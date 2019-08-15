@@ -1,0 +1,17 @@
+{
+  "name": "recipe",
+  "version": "1.0.0",
+  "description": "",
+  "main": "original.js",
+  "scripts": {
+    "start": "node original.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "async-wait-until": "^1.2.4",
+    "delay": "^4.3.0",
+    "mqtt": "^3.0.0"
+  }
+}
