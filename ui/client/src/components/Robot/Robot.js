@@ -71,7 +71,7 @@ function getItemAction(key, cmp) {
       rt = getSliderAction(
         cmp.props.classes.slider,
         cmp.state.robotCmdJogStepLen,
-        cmp.handleRobotCmdJogStepLenChange, 100, 1, 1);
+        cmp.handleRobotCmdJogStepLenChange, 300, 1, 1);
       break;
     case companyInfo.topics.robot.cmd.jog.x:
       rt = getRobotCmdJogAction(cmp, 'x');

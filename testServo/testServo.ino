@@ -23,7 +23,7 @@
 #define MOTOR_Z_DIR_PIN 40
 #define MOTOR_Z_PUL_PIN 42
 
-#define MOTOR_G_POS_PIN 9  // gripper
+#define MOTOR_G_POS_PIN 9 //gripper
 
 #define TOPIC_SUBSCRIBE "robot/cmd/#"
 
@@ -72,7 +72,7 @@
 #define TOPIC_ROBOT_STATUS_PAR_Z_STEP_PER_MM \
   "robot/status/par/z/stepPerMM"  // float
 
-// #define SERIAL_DEBUG  // uncomment this define for enable the serial
+#define SERIAL_DEBUG  // uncomment this define for enable the serial
 // debugging
 #define SERIAL_BAUDRATE 115200
 #define CONNECT_RETRY_INTERERVAL 1000  // ms
@@ -265,19 +265,19 @@ void publishTheStatus(struct sMotor* pMotors) {
 
   for (int32_t i = MOTOR_X; i < (MOTOR_Z + 1); i++) {
     (pMotors + i)->status.pos =
-        stepToPos((pMotors + i)->status.step, (pMotors + i)->cfg.stepPerMM);
+      stepToPos((pMotors + i)->status.step, (pMotors + i)->cfg.stepPerMM);
     (pMotors + i)->status.lastTargetReach = (pMotors + i)->status.targetReach;
   }
 
   client.publish(
-      TOPIC_ROBOT_STATUS_JOG_X,
-      String((pMotors + MOTOR_X)->status.pos, DECIMAL_PLACE).c_str());
+    TOPIC_ROBOT_STATUS_JOG_X,
+    String((pMotors + MOTOR_X)->status.pos, DECIMAL_PLACE).c_str());
   client.publish(
-      TOPIC_ROBOT_STATUS_JOG_Y,
-      String((pMotors + MOTOR_Y)->status.pos, DECIMAL_PLACE).c_str());
+    TOPIC_ROBOT_STATUS_JOG_Y,
+    String((pMotors + MOTOR_Y)->status.pos, DECIMAL_PLACE).c_str());
   client.publish(
-      TOPIC_ROBOT_STATUS_JOG_Z,
-      String((pMotors + MOTOR_Z)->status.pos, DECIMAL_PLACE).c_str());
+    TOPIC_ROBOT_STATUS_JOG_Z,
+    String((pMotors + MOTOR_Z)->status.pos, DECIMAL_PLACE).c_str());
 }
 
 int32_t getMQTTCmd(String topic, String payload, struct sMotor* pMotors) {
@@ -305,7 +305,7 @@ int32_t getMQTTCmd(String topic, String payload, struct sMotor* pMotors) {
     client.publish(TOPIC_ROBOT_STATUS_JOG_VEL,
                    String(delayToVel(delay, (pMotors + MOTOR_X)->cfg.stepPerMM),
                           DECIMAL_PLACE)
-                       .c_str());
+                   .c_str());
   } else if (topic.equals(TOPIC_ROBOT_CMD_STOP)) {
     if (payload.equals(PAYLOAD_TRUE)) {
       for (int32_t i = MOTOR_X; i < (MOTOR_Z + 1); i++) {
@@ -320,20 +320,20 @@ int32_t getMQTTCmd(String topic, String payload, struct sMotor* pMotors) {
     idx = MOTOR_X;
     setStepPerMM((pMotors + idx), payload.toFloat());
     client.publish(
-        TOPIC_ROBOT_STATUS_PAR_X_STEP_PER_MM,
-        String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
+      TOPIC_ROBOT_STATUS_PAR_X_STEP_PER_MM,
+      String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
   } else if (topic.equals(TOPIC_ROBOT_CMD_PAR_Y_STEP_PER_MM)) {
     idx = MOTOR_Y;
     setStepPerMM((pMotors + idx), payload.toFloat());
     client.publish(
-        TOPIC_ROBOT_STATUS_PAR_Y_STEP_PER_MM,
-        String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
+      TOPIC_ROBOT_STATUS_PAR_Y_STEP_PER_MM,
+      String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
   } else if (topic.equals(TOPIC_ROBOT_CMD_PAR_Z_STEP_PER_MM)) {
     idx = MOTOR_Z;
     setStepPerMM((pMotors + idx), payload.toFloat());
     client.publish(
-        TOPIC_ROBOT_STATUS_PAR_Z_STEP_PER_MM,
-        String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
+      TOPIC_ROBOT_STATUS_PAR_Z_STEP_PER_MM,
+      String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
   } else {
     idx = -1;
   }
@@ -390,9 +390,11 @@ void setup() {
                           MOTOR_X_PUL_PIN, MOTOR_Y_ENA_PIN,
                           MOTOR_Y_DIR_PIN, MOTOR_Y_PUL_PIN,
                           MOTOR_Z_ENA_PIN, MOTOR_Z_DIR_PIN,
-                          MOTOR_Z_PUL_PIN, 0};
+                          MOTOR_Z_PUL_PIN, 0
+                         };
   uint8_t inputPins[] = {MANUAL_ENA_PIN, MANUAL_SEL_A_PIN, MANUAL_SEL_B_PIN,
-                         MANUAL_DIR_PIN, 0};
+                         MANUAL_DIR_PIN, 0
+                        };
   setPinsMode(outputPins, OUTPUT);
   setPinsMode(inputPins, INPUT);
   for (int32_t i = MOTOR_X; i < (MOTOR_Z + 1); i++) {

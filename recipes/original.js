@@ -6,15 +6,9 @@ const opt = {
   port: 1883,
   clientId: 'recipeOriginal'
 };
-const waitMotionDoneTimeout = 60000; //ms
-let motionStop = true;
 
-async function waitMotionDone() {
-  motionStop = false;
-  const result = await waitUntil(() => {
-    return motionStop;
-  }, waitMotionDoneTimeout);
-}
+const waitRobotMotionDoneTimeout = 60000; //ms
+let robotMotionDone = true;
 
 console.log(opt.clientId + ' started');
 
@@ -29,17 +23,31 @@ client.on('message', function (topic, msg) {
   console.log('topic ' + topic + ' - ' + msg);
   if (topic === 'robot/status/stop') {
     if (msg.toString() === 'true') {
-      motionStop = true;
+      robotMotionDone = true;
     } else {
-      motionStop = false;
+      robotMotionDone = false;
     }
   }
 });
 
+async function waitRobotMotionDone() {
+  robotMotionDone = false;
+  const result = await waitUntil(() => {
+    return robotMotionDone;
+  }, waitRobotMotionDoneTimeout);
+}
+
 (async () => {
-  await waitMotionDone();
-  client.publish('robot/cmd/jog/x', '50');
-  await waitMotionDone();
-  client.publish('robot/cmd/jog/x', '-50');
+  for (i = 1; i <= 3; i++) {
+    client.publish('robot/cmd/jog/vel', '50');
+    await waitRobotMotionDone();
+    client.publish('robot/cmd/jog/x', '50');
+    client.publish('robot/cmd/jog/y', '50');
+    client.publish('robot/cmd/jog/z', '50');
+    await waitRobotMotionDone();
+    client.publish('robot/cmd/jog/x', '-50');
+    client.publish('robot/cmd/jog/y', '-50');
+    client.publish('robot/cmd/jog/z', '-50');
+  }
 })();
 
