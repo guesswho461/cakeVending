@@ -24,10 +24,10 @@ export default function reducer(state = initState, action) {
   }
 }
 
-export function handleRecipeStart(name) {
+export function handleRecipeStart(arg1, arg2) {
   return {
     type: RECIPE_START,
-    payload: name,
+    payload: arg2,
   };
 }
 

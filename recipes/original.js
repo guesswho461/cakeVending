@@ -43,11 +43,13 @@ async function waitRobotMotionDone() {
     await waitRobotMotionDone();
     client.publish('robot/cmd/jog/x', '50');
     client.publish('robot/cmd/jog/y', '50');
-    client.publish('robot/cmd/jog/z', '50');
+    // client.publish('robot/cmd/jog/z', '50');
+    client.publish('robot/cmd/jog/fork', '50');
     await waitRobotMotionDone();
     client.publish('robot/cmd/jog/x', '-50');
     client.publish('robot/cmd/jog/y', '-50');
-    client.publish('robot/cmd/jog/z', '-50');
+    // client.publish('robot/cmd/jog/z', '-50');
+    client.publish('robot/cmd/jog/fork', '0');
   }
 })();
 

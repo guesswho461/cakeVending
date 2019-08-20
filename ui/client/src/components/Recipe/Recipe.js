@@ -90,7 +90,7 @@ class Recipe extends React.Component {
 const mapDispatchToProps = dispatch => {
   return bindActionCreators(
     {
-      handleRecipeStart: (name) => handleRecipeStart(name),
+      handleRecipeStart: (arg1, arg2) => handleRecipeStart(arg1, arg2),
     },
     dispatch
   );

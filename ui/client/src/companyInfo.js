@@ -7,7 +7,7 @@ import twitterLogo from './imgs/twitterLogo.svg';
 const companyInfo = {
   title: '老闆不在雞蛋糕',
   currency: 'NT',
-  backendURL: 'http://localhost:8081',
+  backendURL: 'http://' + window.location.hostname + ':8081',
   brokerURL: 'ws://localhost:8000',
   footers: [
     {
