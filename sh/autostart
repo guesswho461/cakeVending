@@ -1,0 +1,7 @@
+@lxpanel --profile LXDE-pi
+@pcmanfm --desktop --profile LXDE-pi
+@xscreensaver -no-splash
+@point-rpi
+@unclutter 0.1
+@chromium-browser --kiosk --incognito http://localhost
+@node /home/pi/serialmqtt/index.js

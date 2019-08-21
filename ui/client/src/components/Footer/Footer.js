@@ -54,6 +54,9 @@ const Footer = props => {
           </Grid>
         ))}
       </Grid>
+      <Typography variant="h6" color="textPrimary" gutterBottom>
+        {companyInfo.version}
+      </Typography>
     </div>
   );
 };
