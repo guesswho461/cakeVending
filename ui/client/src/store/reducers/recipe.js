@@ -19,6 +19,7 @@ export default function reducer(state = initState, action) {
           console.log(error);
         });
       console.log(action.type + " - " + action.payload);
+      break;
     default:
       return state;
   }

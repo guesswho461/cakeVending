@@ -6,6 +6,7 @@ import checkoutItem from "./checkoutItem";
 import checkoutStep from "./checkoutStep";
 import mqttTopics from "./mqttTopics";
 import recipe from "./recipe";
+import uiInfo from "./uiInfo";
 
 const reducers = combineReducers({
   setting,
@@ -14,6 +15,7 @@ const reducers = combineReducers({
   checkoutStep,
   mqttTopics,
   recipe,
+  uiInfo,
   form: formReducer
 });
 

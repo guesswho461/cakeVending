@@ -5,7 +5,6 @@ import igLogo from './imgs/igLogo.svg';
 import twitterLogo from './imgs/twitterLogo.svg';
 
 const companyInfo = {
-  version: 'v1.0',
   title: '老闆不在雞蛋糕',
   currency: 'NT',
   backendURL: 'http://' + window.location.hostname + ':8081',
