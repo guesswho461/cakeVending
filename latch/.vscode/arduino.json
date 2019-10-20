@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:mega",
+    "configuration": "cpu=atmega2560",
+    "sketch": "CrtlLatchFW_v002.ino"
+}

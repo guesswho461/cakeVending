@@ -3,5 +3,5 @@
 @xscreensaver -no-splash
 @point-rpi
 @unclutter 0.1
-@node /home/pi/server/server.js
+@node /home/pi/coin/index.js
 @chromium-browser --kiosk --incognito http://localhost
