@@ -1,5 +1,7 @@
 import companyInfo from '../../companyInfo';
 
+const COIN_CNT_DEC = "coin/cnt/dec";
+
 var mqtt = require('mqtt');
 var client = mqtt.connect(companyInfo.brokerURL);
 
@@ -59,6 +61,8 @@ const initState = {
   latchStatusLArmSuck: false,
   latchStatusParRArmPitch: '0',
   latchStatusParLArmPitch: '0',
+  /* --------------------------------------------------------------- */
+  coinCnt: 0,
 };
 
 export default function reducer(state = initState, action) {
@@ -359,6 +363,16 @@ export default function reducer(state = initState, action) {
         ...state,
         latchStatusParLArmPitch: action.payload,
       };
+    case companyInfo.topics.coin.inc:
+      return {
+        ...state,
+        coinCnt: state.coinCnt + 1,
+      };
+    case COIN_CNT_DEC:
+      return {
+        ...state,
+        cointCnt: state.coinCnt - action.payload,
+      }
   };
   return state;
 }
@@ -367,7 +381,7 @@ export function handleSubscribeTopics(root, topic, msg) {
   var actionType = '';
   if (typeof topic === 'string') {
     var topicArr = topic.split("/");
-    if (topicArr[0] === root & topicArr[1] === 'status') {
+    if (topicArr[0] === root) {
       actionType = topic;
     }
   }
@@ -415,4 +429,11 @@ export function publishMsgToTopic(topic, msg) {
     type: topic,
     payload: msg,
   };
+}
+
+export function coinCntDec(cnt) {
+  return {
+    type: COIN_CNT_DEC,
+    payload: cnt,
+  }
 }

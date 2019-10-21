@@ -3,7 +3,7 @@ import demoCake from './imgs/demoCake.jpg';
 const productList = [
   {
     title: '原味',
-    unitPrice: '45',
+    unitPrice: '50',
     unit: '份',
     description: [
       '每份6顆',
@@ -13,7 +13,7 @@ const productList = [
   },
   {
     title: '巧克力',
-    unitPrice: '45',
+    unitPrice: '50',
     unit: '份',
     description: [
       '每份6顆',
@@ -22,7 +22,7 @@ const productList = [
   },
   {
     title: '奶油',
-    unitPrice: '45',
+    unitPrice: '50',
     unit: '份',
     description: [
       '每份6顆',

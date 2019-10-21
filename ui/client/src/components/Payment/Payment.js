@@ -7,11 +7,12 @@ import Button from '@material-ui/core/Button';
 
 import linepayIcon from './../../imgs/linepay.png'
 import contactlessIcon from './../../imgs/contactless_symb_pos.png'
+import coinInsertIcon from './../../imgs/insert-icon-20.jpg'
 
 const styles = theme => ({
   paymentButton: {
-    width: 200,
-    height: 200,
+    width: 150,
+    height: 150,
   },
   paymentIcon: {
     width: '100%',
@@ -26,6 +27,11 @@ const payments = [
   },
   {
     icon: [contactlessIcon],
+    title: 'VISA Paywave',
+    width: '100%',
+  },
+  {
+    icon: [coinInsertIcon],
     title: 'VISA Paywave',
     width: '100%',
   },

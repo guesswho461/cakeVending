@@ -36,6 +36,10 @@ const companyInfo = {
     },
   ],
   topics: {
+    coin: {
+      root: 'coin',
+      inc: 'coin/inc',
+    },
     bucket: {
       root: 'bucket',
       cmd: {
