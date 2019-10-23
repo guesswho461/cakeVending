@@ -68,7 +68,7 @@ class Header extends React.Component {
             {companyInfo.title}
           </Typography>
           <IconButton color="inherit">
-            <Badge badgeContent={this.props.mqttTopics.coinCnt * 10} color="secondary">
+            <Badge badgeContent={this.props.mqttTopics.coinValue} color="secondary">
               <CoinIcon />
             </Badge>
           </IconButton>

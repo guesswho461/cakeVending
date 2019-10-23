@@ -8,8 +8,9 @@ import { withStyles } from "@material-ui/core/styles";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import { logout } from "../store/reducers/authenticate";
-import CheckoutDlg from '../components/CheckoutDlg';
+// import CheckoutDlg from '../components/CheckoutDlg';
 import CouponDlg from '../components/CouponDlg';
+import CheckoutDlg2 from '../components/CheckoutDlg2';
 
 const drawerWidth = 240;
 
@@ -100,7 +101,7 @@ class MainLayout extends Component {
         ) : (
             <div></div>
           )}
-        <CheckoutDlg open={this.state.checkoutDlgOpen} handleCheckoutDlgClose={this.handleCheckoutDlgClose} />
+        <CheckoutDlg2 open={this.state.checkoutDlgOpen} handleCheckoutDlgClose={this.handleCheckoutDlgClose} />
         <CouponDlg open={this.state.couponDlgOpen} handleCouponDlgClose={this.handleCouponDlgClose} />
       </Fragment>
     );

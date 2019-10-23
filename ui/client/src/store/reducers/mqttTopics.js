@@ -63,6 +63,7 @@ const initState = {
   latchStatusParLArmPitch: '0',
   /* --------------------------------------------------------------- */
   coinCnt: 0,
+  coinValue: 0,
 };
 
 export default function reducer(state = initState, action) {
@@ -367,6 +368,7 @@ export default function reducer(state = initState, action) {
       return {
         ...state,
         coinCnt: state.coinCnt + 1,
+        coinValue: state.coinCnt * 10,
       };
     case COIN_CNT_DEC:
       return {
