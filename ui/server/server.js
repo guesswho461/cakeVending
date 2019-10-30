@@ -22,6 +22,13 @@ app.post('/recipe/start', (req, res) => {
   });
 });
 
+app.post('/recipe/start/original', (req, res) => {
+  exec("node ~/codes/cakeVending/recipes/test.js", function (err, stdout, stderr) {
+    console.log(req.body.cmd);
+    res.send(stdout);
+  });
+});
+
 app.listen(port, () => {
   console.log('Listing on port ' + port);
 });

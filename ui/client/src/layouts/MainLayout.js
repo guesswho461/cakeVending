@@ -5,12 +5,12 @@ import { bindActionCreators } from "redux";
 
 import { withStyles } from "@material-ui/core/styles";
 
-import Header from "../components/Header";
+import Header3 from "../components/Header3";
 import Sidebar from "../components/Sidebar";
 import { logout } from "../store/reducers/authenticate";
-// import CheckoutDlg from '../components/CheckoutDlg';
 import CouponDlg from '../components/CouponDlg';
-import CheckoutDlg2 from '../components/CheckoutDlg2';
+import CheckoutDlg3 from '../components/CheckoutDlg3';
+import ProcessingDlg from '../components/ProcessingDlg';
 
 const drawerWidth = 240;
 
@@ -81,10 +81,9 @@ class MainLayout extends Component {
     return (
       <Fragment>
         <div className={classes.root}>
-          <Header
+          <Header3
             logout={this.props.logout}
             handleToggleDrawer={this.handleToggleDrawer}
-            handleCheckoutDlgOpen={this.handleCheckoutDlgOpen}
             handleCouponDlgOpen={this.handleCouponDlgOpen}
           />
           <main
@@ -101,8 +100,9 @@ class MainLayout extends Component {
         ) : (
             <div></div>
           )}
-        <CheckoutDlg2 open={this.state.checkoutDlgOpen} handleCheckoutDlgClose={this.handleCheckoutDlgClose} />
+        <CheckoutDlg3 />
         <CouponDlg open={this.state.couponDlgOpen} handleCouponDlgClose={this.handleCouponDlgClose} />
+        <ProcessingDlg />
       </Fragment>
     );
   }
@@ -110,14 +110,14 @@ class MainLayout extends Component {
 
 const mapStateToProps = state => {
   return {
-    authenticate: state.authenticate
+    authenticate: state.authenticate,
   };
 };
 
 const mapDispatchToProps = dispatch => {
   return bindActionCreators(
     {
-      logout: () => logout()
+      logout: () => logout(),
     },
     dispatch
   );

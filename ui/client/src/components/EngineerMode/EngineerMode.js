@@ -39,7 +39,7 @@ class EngineerMode extends React.Component {
         {this.props.authenticate.engineerMode ? (
           <div className={classes.root}>
             <AppBar position="static">
-              <Tabs value={this.state.tabIdx} onChange={this.handleChange}>
+              <Tabs scrollButtons="auto" variant="scrollable" value={this.state.tabIdx} onChange={this.handleChange}>
                 <Tab label="Robot" />{/** 0 */}
                 <Tab label="Oven" />{/** 1 */}
                 <Tab label="Latch" />{/** 2 */}
