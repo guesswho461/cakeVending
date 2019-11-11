@@ -1,8 +1,8 @@
 #include <Ethernet.h>
 //#include <MQTT.h>
-#include <Servo.h>
 #include <PubSubClient.h>
 #include <SPI.h>
+#include <Servo.h>
 
 #define MANUAL_SPD_PIN A15
 #define MANUAL_ENA_PIN 2
@@ -85,7 +85,8 @@
 
 //#define SERIAL_DEBUG  // uncomment this define for enable the serial
 //#define SERIAL_DEBUG_FULL  // uncomment this define for enable the serial
-//#define SERVO_ON_BEFORE_MOVED  //uncomment this define to disable this function
+//#define SERVO_ON_BEFORE_MOVED  //uncomment this define to disable this
+// function
 // debugging
 #define SERIAL_BAUDRATE 9600
 #define CONNECT_RETRY_INTERERVAL 1000  // ms
@@ -105,7 +106,7 @@
 
 const byte mac[] = {0x9A, 0x9B, 0x9C, 0x9D, 0x9E, 0x9F};
 const IPAddress ip(192, 168, 1, 25);
-const IPAddress server(192, 168, 1, 99);  //pi 99 laptop 19
+const IPAddress server(192, 168, 1, 99);  // pi 99 laptop 19
 // 設定用戶端ID
 const char clientID[] = "Arduino01";
 
@@ -144,8 +145,8 @@ struct sMotor {
   struct sMotorStatus status;
 };
 
-//EthernetClient socket;
-//MQTTClient client;
+// EthernetClient socket;
+// MQTTClient client;
 EthernetClient ethClient;        // 建立乙太網路前端物件
 PubSubClient client(ethClient);  // 基於乙太網路物件，建立MQTT前端物件
 unsigned long lastMillis = 0;
@@ -163,12 +164,12 @@ void genFreqAtPin(uint8_t pin, uint32_t delay) {
 }
 
 void controlTheMotor(struct sMotor& motor) {
-  if (motor.cmd.home == true)  //回home模式
-  {
+  if (motor.cmd.home == true) {  //回home模式
+
     int32_t homeReached = digitalRead(motor.cfg.homePin);
     if (homeReached == HIGH) {  //還沒被觸發
 #ifdef SERIAL_DEBUG
-  Serial.println("In Homing...");
+      Serial.println("In Homing...");
 #endif
       motor.cmd.dir = motor.cfg.homingDir;
       motor.status.targetReach = false;
@@ -182,13 +183,11 @@ void controlTheMotor(struct sMotor& motor) {
       motor.cmd.home = false;
       motor.cmd.delay = MAX_DELAY;
     }
-  } 
-  else 
-  {
-    if (manualMode == LOW)      //手動模式
-    {
+  } else {
+    if (manualMode == LOW) {  //手動模式
+
 #ifdef SERIAL_DEBUG
-  Serial.println("In manualMode");
+      Serial.println("In manualMode");
 #endif
       // velocity mode
       if (motor.cmd.delay < STOP_MOVING_THRESHOLD) {
@@ -196,12 +195,11 @@ void controlTheMotor(struct sMotor& motor) {
       } else {
         motor.status.targetReach = true;
       }
-    } 
-    else                        //MQTT Mode 
-    {
+    } else {  // MQTT Mode
+
       // position mode
 #ifdef SERIAL_DEBUG
-  Serial.println("In MQTT Mode");
+      Serial.println("In MQTT Mode");
 #endif
       if (motor.cmd.dir == HIGH) {
         if (motor.status.step < motor.cmd.step) {
@@ -217,25 +215,24 @@ void controlTheMotor(struct sMotor& motor) {
         }
       }
     }
-  } 
+  }
 
-  
-  if (motor.status.targetReach == false) //還沒到target
-  {
-    #ifdef SERVO_ON_BEFORE_MOVED
-      digitalWrite(motor.cfg.enaPin, HIGH);                //Servo ON
-    #endif
-    digitalWrite(motor.cfg.dirPin, motor.cmd.dir);          //Dir Update
-    genFreqAtPin(motor.cfg.stepPin, motor.cmd.delay);       //走一步
+  if (motor.status.targetReach == false) {  //還沒到target
+
+#ifdef SERVO_ON_BEFORE_MOVED
+    digitalWrite(motor.cfg.enaPin, HIGH);  // Servo ON
+#endif
+    digitalWrite(motor.cfg.dirPin, motor.cmd.dir);     // Dir Update
+    genFreqAtPin(motor.cfg.stepPin, motor.cmd.delay);  //走一步
     if (motor.cmd.dir == HIGH) {
       motor.status.step++;
     } else {
       motor.status.step--;
     }
   } else {
-    #ifdef SERVO_ON_BEFORE_MOVED
-      digitalWrite(motor.cfg.enaPin, LOW);                //Servo OFF
-    #endif
+#ifdef SERVO_ON_BEFORE_MOVED
+    digitalWrite(motor.cfg.enaPin, LOW);  // Servo OFF
+#endif
   }
 #ifdef SERIAL_DEBUG_FULL
   Serial.print("target reach: ");
@@ -295,18 +292,20 @@ uint32_t velToDelay(float vel, float stepPerMM) {
   if (vel < 0.0f) vel = 1.0f;
   if (stepPerMM < 0.0f) stepPerMM = 1.0f;
   float temp = ((USEC_PER_SEC / (vel * stepPerMM)) * 0.5f);
-  if(temp<MIN_DELAY) temp=MIN_DELAY;
+  if (temp < MIN_DELAY) temp = MIN_DELAY;
   return (uint32_t)temp;
 }
 
-float delayToVel(uint32_t delay, float stepPerMM) {  //這邊還有問題，不論input是甚麼，output都一樣
+float delayToVel(
+    uint32_t delay,
+    float stepPerMM) {  //這邊還有問題，不論input是甚麼，output都一樣
   if (delay < 1) delay = 1;
   if (stepPerMM < 0.0f) stepPerMM = 1.0f;
-  float temp=((USEC_PER_SEC / (delay * 2.0f)) / stepPerMM);
+  float temp = ((USEC_PER_SEC / (delay * 2.0f)) / stepPerMM);
 #ifdef SERIAL_DEBUG
   Serial.print("delayToVel:");
   Serial.println(temp);
-#endif    
+#endif
   return temp;
 }
 
@@ -325,8 +324,8 @@ void setCmdPulse(struct sMotor* pMotor, float step) {
 #ifdef SERIAL_DEBUG
   Serial.print("pMotor->cmd.step:");
   Serial.println(pMotor->cmd.step);
-#endif  
-//  if ((pMotor->cmd.step) >= 0) {
+#endif
+  //  if ((pMotor->cmd.step) >= 0) {
   if ((pMotor->status.step - pMotor->cmd.step) <= 0) {
     pMotor->cmd.dir = HIGH;
   } else {
@@ -366,26 +365,33 @@ void publishTheStatus(struct sMotor* pMotors) {
 
   for (int32_t i = MOTOR_X; i < (MOTOR_Z + 1); i++) {
     (pMotors + i)->status.pos =
-      stepToPos((pMotors + i)->status.step, (pMotors + i)->cfg.stepPerMM);
+        stepToPos((pMotors + i)->status.step, (pMotors + i)->cfg.stepPerMM);
     (pMotors + i)->status.lastTargetReach = (pMotors + i)->status.targetReach;
   }
 
   client.publish(
-    TOPIC_ROBOT_STATUS_JOG_X,
-    String((pMotors + MOTOR_X)->status.pos, DECIMAL_PLACE).c_str());
+      TOPIC_ROBOT_STATUS_JOG_X,
+      String((pMotors + MOTOR_X)->status.pos, DECIMAL_PLACE).c_str());
   client.publish(
-    TOPIC_ROBOT_STATUS_JOG_Y,
-    String((pMotors + MOTOR_Y)->status.pos, DECIMAL_PLACE).c_str());
+      TOPIC_ROBOT_STATUS_JOG_Y,
+      String((pMotors + MOTOR_Y)->status.pos, DECIMAL_PLACE).c_str());
   client.publish(
-    TOPIC_ROBOT_STATUS_JOG_Z,
-    String((pMotors + MOTOR_Z)->status.pos, DECIMAL_PLACE).c_str());
+      TOPIC_ROBOT_STATUS_JOG_Z,
+      String((pMotors + MOTOR_Z)->status.pos, DECIMAL_PLACE).c_str());
 
-  client.publish(TOPIC_ROBOT_STATUS_HOME_X, (pMotors + MOTOR_X)->status.home ? PAYLOAD_TRUE : PAYLOAD_FALSE);
-  client.publish(TOPIC_ROBOT_STATUS_HOME_Y, (pMotors + MOTOR_Y)->status.home ? PAYLOAD_TRUE : PAYLOAD_FALSE);
-  client.publish(TOPIC_ROBOT_STATUS_HOME_Z, (pMotors + MOTOR_Z)->status.home ? PAYLOAD_TRUE : PAYLOAD_FALSE);
+  client.publish(TOPIC_ROBOT_STATUS_HOME_X, (pMotors + MOTOR_X)->status.home
+                                                ? PAYLOAD_TRUE
+                                                : PAYLOAD_FALSE);
+  client.publish(TOPIC_ROBOT_STATUS_HOME_Y, (pMotors + MOTOR_Y)->status.home
+                                                ? PAYLOAD_TRUE
+                                                : PAYLOAD_FALSE);
+  client.publish(TOPIC_ROBOT_STATUS_HOME_Z, (pMotors + MOTOR_Z)->status.home
+                                                ? PAYLOAD_TRUE
+                                                : PAYLOAD_FALSE);
 }
 
-int32_t getMQTTCmd(String topic, String payload, struct sMotor* pMotors) {   //MQTT callback
+int32_t getMQTTCmd(String topic, String payload,
+                   struct sMotor* pMotors) {  // MQTT callback
 
   int32_t idx = 0;
   if (topic.equals(TOPIC_ROBOT_CMD_JOG_FORK)) {
@@ -395,21 +401,21 @@ int32_t getMQTTCmd(String topic, String payload, struct sMotor* pMotors) {   //M
     idx = MOTOR_X;
     setCmdPulse((pMotors + idx), payload.toFloat());
 #ifdef SERIAL_DEBUG
-  Serial.print("JOG_X");
+    Serial.print("JOG_X");
 #endif
   } else if (topic.equals(TOPIC_ROBOT_CMD_JOG_Y)) {
     idx = MOTOR_Y;
     setCmdPulse((pMotors + idx), payload.toFloat());
 #ifdef SERIAL_DEBUG
-  Serial.print("JOG_Y");
+    Serial.print("JOG_Y");
 #endif
   } else if (topic.equals(TOPIC_ROBOT_CMD_JOG_Z)) {
     idx = MOTOR_Z;
     setCmdPulse((pMotors + idx), payload.toFloat());
 #ifdef SERIAL_DEBUG
-  Serial.print("JOG_Z");
+    Serial.print("JOG_Z");
 #endif
-  } else if (topic.equals(TOPIC_ROBOT_CMD_JOG_VEL)) {         //vel
+  } else if (topic.equals(TOPIC_ROBOT_CMD_JOG_VEL)) {  // vel
     float vel = payload.toFloat();
 
     uint32_t delay = 1000;
@@ -417,16 +423,16 @@ int32_t getMQTTCmd(String topic, String payload, struct sMotor* pMotors) {   //M
       int32_t delay = velToDelay(vel, (pMotors + i)->cfg.stepPerMM);
       (pMotors + i)->cmd.delay = delay;
 #ifdef SERIAL_DEBUG
-  Serial.print("(pMotors + i)->cmd.delay =");
-  Serial.println((pMotors + i)->cmd.delay);
+      Serial.print("(pMotors + i)->cmd.delay =");
+      Serial.println((pMotors + i)->cmd.delay);
 #endif
     }
     client.publish(TOPIC_ROBOT_STATUS_JOG_VEL,
                    String(delayToVel(delay, (pMotors + MOTOR_X)->cfg.stepPerMM),
                           DECIMAL_PLACE)
-                   .c_str());
+                       .c_str());
 #ifdef SERIAL_DEBUG
-  Serial.print("JOG_VEL");
+    Serial.print("JOG_VEL");
 #endif
   } else if (topic.equals(TOPIC_ROBOT_CMD_STOP)) {
     if (payload.equals(PAYLOAD_TRUE)) {
@@ -449,20 +455,20 @@ int32_t getMQTTCmd(String topic, String payload, struct sMotor* pMotors) {   //M
     idx = MOTOR_X;
     setStepPerMM((pMotors + idx), payload.toFloat());
     client.publish(
-      TOPIC_ROBOT_STATUS_PAR_X_STEP_PER_MM,
-      String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
+        TOPIC_ROBOT_STATUS_PAR_X_STEP_PER_MM,
+        String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
   } else if (topic.equals(TOPIC_ROBOT_CMD_PAR_Y_STEP_PER_MM)) {
     idx = MOTOR_Y;
     setStepPerMM((pMotors + idx), payload.toFloat());
     client.publish(
-      TOPIC_ROBOT_STATUS_PAR_Y_STEP_PER_MM,
-      String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
+        TOPIC_ROBOT_STATUS_PAR_Y_STEP_PER_MM,
+        String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
   } else if (topic.equals(TOPIC_ROBOT_CMD_PAR_Z_STEP_PER_MM)) {
     idx = MOTOR_Z;
     setStepPerMM((pMotors + idx), payload.toFloat());
     client.publish(
-      TOPIC_ROBOT_STATUS_PAR_Z_STEP_PER_MM,
-      String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
+        TOPIC_ROBOT_STATUS_PAR_Z_STEP_PER_MM,
+        String((pMotors + idx)->status.stepPerMM, DECIMAL_PLACE).c_str());
   } else {
     idx = -1;
   }
@@ -472,18 +478,18 @@ int32_t getMQTTCmd(String topic, String payload, struct sMotor* pMotors) {   //M
 void messageReceived(char* topic, byte* payload, unsigned int length) {
   String myTopic = String((char*)topic);
   String myPayload = String((char*)payload);
-  String msg =charToStringJ(payload,length);
+  String msg = charToStringJ(payload, length);
 #ifdef SERIAL_DEBUG
-    Serial.println("----Message arrived!----");
-    Serial.print("topic:");
-    Serial.println(topic);
-    Serial.print("Message:");
-    Serial.println(msg);
-    Serial.println("------------------------");
+  Serial.println("----Message arrived!----");
+  Serial.print("topic:");
+  Serial.println(topic);
+  Serial.print("Message:");
+  Serial.println(msg);
+  Serial.println("------------------------");
 #endif
   if (manualMode == HIGH) {
     if (getMQTTCmd(myTopic, msg, motors) < 0) {
-//    if (getMQTTCmd(topic, payload, motors) < 0) {
+      //    if (getMQTTCmd(topic, payload, motors) < 0) {
       PUBLISH_MSG(PAYLOAD_UNKNOWN_TOPIC);
 #ifdef SERIAL_DEBUG
       Serial.println(PAYLOAD_UNKNOWN_TOPIC);
@@ -503,8 +509,7 @@ void setPinsMode(uint8_t* pPins, uint8_t mode) {
   }
 }
 
-String charToStringJ(const char S[], unsigned int length)
-{
+String charToStringJ(const char S[], unsigned int length) {
   byte at = 0;
   String D = "";
 
@@ -518,78 +523,78 @@ void setup() {
 #ifdef SERIAL_DEBUG
   Serial.begin(SERIAL_BAUDRATE);
 #endif
-  uint8_t outputPins[] = {MOTOR_X_ENA_PIN, MOTOR_X_DIR_PIN,
-                          MOTOR_X_PUL_PIN, MOTOR_Y_ENA_PIN,
-                          MOTOR_Y_DIR_PIN, MOTOR_Y_PUL_PIN,
-                          MOTOR_Z_ENA_PIN, MOTOR_Z_DIR_PIN,
-                          MOTOR_Z_PUL_PIN, 0
-                         };
-  uint8_t inputPins[] = {MANUAL_ENA_PIN, MANUAL_SEL_A_PIN, MANUAL_SEL_B_PIN,
-                         MANUAL_DIR_PIN,
-                         /*MOTOR_X_POS_LIMIT_PIN, MOTOR_X_NEG_LIMIT_PIN,*/ MOTOR_X_HOME_PIN,
-                         /*MOTOR_Y_POS_LIMIT_PIN, MOTOR_Y_NEG_LIMIT_PIN,*/ MOTOR_Y_HOME_PIN,
-                         /*MOTOR_Z_POS_LIMIT_PIN, MOTOR_Z_NEG_LIMIT_PIN,*/ MOTOR_Z_HOME_PIN,
-                         0
-                        };
-  setPinsMode(outputPins, OUTPUT);
-  setPinsMode(inputPins, INPUT_PULLUP);
+  // uint8_t outputPins[] = {MOTOR_X_ENA_PIN, MOTOR_X_DIR_PIN,
+  //                         MOTOR_X_PUL_PIN, MOTOR_Y_ENA_PIN,
+  //                         MOTOR_Y_DIR_PIN, MOTOR_Y_PUL_PIN,
+  //                         MOTOR_Z_ENA_PIN, MOTOR_Z_DIR_PIN,
+  //                         MOTOR_Z_PUL_PIN, 0};
+  // uint8_t inputPins[] = {
+  //     MANUAL_ENA_PIN,
+  //     MANUAL_SEL_A_PIN,
+  //     MANUAL_SEL_B_PIN,
+  //     MANUAL_DIR_PIN,
+  //     /*MOTOR_X_POS_LIMIT_PIN, MOTOR_X_NEG_LIMIT_PIN,*/ MOTOR_X_HOME_PIN,
+  //     /*MOTOR_Y_POS_LIMIT_PIN, MOTOR_Y_NEG_LIMIT_PIN,*/ MOTOR_Y_HOME_PIN,
+  //     /*MOTOR_Z_POS_LIMIT_PIN, MOTOR_Z_NEG_LIMIT_PIN,*/ MOTOR_Z_HOME_PIN,
+  //     0};
+  // setPinsMode(outputPins, OUTPUT);
+  // setPinsMode(inputPins, INPUT_PULLUP);
 
-  motors[MOTOR_X].cfg.enaPin = MOTOR_X_ENA_PIN;
-  motors[MOTOR_X].cfg.stepPin = MOTOR_X_PUL_PIN;
-  motors[MOTOR_X].cfg.dirPin = MOTOR_X_DIR_PIN;
-  motors[MOTOR_X].cfg.posLimitPin = MOTOR_X_POS_LIMIT_PIN;
-  motors[MOTOR_X].cfg.negLimitPin = MOTOR_X_NEG_LIMIT_PIN;
-  motors[MOTOR_X].cfg.homePin = MOTOR_X_HOME_PIN;
-  motors[MOTOR_X].cfg.stepPerMM = DEFAULT_STEP_PER_MM;
+  // motors[MOTOR_X].cfg.enaPin = MOTOR_X_ENA_PIN;
+  // motors[MOTOR_X].cfg.stepPin = MOTOR_X_PUL_PIN;
+  // motors[MOTOR_X].cfg.dirPin = MOTOR_X_DIR_PIN;
+  // motors[MOTOR_X].cfg.posLimitPin = MOTOR_X_POS_LIMIT_PIN;
+  // motors[MOTOR_X].cfg.negLimitPin = MOTOR_X_NEG_LIMIT_PIN;
+  // motors[MOTOR_X].cfg.homePin = MOTOR_X_HOME_PIN;
+  // motors[MOTOR_X].cfg.stepPerMM = DEFAULT_STEP_PER_MM;
 
-  motors[MOTOR_Y].cfg.enaPin = MOTOR_Y_ENA_PIN;
-  motors[MOTOR_Y].cfg.stepPin = MOTOR_Y_PUL_PIN;
-  motors[MOTOR_Y].cfg.dirPin = MOTOR_Y_DIR_PIN;
-  motors[MOTOR_Y].cfg.posLimitPin = MOTOR_Y_POS_LIMIT_PIN;
-  motors[MOTOR_Y].cfg.negLimitPin = MOTOR_Y_NEG_LIMIT_PIN;
-  motors[MOTOR_Y].cfg.homePin = MOTOR_Y_HOME_PIN;
-  motors[MOTOR_Y].cfg.stepPerMM = DEFAULT_STEP_PER_MM;
+  // motors[MOTOR_Y].cfg.enaPin = MOTOR_Y_ENA_PIN;
+  // motors[MOTOR_Y].cfg.stepPin = MOTOR_Y_PUL_PIN;
+  // motors[MOTOR_Y].cfg.dirPin = MOTOR_Y_DIR_PIN;
+  // motors[MOTOR_Y].cfg.posLimitPin = MOTOR_Y_POS_LIMIT_PIN;
+  // motors[MOTOR_Y].cfg.negLimitPin = MOTOR_Y_NEG_LIMIT_PIN;
+  // motors[MOTOR_Y].cfg.homePin = MOTOR_Y_HOME_PIN;
+  // motors[MOTOR_Y].cfg.stepPerMM = DEFAULT_STEP_PER_MM;
 
-  motors[MOTOR_Z].cfg.enaPin = MOTOR_Z_ENA_PIN;
-  motors[MOTOR_Z].cfg.stepPin = MOTOR_Z_PUL_PIN;
-  motors[MOTOR_Z].cfg.dirPin = MOTOR_Z_DIR_PIN;
-  motors[MOTOR_Z].cfg.posLimitPin = MOTOR_Z_POS_LIMIT_PIN;
-  motors[MOTOR_Z].cfg.negLimitPin = MOTOR_Z_NEG_LIMIT_PIN;
-  motors[MOTOR_Z].cfg.homePin = MOTOR_Z_HOME_PIN;
-  motors[MOTOR_Z].cfg.stepPerMM = DEFAULT_STEP_PER_MM_Z;
+  // motors[MOTOR_Z].cfg.enaPin = MOTOR_Z_ENA_PIN;
+  // motors[MOTOR_Z].cfg.stepPin = MOTOR_Z_PUL_PIN;
+  // motors[MOTOR_Z].cfg.dirPin = MOTOR_Z_DIR_PIN;
+  // motors[MOTOR_Z].cfg.posLimitPin = MOTOR_Z_POS_LIMIT_PIN;
+  // motors[MOTOR_Z].cfg.negLimitPin = MOTOR_Z_NEG_LIMIT_PIN;
+  // motors[MOTOR_Z].cfg.homePin = MOTOR_Z_HOME_PIN;
+  // motors[MOTOR_Z].cfg.stepPerMM = DEFAULT_STEP_PER_MM_Z;
 
-  for (int32_t i = MOTOR_X; i < (MOTOR_Z + 1); i++) {
-    motors[i].status.step = 0;
-    motors[i].status.targetReach = 0;
-    motors[i].cfg.homingDir = HIGH;
-    digitalWrite(motors[i].cfg.dirPin, HIGH);
-    digitalWrite(motors[i].cfg.enaPin, HIGH);
-    motors[i].cmd.home = true;
-  }
-  
-  gripper.attach(MOTOR_G_POS_PIN);
-  gripper.write(0);
+  // for (int32_t i = MOTOR_X; i < (MOTOR_Z + 1); i++) {
+  //   motors[i].status.step = 0;
+  //   motors[i].status.targetReach = 0;
+  //   motors[i].cfg.homingDir = HIGH;
+  //   digitalWrite(motors[i].cfg.dirPin, HIGH);
+  //   digitalWrite(motors[i].cfg.enaPin, HIGH);
+  //   motors[i].cmd.home = true;
+  // }
 
-  //先回Home
-  while(1)
-  {
-    for (int32_t i = MOTOR_X; i < (MOTOR_Z + 1); i++) {
-      controlTheMotor(motors[i]);     //執行cmd內容
-    }
+  // gripper.attach(MOTOR_G_POS_PIN);
+  // gripper.write(0);
 
-    if(motors[0].status.home == true 
-    && motors[1].status.home == true
-    && motors[2].status.home == true) break;
-  }
+  // //先回Home
+  // while (1) {
+  //   for (int32_t i = MOTOR_X; i < (MOTOR_Z + 1); i++) {
+  //     controlTheMotor(motors[i]);  //執行cmd內容
+  //   }
 
-    //--MQTT Setup------------------
-    Ethernet.begin(mac, ip);
-    // 設定MQTT代理人的網址和埠號
-    client.setServer(server, 1883);
-    // 留點時間給乙太網路卡進行初始化
-    delay(1000);
-    reconnect();
-    //----------------------------
+  //   if (motors[0].status.home == true && motors[1].status.home == true &&
+  //       motors[2].status.home == true)
+  //     break;
+  // }
+
+  //--MQTT Setup------------------
+  Ethernet.begin(mac, ip);
+  // 設定MQTT代理人的網址和埠號
+  client.setServer(server, 1883);
+  // 留點時間給乙太網路卡進行初始化
+  delay(1000);
+  reconnect();
+  //----------------------------
 }
 
 void reconnect() {
@@ -602,8 +607,8 @@ void reconnect() {
       // 若連結成功，在序列埠監控視窗顯示「已連線」。
       Serial.println("connected");
 #endif
-    client.setCallback(messageReceived);
-    client.subscribe(TOPIC_SUBSCRIBE);
+      client.setCallback(messageReceived);
+      client.subscribe(TOPIC_SUBSCRIBE);
     } else {
 #ifdef SERIAL_DEBUG
       // 若連線不成功，則顯示錯誤訊息
@@ -615,18 +620,16 @@ void reconnect() {
       delay(500);
     }
     i++;
-    if(i>2)break; //retry2次
+    if (i > 2) break;  // retry2次
   }
 }
 
 void loop() {
-    
-    // 確認用戶端是否已連上伺服器
-    if (!client.connected()) 
-    { // 若沒有連上，則重連。
-      reconnect();
-    }
-    client.loop();
+  // 確認用戶端是否已連上伺服器
+  if (!client.connected()) {  // 若沒有連上，則重連。
+    reconnect();
+  }
+  client.loop();
 
   manualMode = digitalRead(MANUAL_ENA_PIN);
 #ifdef SERIAL_DEBUG_FULL
@@ -646,16 +649,16 @@ void loop() {
   } else {
     // do nothing
   }
-  lastManualMode = manualMode;  //mode update
+  lastManualMode = manualMode;  // mode update
 
-  if (manualMode == LOW) {          //into manualMode
+  if (manualMode == LOW) {  // into manualMode
     for (int32_t i = MOTOR_X; i < (MOTOR_Z + 1); i++) {
       motors[i].cmd.delay = MAX_DELAY;
     }
-    getManualCmd(motors);    //產生cmd內容
+    getManualCmd(motors);  //產生cmd內容
   }
   for (int32_t i = MOTOR_X; i < (MOTOR_Z + 1); i++) {
-    controlTheMotor(motors[i]);     //執行cmd內容
+    controlTheMotor(motors[i]);  //執行cmd內容
   }
 
   //

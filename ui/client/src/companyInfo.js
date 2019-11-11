@@ -8,7 +8,8 @@ const companyInfo = {
   title: "老闆不在雞蛋糕",
   currency: "NT",
   backendURL: "http://" + window.location.hostname + ":8081",
-  brokerURL: "ws://localhost:8000",
+  brokerURL: "ws://" + window.location.hostname + ":8000",
+  // brokerURL: "ws://localhost:8000",
   footers: [
     {
       title: "LINE",

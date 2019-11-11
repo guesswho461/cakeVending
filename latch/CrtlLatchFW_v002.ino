@@ -154,7 +154,9 @@ void loop() {
   if (digitalRead(_modCtr1) == LOW)  // Auto mode
   {
     if (CtrlMode == 0) {
+#ifdef SERIAL_DEBUG_FULL
       Serial.println("Auto mode");
+#endif
       CtrlMode = 1;
     }
 
@@ -219,7 +221,9 @@ void loop() {
 
   } else {
     if (CtrlMode == 1) {
+#ifdef SERIAL_DEBUG_FULL
       Serial.println("MQTT mode");
+#endif
       CtrlMode = 0;
     }
   }
@@ -248,15 +252,19 @@ void reconnect() {
     // 指定用戶端ID並連結MQTT伺服器
     if (client.connect(clientID) == 1) {
       // 若連結成功，在序列埠監控視窗顯示「已連線」。
+#ifdef SERIAL_DEBUG_INFO || SERIAL_DEBUG_FULL
       Serial.println("re-connected");
+#endif
       //重新設定訂閱
       client.setCallback(callback);
       client.subscribe(latch_topic);
     } else {
       // 若連線不成功，則顯示錯誤訊息
+#ifdef SERIAL_DEBUG_INFO || SERIAL_DEBUG_FULL
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
+#endif
       // 等候5秒，再重新嘗試連線。
       delay(500);
     }
@@ -266,12 +274,14 @@ void reconnect() {
 void callback(char* topic, byte* payload, unsigned int length) {
   if (CtrlMode == 0) {
     String msg = charToStringJ(payload, length);
+#ifdef SERIAL_DEBUG_FULL
     Serial.println("----Message arrived!----");
     Serial.print("topic:");
     Serial.println(topic);
     Serial.print("Message:");
     Serial.println(msg);
     Serial.println("------------------------");
+#endif
 
     if (strcmp(topic, topic_list[0]) == 0)  /// openDoor
     {
@@ -296,10 +306,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
       Serial.print("openFan:");
       if (msg.equalsIgnoreCase("true")) {
         SetOpenFan("true");
+#ifdef SERIAL_DEBUG_INFO || SERIAL_DEBUG_FULL
         Serial.println("On");
+#endif
       } else {
         SetOpenFan("false");
+#ifdef SERIAL_DEBUG_INFO || SERIAL_DEBUG_FULL
         Serial.println("Off");
+#endif
       }
     } else if (strcmp(topic, topic_list[4]) == 0)  /// Arm_pos
     {
@@ -406,7 +420,9 @@ void SetRelHome(String arm) {
     digitalWrite(_arm_pulse, LOW);
     delayMicroseconds(10);
   }
+#ifdef SERIAL_DEBUG_INFO || SERIAL_DEBUG_FULL
   Serial.println("Home OK");
+#endif
   digitalWrite(_arm_enable, LOW);
 }
 

@@ -1,0 +1,7 @@
+{
+    "board": "arduino:avr:mega",
+    "configuration": "cpu=atmega2560",
+    "programmer": "AVRISP mkII",
+    "port": "/dev/ttyACM0",
+    "sketch": "latch_fw_v2.ino"
+}
