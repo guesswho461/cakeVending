@@ -3,8 +3,8 @@ import companyInfo from "../../companyInfo";
 const COIN_VALUE_DEC = "coin/value/dec";
 const SET_PROCESSING_DLG_OPEN = "set/processingDlg/open";
 
-var mqtt = require("mqtt");
-var client = mqtt.connect(companyInfo.brokerURL);
+const mqtt = require("mqtt");
+const client = mqtt.connect(companyInfo.brokerURL);
 
 const initState = {
   /* --------------------------------------------------------------- */
@@ -372,7 +372,7 @@ export default function reducer(state = initState, action) {
         ...state,
         latchStatusParLArmPitch: action.payload
       };
-    case companyInfo.topics.coin.inc:
+    case companyInfo.topics.coin.status.inc:
       return {
         ...state,
         coinValue: state.coinValue + 10

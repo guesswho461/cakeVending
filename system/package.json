@@ -1,11 +1,11 @@
 {
-  "name": "coin",
+  "name": "system",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "pkg": "pkg index.js -o coin -t node8-linux-armv7"
+    "pkg": "pkg index.js -o system -t node8-linux-armv7"
   },
   "bin": "index.js",
   "author": "",

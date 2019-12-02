@@ -44,7 +44,12 @@ const companyInfo = {
     },
     coin: {
       root: "coin",
-      inc: "coin/inc"
+      status: {
+        inc: "coin/status/inc",
+      },
+      cmd: {
+        enable: "coin/cmd/enable"
+      }
     },
     bucket: {
       root: "bucket",

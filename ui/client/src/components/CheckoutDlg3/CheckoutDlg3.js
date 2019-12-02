@@ -41,10 +41,10 @@ function dlgTransition(props) {
 
 class CheckoutDlg3 extends React.Component {
   startTheRecipe = () => {
-    this.props.coinValueDec(productList[0].unitPrice);
     this.props.setCheckoutDlgClose();
     this.props.setOriginalRecipeStart();
     this.props.setProcessingDlgOpen();
+    this.props.coinValueDec(productList[0].unitPrice);
   };
 
   render() {
@@ -122,13 +122,13 @@ const mapDispatchToProps = dispatch => {
   );
 };
 
-const bucketTopicsSubscribeDispatch = function(topic, message, packet) {
+const coinTopicsSubscribeDispatch = function(topic, message, packet) {
   store.dispatch(handleSubscribeTopics("coin", topic, message));
 };
 
 export default subscribe({
-  topic: "coin/inc",
-  dispatch: bucketTopicsSubscribeDispatch
+  topic: "coin/status/#",
+  dispatch: coinTopicsSubscribeDispatch
 })(
   connect(
     mapStateToProps,
