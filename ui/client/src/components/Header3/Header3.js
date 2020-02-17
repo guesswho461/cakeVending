@@ -32,16 +32,12 @@ const styles = {
 
 class Header3 extends React.Component {
   render() {
-    const {
-      classes,
-      handleToggleDrawer,
-      handleCouponDlgOpen
-    } = this.props;
+    const { classes, handleToggleDrawer, handleCouponDlgOpen } = this.props;
 
     return (
       <AppBar position="fixed">
         <Toolbar disableGutters={true} classes={{ root: classes.toolbarRoot }}>
-          {this.props.authenticate.engineerMode ? (
+          {/* {this.props.authenticate.engineerMode ? (
             <IconButton
               color="inherit"
               aria-label="Open drawer"
@@ -52,7 +48,7 @@ class Header3 extends React.Component {
             </IconButton>
           ) : (
             <div></div>
-          )}
+          )} */}
           <Typography
             variant="h5"
             color="inherit"
@@ -62,16 +58,20 @@ class Header3 extends React.Component {
           >
             {companyInfo.title}
           </Typography>
-          <IconButton color="inherit" onClick={handleCouponDlgOpen}>
+          <IconButton
+            color="inherit"
+            onClick={handleCouponDlgOpen}
+            size="large"
+          >
             <GiftIcon />
           </IconButton>
-          {this.props.authenticate.engineerMode ? (
+          {/* {this.props.authenticate.engineerMode ? (
             <IconButton color="inherit" onClick={this.props.logout}>
               <EjectIcon />
             </IconButton>
           ) : (
             <div></div>
-          )}
+          )} */}
         </Toolbar>
       </AppBar>
     );

@@ -50,6 +50,10 @@ class CheckoutDlg3 extends React.Component {
   render() {
     const { classes } = this.props;
 
+    if (this.props.mqttTopics.coinValue >= productList[0].unitPrice) {
+      this.startTheRecipe();
+    }
+
     return (
       <Dialog
         fullWidth={true}
@@ -69,7 +73,7 @@ class CheckoutDlg3 extends React.Component {
             {companyInfo.currency}${productList[0].unitPrice}
           </Typography>
         </DialogContent>
-        <DialogActions>
+        {/* <DialogActions>
           <Button
             variant="contained"
             color="primary"
@@ -96,7 +100,7 @@ class CheckoutDlg3 extends React.Component {
               </div>
             )}
           </Button>
-        </DialogActions>
+        </DialogActions> */}
       </Dialog>
     );
   }
@@ -130,8 +134,5 @@ export default subscribe({
   topic: "coin/status/#",
   dispatch: coinTopicsSubscribeDispatch
 })(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps
-  )(withStyles(styles)(CheckoutDlg3))
+  connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(CheckoutDlg3))
 );

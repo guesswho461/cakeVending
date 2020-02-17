@@ -3,32 +3,32 @@ import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 
 import { withStyles } from "@material-ui/core/styles";
-import Grid from '@material-ui/core/Grid';
-import Typography from '@material-ui/core/Typography';
+import Grid from "@material-ui/core/Grid";
+import Typography from "@material-ui/core/Typography";
 
-import companyInfo from '../../companyInfo';
+import companyInfo from "../../companyInfo";
 
 import { getVersion } from "../../store/reducers/uiInfo";
 
 const styles = theme => ({
   footer: {
-    marginTop: theme.spacing.unit * 8,
+    marginTop: theme.spacing.unit * 4,
     borderTop: `1px solid ${theme.palette.divider}`,
-    padding: `${theme.spacing.unit * 6}px 0`,
-    textAlign: 'center',
+    padding: `${theme.spacing.unit * 2}px 0`,
+    textAlign: "center"
   },
   footerLogo: {
-    margin: 'auto',
-    display: 'block',
+    margin: "auto",
+    display: "block",
     width: 32,
-    height: 32,
+    height: 32
   },
   footerQRCode: {
-    margin: 'auto',
-    display: 'block',
+    margin: "auto",
+    display: "block",
     width: 128,
-    height: 128,
-  },
+    height: 128
+  }
 });
 
 class Footer extends React.Component {
@@ -41,19 +41,23 @@ class Footer extends React.Component {
             <Grid item xs key={footer.title}>
               <Typography variant="h6" color="textPrimary" gutterBottom>
                 {footer.logo.map(item => (
-                  <img src={item}
+                  <img
+                    src={item}
                     title={footer.title}
                     className={classes.footerLogo}
                     alt={footer.title}
-                    key={item} />
+                    key={item}
+                  />
                 ))}
               </Typography>
               {footer.qrCode.map(item => (
-                <img src={item}
+                <img
+                  src={item}
                   title={footer.title}
                   className={classes.footerQRCode}
                   alt={footer.description}
-                  key={item} />
+                  key={item}
+                />
               ))}
             </Grid>
           ))}
@@ -64,11 +68,11 @@ class Footer extends React.Component {
       </div>
     );
   }
-};
+}
 
 const mapStateToProps = state => {
   return {
-    version: state.version,
+    version: state.version
   };
 };
 

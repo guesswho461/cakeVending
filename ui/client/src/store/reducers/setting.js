@@ -23,13 +23,26 @@ const themeConfig = {
     tonalOffset: 0.2
   },
   typography: {
-    useNextVariants: true,
+    useNextVariants: true
   },
+  MuiButtonBase: {
+    // The properties to apply
+    disableRipple: true // No more ripple, on the whole application 💣!
+  }
 };
 
 // All the following keys are optional.
 // We try our best to provide a great default value.
-const defaultTheme = createMuiTheme(themeConfig);
+// const defaultTheme = createMuiTheme(themeConfig);
+const defaultTheme = createMuiTheme({
+  props: {
+    // Name of the component ⚛️
+    MuiButtonBase: {
+      // The properties to apply
+      disableRipple: true // No more ripple, on the whole application 💣!
+    }
+  }
+});
 
 const initState = {
   theme: defaultTheme,

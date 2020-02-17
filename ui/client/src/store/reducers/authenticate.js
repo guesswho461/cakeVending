@@ -1,40 +1,38 @@
-import axios from 'axios';
+import axios from "axios";
 
-import companyInfo from '../../companyInfo'
+import companyInfo from "../../companyInfo";
 
 const LOGIN = "authenticate/LOGIN";
 const LOGOUT = "authenticate/LOGOUT";
 const RESET_LOGIN_OK = "authenticate/RESET";
 
 const initState = {
-  engineerMode: true,
+  engineerMode: false,
   orderDiscount: 0,
-  loginOK: false,
+  loginOK: false
 };
 
 export default function reducer(state = initState, action) {
   switch (action.type) {
     case LOGIN:
       console.log(action.payload);
-      axios.get(companyInfo.backendURL).then(
-        response => console.log(response)
-      );
+      axios.get(companyInfo.backendURL).then(response => console.log(response));
       return {
         ...state,
         engineerMode: true,
-        loginOK: true,
+        loginOK: true
       };
 
     case LOGOUT:
       return {
         ...state,
-        engineerMode: false,
+        engineerMode: false
       };
 
     case RESET_LOGIN_OK:
       return {
         ...state,
-        loginOK: false,
+        loginOK: false
       };
 
     default:
@@ -45,19 +43,18 @@ export default function reducer(state = initState, action) {
 export function login(data) {
   return {
     type: LOGIN,
-    payload: data,
+    payload: data
   };
 }
 
 export function logout() {
   return {
-    type: LOGOUT,
+    type: LOGOUT
   };
 }
 
 export function resetLoginOK() {
   return {
-    type: RESET_LOGIN_OK,
+    type: RESET_LOGIN_OK
   };
 }
-

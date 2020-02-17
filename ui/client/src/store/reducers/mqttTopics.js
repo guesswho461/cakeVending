@@ -68,6 +68,12 @@ const initState = {
   recipeDone: false
 };
 
+const closeGateDelay = 5000;
+
+const closeTheGate = () => {
+  client.publish(companyInfo.topics.gate.cmd.open, "false");
+};
+
 export default function reducer(state = initState, action) {
   switch (action.type) {
     default:
@@ -387,17 +393,35 @@ export default function reducer(state = initState, action) {
         ...state,
         processingDlgOpen: true
       };
-    case companyInfo.topics.recipe.done:
-      return {
-        ...state,
-        recipeDone: true
-      };
-    case companyInfo.topics.recipe.takeIt:
-      return {
-        ...state,
-        processingDlgOpen: false,
-        recipeDone: true
-      };
+    // case companyInfo.topics.recipe.done:
+    //   // client.publish(companyInfo.topics.gate.cmd.open, "true");
+    //   return {
+    //     ...state,
+    //     recipeDone: true
+    //   };
+    // // case companyInfo.topics.recipe.takeIt:
+    // case companyInfo.topics.latch.status.bowl.ready:
+    //   // if (action.payload === "false") {
+    //   //   setTimeout(closeTheGate, closeGateDelay);
+    //   // }
+    //   return {
+    //     ...state,
+    //     processingDlgOpen: false,
+    //     recipeDone: false
+    //   };
+    case companyInfo.topics.gate.cmd.open:
+      if (action.payload === "true") {
+        return {
+          ...state,
+          recipeDone: true
+        };
+      } else {
+        return {
+          ...state,
+          processingDlgOpen: false,
+          recipeDone: false
+        };
+      }
   }
   return state;
 }

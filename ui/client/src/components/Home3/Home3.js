@@ -20,6 +20,9 @@ import companyInfo from "../../companyInfo";
 const styles = theme => ({
   cardPricing: {
     display: "inline-block"
+  },
+  cardImg: {
+    display: "flex"
   }
 });
 
@@ -29,7 +32,7 @@ class Home3 extends React.Component {
   render() {
     const { classes } = this.props;
     return (
-      <div>
+      <div style={{ display: "flex", justifyContent: "center" }}>
         <Card>
           <CardActionArea
             onClick={() => {
@@ -37,7 +40,7 @@ class Home3 extends React.Component {
             }}
           >
             <CardHeader
-              title={"老闆, 給我一份" + productList[0].title}
+              title={productList[0].title}
               titleTypographyProps={{ align: "center" }}
               action={productList[0].favorite === "yes" ? <StarIcon /> : null}
             />
@@ -46,8 +49,9 @@ class Home3 extends React.Component {
               title={productList[0].title}
               alt={productList[0].title}
               image={productList[0].img}
+              className={classes.cardImg}
             />
-            <CardContent>
+            <CardContent className={classes.content}>
               <Typography
                 variant="h3"
                 color="textPrimary"

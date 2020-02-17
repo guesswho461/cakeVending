@@ -52,13 +52,13 @@ class ProcessingDlg extends React.Component {
           ) : (
             <Typography align="center" variant="h3" gutterBottom>
               製作中, 請稍待...
-              <CountDown
+              {/* <CountDown
                 from={3}
                 to={0}
                 type={"-"}
                 addon={"秒後完成"}
                 interval={1}
-              />
+              /> */}
             </Typography>
           )}
         </DialogTitle>
@@ -85,11 +85,11 @@ const mapDispatchToProps = dispatch => {
 };
 
 const mqttTopicsSubscribeDispatch = function(topic, message, packet) {
-  store.dispatch(handleSubscribeTopics("recipe", topic, message));
+  store.dispatch(handleSubscribeTopics("gate", topic, message));
 };
 
 export default subscribe({
-  topic: "recipe/#",
+  topic: "gate/#",
   dispatch: mqttTopicsSubscribeDispatch
 })(
   connect(

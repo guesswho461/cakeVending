@@ -14,10 +14,11 @@ import MainLayout from "./layouts/MainLayout";
 import EmptyLayout from "./layouts/EmptyLayout";
 
 // import Home from "./components/Home";
-import EngineerMode from "./components/EngineerMode";
+// import EngineerMode from "./components/EngineerMode";
 import Footer from "./components/Footer";
-// import Home2 from "./components/Home2";
-import Home3 from "./components/Home3";
+// import Home from "./components/Home2";
+import Home from "./components/Home3";
+// import Home from "./components/Home4";
 
 const DashboardRoute = ({ component: Component, ...rest }) => {
   return (
@@ -27,7 +28,7 @@ const DashboardRoute = ({ component: Component, ...rest }) => {
         <MainLayout>
           <Component {...matchProps} />
           <Footer />
-        </MainLayout >
+        </MainLayout>
       )}
     />
   );
@@ -54,9 +55,9 @@ class App extends Component {
         <div style={{ height: "100vh" }}>
           <Router>
             <Switch>
-              <DashboardRoute path="/home" component={Home3} />
-              <DashboardRoute exact path="/" component={Home3} />
-              <DashboardRoute path="/engineerMode" component={EngineerMode} />
+              <DashboardRoute path="/home" component={Home} />
+              <DashboardRoute exact path="/" component={Home} />
+              {/* <DashboardRoute path="/engineerMode" component={EngineerMode} /> */}
               <Redirect to="/home" />
             </Switch>
           </Router>
@@ -75,7 +76,4 @@ const mapStateToProps = state => {
   };
 };
 
-export default connect(
-  mapStateToProps,
-  null
-)(App);
+export default connect(mapStateToProps, null)(App);

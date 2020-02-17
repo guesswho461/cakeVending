@@ -1,3 +1,3 @@
-tar zcvf fw.tar.gz ../ui/client/build
-scp fw.tar.gz pi@172.16.228.4:/home/pi
-ssh pi@172.16.228.4 < update.sh
+tar zcvf fw.tar.gz ../ui/client/build ../ui/server
+scp fw.tar.gz pi@192.168.1.99:/home/pi
+ssh pi@192.168.1.99 < update.sh
