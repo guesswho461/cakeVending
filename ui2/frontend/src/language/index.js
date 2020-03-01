@@ -1,23 +1,33 @@
 const translationsObject = {
-  en: {
-    headerTitle: "cake vending",
+  us: {
+    brandName: "cake vending",
     originalFlavorTitle: "original",
     originalFlavorContent: "good to eat",
     originalFlavorPrice: "$1.99",
     cakeUnit: "every package",
-    sellingPageTitle: "goods",
+    itemPageTitle: "goods",
     usageGuidingPageTitle: "guiding",
-    aboutUsPageTitle: "about us"
+    aboutUsPageTitle: "about us",
+    date: "MMM. D, Y HH:MM",
+    touch2BuyText: "touch to buy",
+    confirm: "YES",
+    cancel: "YES",
+    plsInsertCoin: "please insert coins..."
   },
-  zh: {
-    headerTitle: "老闆不在雞蛋糕",
+  tw: {
+    brandName: "老闆不在雞蛋糕",
     originalFlavorTitle: "原味",
-    originalFlavorContent: "超級好吃",
+    originalFlavorContent: "超級好吃111111111111111111111111",
     originalFlavorPrice: "$50",
     cakeUnit: "每份",
-    sellingPageTitle: "購買",
+    itemPageTitle: "購買",
     usageGuidingPageTitle: "使用教學",
-    aboutUsPageTitle: "關於"
+    aboutUsPageTitle: "關於",
+    date: "Y/MM/D HH:MM",
+    touch2BuyText: "購買請點我",
+    confirm: "確定",
+    cancel: "取消",
+    plsInsertCoin: "請開始投幣..."
   }
 };
 

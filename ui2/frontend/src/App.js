@@ -5,6 +5,7 @@ import "./App.css";
 import HomeLayout from "./layouts/Home";
 import EmptyLayout from "./layouts/Empty";
 import MainPage from "./components/MainPage";
+import ADPage from "./components/ADPage";
 
 const NotFound = () => {
   return <div>NotFound</div>;
@@ -20,6 +21,12 @@ const HomeRoute = ({ component: Component, ...rest }) => {
         </HomeLayout>
       )}
     />
+  );
+};
+
+const ADRoute = ({ component: Component, ...rest }) => {
+  return (
+    <Route {...rest} render={matchProps => <Component {...matchProps} />} />
   );
 };
 
@@ -49,7 +56,8 @@ class App extends Component {
     return (
       <Router>
         <Switch>
-          <HomeRoute exact path="/" component={MainPage} />
+          <ADRoute exact path="/" component={ADPage} />
+          <HomeRoute exact path="/home" component={MainPage} />
           <EmptyRoute component={NotFound} />
         </Switch>
       </Router>

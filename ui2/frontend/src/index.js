@@ -26,7 +26,7 @@ ReactDOM.render(
 
 syncTranslationWithStore(store);
 store.dispatch(loadTranslations(translationsObject));
-store.dispatch(setLocale("zh"));
+store.dispatch(setLocale("tw"));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

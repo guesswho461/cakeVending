@@ -4,11 +4,20 @@ import { bindActionCreators } from "redux";
 import { Translate } from "react-redux-i18n";
 
 import { withStyles } from "@material-ui/core/styles";
+import Typography from "@material-ui/core/Typography";
 import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
 import Box from "@material-ui/core/Box";
 
 import ItemPage from "../ItemPage";
+import CheckoutDlg from "../CheckoutDlg";
+import items from "../../items";
+
+import { setOriginalRecipeStart } from "../../store/reducers/pageStatus";
+
+const tabTitle = child => {
+  return <Typography variant="h4">{child}</Typography>;
+};
 
 const styles = theme => ({
   root: {
@@ -48,11 +57,11 @@ class MainPage extends Component {
           onChange={this.handleChange}
           className={classes.tabs}
         >
-          <Tab label={<Translate value="sellingPageTitle" />} />
+          <Tab label={tabTitle(<Translate value="itemPageTitle" />)} />
           {/** 0 */}
-          <Tab label={<Translate value="usageGuidingPageTitle" />} />
+          <Tab label={tabTitle(<Translate value="usageGuidingPageTitle" />)} />
           {/** 1 */}
-          <Tab label={<Translate value="aboutUsPageTitle" />} />
+          <Tab label={tabTitle(<Translate value="aboutUsPageTitle" />)} />
           {/** 2 */}
         </Tabs>
         {this.state.tabIdx === 0 && (
@@ -60,6 +69,10 @@ class MainPage extends Component {
             <ItemPage />
           </Box>
         )}
+        <CheckoutDlg
+          item={items[0]}
+          confirmAction={this.props.setOriginalRecipeStart}
+        />
       </div>
     );
   }
@@ -70,7 +83,12 @@ const mapStateToProps = state => {
 };
 
 const mapDispatchToProps = dispatch => {
-  return bindActionCreators({}, dispatch);
+  return bindActionCreators(
+    {
+      setOriginalRecipeStart: () => setOriginalRecipeStart
+    },
+    dispatch
+  );
 };
 
 export default connect(

@@ -17,3 +17,17 @@ export function i18nDigit(data, minFraction) {
     />
   );
 }
+
+export function i18nCurrency(data) {
+  return (
+    <Localize
+      value={60}
+      options={{
+        style: "currency",
+        currency: "EUR",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }}
+    />
+  );
+}

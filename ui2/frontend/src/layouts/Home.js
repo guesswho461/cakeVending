@@ -11,7 +11,7 @@ const styles = theme => ({
     flexGrow: 1
   },
   content: {
-    paddingTop: "15vh"
+    paddingTop: "5vh"
     // paddingBottom: "15vh"
   }
 });

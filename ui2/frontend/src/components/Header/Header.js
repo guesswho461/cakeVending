@@ -1,11 +1,12 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
-import { Translate } from "react-redux-i18n";
+import { Translate, Localize } from "react-redux-i18n";
 
 import { withStyles } from "@material-ui/core/styles";
 import AppBar from "@material-ui/core/AppBar";
 import Typography from "@material-ui/core/Typography";
+import Toolbar from "@material-ui/core/Toolbar";
 
 const styles = theme => ({
   root: {
@@ -29,10 +30,15 @@ class Header extends Component {
     const { classes } = this.props;
     return (
       <div className={classes.root}>
-        <AppBar position="fixed">
-          <Typography variant="h2" className={classes.title}>
-            <Translate value="headerTitle" />
-          </Typography>
+        <AppBar position="sticky">
+          <Toolbar>
+            <Typography variant="h2" className={classes.title}>
+              <Translate value="brandName" />
+            </Typography>
+            <Typography variant="h4">
+              <Localize value={Date()} dateFormat="date" />
+            </Typography>
+          </Toolbar>
         </AppBar>
       </div>
     );
