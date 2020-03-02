@@ -12,7 +12,10 @@ const translationsObject = {
     touch2BuyText: "touch to buy",
     confirm: "YES",
     cancel: "YES",
-    plsInsertCoin: "please insert coins..."
+    plsInsertCoin: "please insert coins...",
+    makingText: "making, please hold...",
+    heatingText: "oven is heating up, please hold...",
+    cakeTakeText: "please take the cake"
   },
   tw: {
     brandName: "老闆不在雞蛋糕",
@@ -27,7 +30,10 @@ const translationsObject = {
     touch2BuyText: "購買請點我",
     confirm: "確定",
     cancel: "取消",
-    plsInsertCoin: "請開始投幣..."
+    plsInsertCoin: "請開始投幣...",
+    makingText: "製作中, 請稍待...",
+    heatingText: "烤箱加熱中, 請稍待...",
+    cakeTakeText: "請取餐"
   }
 };
 

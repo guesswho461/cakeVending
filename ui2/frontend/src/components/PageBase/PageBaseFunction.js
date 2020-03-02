@@ -1,10 +1,15 @@
 import React from "react";
 import ListItem from "@material-ui/core/ListItem";
 import { Localize } from "react-redux-i18n";
+import Slide from "@material-ui/core/Slide";
 
 export function ListItemLink(props) {
   return <ListItem button component="a" {...props} />;
 }
+
+export const DlgTransitionDown = props => {
+  return <Slide direction={"down"} {...props} />;
+};
 
 export function i18nDigit(data, minFraction) {
   return (

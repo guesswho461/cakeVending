@@ -2,29 +2,14 @@ import React, { Component } from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import "./App.css";
 
-import HomeLayout from "./layouts/Home";
 import EmptyLayout from "./layouts/Empty";
-import MainPage from "./components/MainPage";
-import ADPage from "./components/ADPage";
+import RootPage from "./components/RootPage";
 
 const NotFound = () => {
   return <div>NotFound</div>;
 };
 
-const HomeRoute = ({ component: Component, ...rest }) => {
-  return (
-    <Route
-      {...rest}
-      render={matchProps => (
-        <HomeLayout>
-          <Component {...matchProps} />
-        </HomeLayout>
-      )}
-    />
-  );
-};
-
-const ADRoute = ({ component: Component, ...rest }) => {
+const RootRoute = ({ component: Component, ...rest }) => {
   return (
     <Route {...rest} render={matchProps => <Component {...matchProps} />} />
   );
@@ -56,8 +41,7 @@ class App extends Component {
     return (
       <Router>
         <Switch>
-          <ADRoute exact path="/" component={ADPage} />
-          <HomeRoute exact path="/home" component={MainPage} />
+          <RootRoute exact path="/" component={RootPage} />
           <EmptyRoute component={NotFound} />
         </Switch>
       </Router>

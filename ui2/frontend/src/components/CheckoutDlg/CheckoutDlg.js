@@ -10,12 +10,12 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
-import Slide from "@material-ui/core/Slide";
 import Grid from "@material-ui/core/Grid";
 
 import {
   setCheckoutDlgClose,
-  coinValueDec
+  coinValueDec,
+  setPageSelected
 } from "../../store/reducers/pageStatus";
 import demoCake from "../../imgs/demoCake.jpg";
 
@@ -24,10 +24,6 @@ const styles = theme => ({
     height: 240
   }
 });
-
-// const dlgTransition = props => {
-//   return <Slide direction="down" {...props} />;
-// };
 
 class CheckoutDlg extends Component {
   render() {
@@ -42,7 +38,7 @@ class CheckoutDlg extends Component {
         onClose={this.props.setCheckoutDlgClose}
       >
         <DialogTitle>
-          <Typography align="center" variant="h3">
+          <Typography variant="h2" align="center">
             <Translate value="plsInsertCoin" />
           </Typography>
         </DialogTitle>
@@ -87,11 +83,12 @@ class CheckoutDlg extends Component {
             // variant="contained"
             color="primary"
             size="large"
-            disabled={this.props.pageStatus.coinValue < item.priceNum}
+            // disabled={this.props.pageStatus.coinValue < item.priceNum}
             onClick={() => {
               this.props.setCheckoutDlgClose();
               confirmAction();
               this.props.coinValueDec(item.priceNum);
+              this.props.setPageSelected("ad");
             }}
           >
             <Typography variant="h5">
@@ -114,7 +111,8 @@ const mapDispatchToProps = dispatch => {
   return bindActionCreators(
     {
       setCheckoutDlgClose: () => setCheckoutDlgClose(),
-      coinValueDec: data => coinValueDec(data)
+      coinValueDec: data => coinValueDec(data),
+      setPageSelected: data => setPageSelected(data)
     },
     dispatch
   );

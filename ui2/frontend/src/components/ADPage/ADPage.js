@@ -11,6 +11,12 @@ import Grid from "@material-ui/core/Grid";
 import Button from "@material-ui/core/Button";
 import LinearProgress from "@material-ui/core/LinearProgress";
 
+import {
+  setPageSelected,
+  setHeadtingUpWarningDlgOpen,
+  setTakeCakeWarningDlgOpen
+} from "../../store/reducers/pageStatus";
+
 const styles = theme => ({
   root: {
     flexGrow: 1
@@ -31,9 +37,19 @@ class ADPage extends Component {
 
   render() {
     const { classes } = this.props;
+
     return (
       <div className={classes.root}>
-        <Button href="/home">
+        <Button
+          onClick={() => {
+            if (this.props.pageStatus.ovenIsReady) {
+              this.props.setPageSelected("main");
+            } else {
+              this.props.setHeadtingUpWarningDlgOpen();
+              // this.props.setTakeCakeWarningDlgOpen();
+            }
+          }}
+        >
           <Grid
             container
             spacing={2}
@@ -82,7 +98,14 @@ const mapStateToProps = state => {
 };
 
 const mapDispatchToProps = dispatch => {
-  return bindActionCreators({}, dispatch);
+  return bindActionCreators(
+    {
+      setPageSelected: data => setPageSelected(data),
+      setHeadtingUpWarningDlgOpen: () => setHeadtingUpWarningDlgOpen(),
+      setTakeCakeWarningDlgOpen: () => setTakeCakeWarningDlgOpen()
+    },
+    dispatch
+  );
 };
 
 export default connect(

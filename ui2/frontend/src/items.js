@@ -1,6 +1,6 @@
 import demoCake from "./imgs/demoCake.jpg";
 
-const tileData = [
+const items = [
   {
     img: [demoCake],
     title: "originalFlavorTitle",
@@ -10,4 +10,4 @@ const tileData = [
   }
 ];
 
-export default tileData;
+export default items;

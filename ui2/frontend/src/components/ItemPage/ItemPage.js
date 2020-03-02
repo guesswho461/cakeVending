@@ -38,8 +38,8 @@ class ItemPage extends Component {
     return (
       <div className={classes.root}>
         <GridList cellHeight={girdCellHeight} className={classes.gridList}>
-          {items.map(tile => (
-            <GridListTile key={tile.img}>
+          {items.map(item => (
+            <GridListTile key={item.img}>
               {/* <Button> */}
               <CardActionArea
                 className={classes.item}
@@ -49,17 +49,17 @@ class ItemPage extends Component {
                 // disableRipple={true}
                 // disableTouchRipple={true}
               >
-                <img src={tile.img} alt={<Translate value={tile.title} />} />
+                <img src={item.img} alt={<Translate value={item.title} />} />
                 <GridListTileBar
                   title={
                     <Typography variant="h5">
-                      <Translate value={tile.title} />
+                      <Translate value={item.title} />
                     </Typography>
                   }
                   subtitle={
                     <Typography variant="h6">
                       <Translate value="cakeUnit" />{" "}
-                      <Translate value={tile.priceStr} />
+                      <Translate value={item.priceStr} />
                     </Typography>
                   }
                 />

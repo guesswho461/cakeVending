@@ -13,6 +13,7 @@
     "object.omit": "^3.0.0",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
+    "react-number-count-down": "^1.0.5",
     "react-redux": "^7.1.1",
     "react-redux-i18n": "^1.9.3",
     "react-router-dom": "^5.0.1",
