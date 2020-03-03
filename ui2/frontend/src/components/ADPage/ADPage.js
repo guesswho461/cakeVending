@@ -2,8 +2,7 @@ import React, { Component } from "react";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 import { Translate } from "react-redux-i18n";
-import "../../../node_modules/video-react/dist/video-react.css";
-import { Player, ControlBar, Shortcut } from "video-react";
+import ReactPlayer from "react-player";
 
 import { withStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
@@ -14,26 +13,64 @@ import LinearProgress from "@material-ui/core/LinearProgress";
 import {
   setPageSelected,
   setHeadtingUpWarningDlgOpen,
-  setTakeCakeWarningDlgOpen
+  setMakingProgress
 } from "../../store/reducers/pageStatus";
 
 const styles = theme => ({
   root: {
     flexGrow: 1
-  },
-  progressBar: {
-    width: "100%"
   }
 });
+
+const TOTAL_MAKING_TIME = 0.5; //mins
+const MAX_MAKING_PROGRESS = 95;
+const MAKING_PROGRESS_STEP = 1;
+const MAKING_TICK_TIME =
+  (TOTAL_MAKING_TIME * 60 * 1000) /
+  (MAX_MAKING_PROGRESS / MAKING_PROGRESS_STEP);
 
 class ADPage extends Component {
   constructor(props) {
     super(props);
+    this.makingTimeTick = this.makingTimeTick.bind(this);
   }
 
   state = {
-    tabIdx: 0
+    progress: 0
   };
+
+  makingProgressInc(prev, stepSize) {
+    if (prev < MAX_MAKING_PROGRESS) {
+      return prev + stepSize;
+    } else {
+      return MAX_MAKING_PROGRESS;
+    }
+  }
+
+  makingTimeTick() {
+    this.props.setMakingProgress(
+      this.makingProgressInc(
+        this.props.pageStatus.makingProgress,
+        MAKING_PROGRESS_STEP
+      )
+    );
+  }
+
+  componentDidMount() {
+    if (this.props.pageStatus.checkoutDone) {
+      this.makingTimerID = setInterval(this.makingTimeTick, MAKING_TICK_TIME);
+    }
+  }
+
+  componentDidUpdate() {
+    if (this.props.pageStatus.makingProgress >= MAX_MAKING_PROGRESS) {
+      clearInterval(this.makingTimerID);
+    }
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.makingTimerID);
+  }
 
   render() {
     const { classes } = this.props;
@@ -46,9 +83,9 @@ class ADPage extends Component {
               this.props.setPageSelected("main");
             } else {
               this.props.setHeadtingUpWarningDlgOpen();
-              // this.props.setTakeCakeWarningDlgOpen();
             }
           }}
+          disabled={this.props.pageStatus.checkoutDone}
         >
           <Grid
             container
@@ -59,9 +96,8 @@ class ADPage extends Component {
           >
             <Grid item xs={12}>
               <LinearProgress
-                className={classes.progressBar}
                 variant="determinate"
-                value={"50%"}
+                value={this.props.pageStatus.makingProgress}
               />
             </Grid>
             <Grid item xs={12}>
@@ -71,17 +107,17 @@ class ADPage extends Component {
             </Grid>
             <Grid item xs={12}>
               <div align="center">
-                <Player
-                  fluid={false}
-                  height={550}
-                  autoPlay
-                  playsInline
-                  aspectRatio="auto"
-                  src="https://media.w3.org/2010/05/sintel/trailer_hd.mp4"
-                >
-                  <ControlBar disableCompletely={true} />
-                  <Shortcut clickable={false} />
-                </Player>
+                <ReactPlayer
+                  url="https://media.w3.org/2010/05/sintel/trailer_hd.mp4"
+                  playing={true}
+                  loop={true}
+                  controls={false}
+                  volume={0}
+                  muted={true}
+                  playsinline={true}
+                  width="80%"
+                  height="80%"
+                />
               </div>
             </Grid>
           </Grid>
@@ -102,7 +138,7 @@ const mapDispatchToProps = dispatch => {
     {
       setPageSelected: data => setPageSelected(data),
       setHeadtingUpWarningDlgOpen: () => setHeadtingUpWarningDlgOpen(),
-      setTakeCakeWarningDlgOpen: () => setTakeCakeWarningDlgOpen()
+      setMakingProgress: data => setMakingProgress(data)
     },
     dispatch
   );

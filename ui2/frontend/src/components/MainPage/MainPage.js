@@ -13,15 +13,13 @@ import Header from "../Header";
 import ItemPage from "../ItemPage";
 import CheckoutDlg from "../CheckoutDlg";
 import items from "../../items";
-
 import {
   setOriginalRecipeStart,
-  setADPageTitle
+  setADPageTitle,
+  coinValueDec,
+  setPageSelected,
+  setMakingProgress
 } from "../../store/reducers/pageStatus";
-
-const tabTitle = child => {
-  return <Typography variant="h4">{child}</Typography>;
-};
 
 const styles = theme => ({
   root: {
@@ -42,17 +40,23 @@ const styles = theme => ({
 class MainPage extends Component {
   constructor(props) {
     super(props);
+    this.handleChange = this.handleChange.bind(this);
+    this.tabTitle = this.tabTitle.bind(this);
   }
 
   state = {
     tabIdx: 0
   };
 
-  handleChange = (event, newTabIdx) => {
+  tabTitle(child) {
+    return <Typography variant="h4">{child}</Typography>;
+  }
+
+  handleChange(event, newTabIdx) {
     this.setState({
       tabIdx: newTabIdx
     });
-  };
+  }
 
   render() {
     const { classes } = this.props;
@@ -68,13 +72,17 @@ class MainPage extends Component {
               onChange={this.handleChange}
               className={classes.tabs}
             >
-              <Tab label={tabTitle(<Translate value="itemPageTitle" />)} />
+              <Tab label={this.tabTitle(<Translate value="itemPageTitle" />)} />
               {/** 0 */}
               <Tab
-                label={tabTitle(<Translate value="usageGuidingPageTitle" />)}
+                label={this.tabTitle(
+                  <Translate value="usageGuidingPageTitle" />
+                )}
               />
               {/** 1 */}
-              <Tab label={tabTitle(<Translate value="aboutUsPageTitle" />)} />
+              <Tab
+                label={this.tabTitle(<Translate value="aboutUsPageTitle" />)}
+              />
               {/** 2 */}
             </Tabs>
             {this.state.tabIdx === 0 && (
@@ -88,6 +96,9 @@ class MainPage extends Component {
             confirmAction={() => {
               this.props.setOriginalRecipeStart();
               this.props.setADPageTitle("makingText");
+              this.props.coinValueDec(items[0].priceNum);
+              this.props.setPageSelected("ad");
+              this.props.setMakingProgress(0);
             }}
           />
         </div>
@@ -104,7 +115,10 @@ const mapDispatchToProps = dispatch => {
   return bindActionCreators(
     {
       setOriginalRecipeStart: () => setOriginalRecipeStart(),
-      setADPageTitle: data => setADPageTitle(data)
+      setADPageTitle: data => setADPageTitle(data),
+      setPageSelected: data => setPageSelected(data),
+      coinValueDec: data => coinValueDec(data),
+      setMakingProgress: data => setMakingProgress(data)
     },
     dispatch
   );

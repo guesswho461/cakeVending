@@ -2,7 +2,6 @@ import React, { Component } from "react";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 import { Translate } from "react-redux-i18n";
-import CountDown from "react-number-count-down";
 
 import { withStyles } from "@material-ui/core/styles";
 import Dialog from "@material-ui/core/Dialog";
@@ -17,6 +16,10 @@ class AutoCloseDlg extends Component {
   render() {
     const { classes, title, delay, openState, closeAction } = this.props;
 
+    if (delay > 0) {
+      setTimeout(closeAction, delay * 1000);
+    }
+
     return (
       <Dialog
         // fullWidth={true}
@@ -30,17 +33,6 @@ class AutoCloseDlg extends Component {
             <Translate value={title} />
           </Typography>
         </DialogTitle>
-        {delay > 0 ? (
-          <CountDown
-            from={delay}
-            to={0}
-            type={"-"}
-            interval={1}
-            onComplete={closeAction}
-          />
-        ) : (
-          <div></div>
-        )}
       </Dialog>
     );
   }

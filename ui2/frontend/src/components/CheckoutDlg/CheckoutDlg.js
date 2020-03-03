@@ -12,11 +12,7 @@ import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import Grid from "@material-ui/core/Grid";
 
-import {
-  setCheckoutDlgClose,
-  coinValueDec,
-  setPageSelected
-} from "../../store/reducers/pageStatus";
+import { setCheckoutDlgClose } from "../../store/reducers/pageStatus";
 import demoCake from "../../imgs/demoCake.jpg";
 
 const styles = theme => ({
@@ -26,6 +22,10 @@ const styles = theme => ({
 });
 
 class CheckoutDlg extends Component {
+  constructor(props) {
+    super(props);
+  }
+
   render() {
     const { classes, item, confirmAction } = this.props;
 
@@ -83,16 +83,14 @@ class CheckoutDlg extends Component {
             // variant="contained"
             color="primary"
             size="large"
-            // disabled={this.props.pageStatus.coinValue < item.priceNum}
+            disabled={this.props.pageStatus.coinValue < item.priceNum}
             onClick={() => {
               this.props.setCheckoutDlgClose();
               confirmAction();
-              this.props.coinValueDec(item.priceNum);
-              this.props.setPageSelected("ad");
             }}
           >
             <Typography variant="h5">
-              <Translate value="confirm" />
+              <Translate value="startBake" />
             </Typography>
           </Button>
         </DialogActions>
@@ -110,9 +108,7 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
   return bindActionCreators(
     {
-      setCheckoutDlgClose: () => setCheckoutDlgClose(),
-      coinValueDec: data => coinValueDec(data),
-      setPageSelected: data => setPageSelected(data)
+      setCheckoutDlgClose: () => setCheckoutDlgClose()
     },
     dispatch
   );

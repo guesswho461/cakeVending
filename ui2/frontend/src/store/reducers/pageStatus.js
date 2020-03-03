@@ -10,25 +10,43 @@ const SET_ADPAGE_TITLE = "set/adPage/title";
 const SET_ORIGINAL_RECIPE_START = "set/originalRecipe/start";
 const SET_HEATINGUP_WARNING_DLG_OPEN = "set/heatingupWarningDlg/open";
 const SET_HEATINGUP_WARNING_DLG_CLOSE = "set/heatingupWarningDlg/close";
-const SET_TAKECAKE_WARNING_DLG_OPEN = "set/takeCakeWarningDlg/open";
-const SET_TAKECAKE_WARNING_DLG_CLOSE = "set/takeCakeWarningDlg/close";
+const SET_MAKING_PROGRESS = "set/makingProgress";
 
 const initState = {
   selectedPage: "ad",
-  lastPage: "ad",
-  selectedIdx: 0,
   adPageTitle: "touch2BuyText",
   checkoutDlgOpen: false,
   coinValue: 0,
   ovenIsReady: false,
   heatingUpWarningDlgOpen: false,
-  takeCakeWarningDlgOpen: false
+  takeCakeWarningDlgOpen: false,
+  checkoutDone: false,
+  makingProgress: 0
 };
+
+function checkOvenIsReady(tempature) {
+  const parsed = parseInt(tempature, 10);
+  return parsed >= 180 ? true : false;
+}
+
+function decTheCoinValue(coinValue, data) {
+  return coinValue - data;
+}
+
+function incTheCoinValue(coinValue) {
+  return coinValue + 10;
+}
 
 export default function reducer(state = initState, action) {
   switch (action.type) {
     default:
       return state;
+    case COIN_VALUE_DEC:
+      return {
+        ...state,
+        coinValue: decTheCoinValue(state.coinValue, action.payload),
+        checkoutDone: true
+      };
     case SET_PAGE_SELECTED:
       return {
         ...state,
@@ -37,7 +55,8 @@ export default function reducer(state = initState, action) {
     case OPEN_CHECKOUT_DLG:
       return {
         ...state,
-        checkoutDlgOpen: true
+        checkoutDlgOpen: true,
+        checkoutDone: false
       };
     case CLOSE_CHECKOUT_DLG:
       return {
@@ -59,29 +78,45 @@ export default function reducer(state = initState, action) {
         ...state,
         heatingUpWarningDlgOpen: false
       };
-    case SET_TAKECAKE_WARNING_DLG_OPEN:
+    case "oven/status/tempature":
       return {
         ...state,
-        takeCakeWarningDlgOpen: true
+        ovenIsReady: checkOvenIsReady(action.payload)
       };
-    case SET_TAKECAKE_WARNING_DLG_CLOSE:
+    case "coin/status/inc":
       return {
         ...state,
-        takeCakeWarningDlgOpen: false
+        coinValue: incTheCoinValue(state.coinValue)
+      };
+    case "gate/cmd/open":
+      if (action.payload === "true") {
+        return {
+          ...state,
+          takeCakeWarningDlgOpen: true,
+          makingProgress: 100,
+          adPageTitle: "completeBake"
+        };
+      } else {
+        return {
+          ...state,
+          takeCakeWarningDlgOpen: false,
+          selectedPage: "main",
+          checkoutDone: false,
+          makingProgress: 0,
+          adPageTitle: "touch2BuyText"
+        };
+      }
+    case SET_MAKING_PROGRESS:
+      return {
+        ...state,
+        makingProgress: action.payload
       };
   }
 }
 
-export function handleSubscribeTopics(root, topic, msg) {
-  var actionType = "";
-  if (typeof topic === "string") {
-    var topicArr = topic.split("/");
-    if (topicArr[0] === root) {
-      actionType = topic;
-    }
-  }
+export function handleMQTTSubscribeTopics(topic, msg) {
   return {
-    type: actionType,
+    type: topic,
     payload: msg.toString()
   };
 }
@@ -146,14 +181,9 @@ export function setHeadtingUpWarningDlgClose() {
   };
 }
 
-export function setTakeCakeWarningDlgOpen() {
+export function setMakingProgress(data) {
   return {
-    type: SET_TAKECAKE_WARNING_DLG_OPEN
-  };
-}
-
-export function setTakeCakeWarningDlgClose() {
-  return {
-    type: SET_TAKECAKE_WARNING_DLG_CLOSE
+    type: SET_MAKING_PROGRESS,
+    payload: data
   };
 }

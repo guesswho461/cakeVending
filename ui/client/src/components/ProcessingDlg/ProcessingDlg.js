@@ -89,7 +89,7 @@ const mqttTopicsSubscribeDispatch = function(topic, message, packet) {
 };
 
 export default subscribe({
-  topic: "gate/#",
+  topic: ["gate/#", "test/test"],
   dispatch: mqttTopicsSubscribeDispatch
 })(
   connect(

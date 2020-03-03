@@ -16,7 +16,7 @@ import store from "./store";
 import translationsObject from "./language";
 
 ReactDOM.render(
-  <Connector mqttProps="ws://192.168.56.101:8080">
+  <Connector mqttProps={"ws://" + window.location.hostname + ":8000"}>
     <Provider store={store}>
       <App />
     </Provider>

@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
-import "./App.css";
 
+import "./App.css";
 import EmptyLayout from "./layouts/Empty";
 import RootPage from "./components/RootPage";
 

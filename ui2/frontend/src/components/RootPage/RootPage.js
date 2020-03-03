@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
+import { subscribe } from "mqtt-react";
+import IdleTimer from "react-idle-timer";
 
 import { withStyles } from "@material-ui/core/styles";
 import Slide from "@material-ui/core/Slide";
@@ -8,11 +10,16 @@ import Slide from "@material-ui/core/Slide";
 import MainPage from "../MainPage";
 import ADPage from "../ADPage";
 import AutoCloseDlg from "../AutoCloseDlg";
-
 import {
   setHeadtingUpWarningDlgClose,
-  setTakeCakeWarningDlgClose
+  handleMQTTSubscribeTopics,
+  setADPageTitle,
+  setPageSelected,
+  setCheckoutDlgClose
 } from "../../store/reducers/pageStatus";
+import store from "../../store";
+
+const IDLE_TIME = 30; //sec.
 
 const styles = theme => ({
   root: {
@@ -23,24 +30,38 @@ const styles = theme => ({
 class RootPage extends Component {
   constructor(props) {
     super(props);
+    this.idleTimer = null;
+    this.onIdle = this.onIdle.bind(this);
   }
 
-  state = {
-    checked: false
-  };
+  onIdle(e) {
+    if (this.props.pageStatus.selectedPage === "main") {
+      if (this.props.pageStatus.checkoutDlgOpen) {
+        if (this.props.pageStatus.coinValue <= 0) {
+          this.props.setCheckoutDlgClose();
+        }
+      } else {
+        this.props.setPageSelected("ad");
+      }
+    }
+    this.idleTimer.reset();
+  }
 
-  handleChange = () => {
-    this.setState(prevState => {
-      return {
-        checked: !prevState.checked
-      };
-    });
-  };
+  state = {};
 
   render() {
     const { classes } = this.props;
     return (
       <div className={classes.root}>
+        <IdleTimer
+          ref={ref => {
+            this.idleTimer = ref;
+          }}
+          element={document}
+          onIdle={this.onIdle}
+          debounce={250}
+          timeout={1000 * IDLE_TIME}
+        />
         <Slide
           direction="right"
           in={this.props.pageStatus.selectedPage === "main"}
@@ -63,7 +84,7 @@ class RootPage extends Component {
         </Slide>
         <AutoCloseDlg
           title="heatingText"
-          delay={1}
+          delay={10} //sec.
           openState={this.props.pageStatus.heatingUpWarningDlgOpen}
           closeAction={this.props.setHeadtingUpWarningDlgClose}
         />
@@ -71,12 +92,15 @@ class RootPage extends Component {
           title="cakeTakeText"
           delay={0}
           openState={this.props.pageStatus.takeCakeWarningDlgOpen}
-          closeAction={this.props.setTakeCakeWarningDlgClose}
         />
       </div>
     );
   }
 }
+
+const mqttTopicsSubscribeDispatch = function(topic, message, packet) {
+  store.dispatch(handleMQTTSubscribeTopics(topic, message));
+};
 
 const mapStateToProps = state => {
   return {
@@ -88,13 +112,20 @@ const mapDispatchToProps = dispatch => {
   return bindActionCreators(
     {
       setHeadtingUpWarningDlgClose: () => setHeadtingUpWarningDlgClose(),
-      setTakeCakeWarningDlgClose: () => setTakeCakeWarningDlgClose()
+      setADPageTitle: data => setADPageTitle(data),
+      setPageSelected: data => setPageSelected(data),
+      setCheckoutDlgClose: () => setCheckoutDlgClose()
     },
     dispatch
   );
 };
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(withStyles(styles)(RootPage));
+// export default connect(
+//   mapStateToProps,
+//   mapDispatchToProps
+// )(withStyles(styles)(RootPage));
+
+export default subscribe({
+  topic: "#",
+  dispatch: mqttTopicsSubscribeDispatch
+})(connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(RootPage)));

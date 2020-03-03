@@ -15,7 +15,9 @@ const translationsObject = {
     plsInsertCoin: "please insert coins...",
     makingText: "making, please hold...",
     heatingText: "oven is heating up, please hold...",
-    cakeTakeText: "please take the cake"
+    cakeTakeText: "please take the cake",
+    startBake: "start to bake",
+    completeBake: "bake complete"
   },
   tw: {
     brandName: "老闆不在雞蛋糕",
@@ -33,7 +35,9 @@ const translationsObject = {
     plsInsertCoin: "請開始投幣...",
     makingText: "製作中, 請稍待...",
     heatingText: "烤箱加熱中, 請稍待...",
-    cakeTakeText: "請取餐"
+    cakeTakeText: "請取餐",
+    startBake: "開始製作",
+    completeBake: "完成製作"
   }
 };
 

@@ -3,15 +3,15 @@ import ListItem from "@material-ui/core/ListItem";
 import { Localize } from "react-redux-i18n";
 import Slide from "@material-ui/core/Slide";
 
-export function ListItemLink(props) {
+export const ListItemLink = props => {
   return <ListItem button component="a" {...props} />;
-}
+};
 
 export const DlgTransitionDown = props => {
   return <Slide direction={"down"} {...props} />;
 };
 
-export function i18nDigit(data, minFraction) {
+export const i18nDigit = (data, minFraction) => {
   return (
     <Localize
       value={data}
@@ -21,9 +21,9 @@ export function i18nDigit(data, minFraction) {
       }}
     />
   );
-}
+};
 
-export function i18nCurrency(data) {
+export const i18nCurrency = data => {
   return (
     <Localize
       value={60}
@@ -35,4 +35,4 @@ export function i18nCurrency(data) {
       }}
     />
   );
-}
+};
