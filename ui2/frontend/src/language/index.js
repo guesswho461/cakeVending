@@ -17,7 +17,8 @@ const translationsObject = {
     heatingText: "oven is heating up, please hold...",
     cakeTakeText: "please take the cake",
     startBake: "start to bake",
-    completeBake: "bake complete"
+    completeBake: "bake complete",
+    plsPressSart: "please press start..."
   },
   tw: {
     brandName: "老闆不在雞蛋糕",
@@ -37,7 +38,8 @@ const translationsObject = {
     heatingText: "烤箱加熱中, 請稍待...",
     cakeTakeText: "請取餐",
     startBake: "開始製作",
-    completeBake: "完成製作"
+    completeBake: "完成製作",
+    plsPressSart: "請按開始製作..."
   }
 };
 

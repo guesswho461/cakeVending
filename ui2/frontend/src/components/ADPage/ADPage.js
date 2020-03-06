@@ -15,11 +15,30 @@ import {
   setHeadtingUpWarningDlgOpen,
   setMakingProgress
 } from "../../store/reducers/pageStatus";
+import { TransitionSlideDown } from "../PageBase/PageBaseFunction";
+
+const BorderLinearProgress = withStyles({
+  root: {
+    height: 20
+    // backgroundColor: lighten('#ff6c5c', 0.5),
+  }
+  // bar: {
+  //   borderRadius: 20,
+  //   backgroundColor: '#ff6c5c',
+  // },
+})(LinearProgress);
 
 const styles = theme => ({
   root: {
     flexGrow: 1
-  }
+  },
+  button: {
+    "&$buttonDisabled": {
+      color: theme.palette.grey[900]
+    },
+    flexGrow: 1
+  },
+  buttonDisabled: {}
 });
 
 const TOTAL_MAKING_TIME = 0.5; //mins
@@ -86,16 +105,17 @@ class ADPage extends Component {
             }
           }}
           disabled={this.props.pageStatus.checkoutDone}
+          classes={{ root: classes.button, disabled: classes.buttonDisabled }}
         >
           <Grid
             container
             spacing={2}
-            direction="row"
-            justify="space-around"
-            alignItems="stretch"
+            // direction="row"
+            // justify="space-between"
+            // alignItems="center"
           >
             <Grid item xs={12}>
-              <LinearProgress
+              <BorderLinearProgress
                 variant="determinate"
                 value={this.props.pageStatus.makingProgress}
               />
@@ -115,8 +135,8 @@ class ADPage extends Component {
                   volume={0}
                   muted={true}
                   playsinline={true}
-                  width="80%"
-                  height="80%"
+                  width="70%"
+                  height="70%"
                 />
               </div>
             </Grid>

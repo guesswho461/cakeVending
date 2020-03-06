@@ -1,27 +1,31 @@
 import axios from "axios";
 
-// import companyInfo from "../../companyInfo";
-
 const SET_PAGE_SELECTED = "set/page/selected";
 const OPEN_CHECKOUT_DLG = "open/checkoutdlg";
 const CLOSE_CHECKOUT_DLG = "close/checkoutdlg";
 const COIN_VALUE_DEC = "coin/value/dec";
 const SET_ADPAGE_TITLE = "set/adPage/title";
-const SET_ORIGINAL_RECIPE_START = "set/originalRecipe/start";
 const SET_HEATINGUP_WARNING_DLG_OPEN = "set/heatingupWarningDlg/open";
 const SET_HEATINGUP_WARNING_DLG_CLOSE = "set/heatingupWarningDlg/close";
 const SET_MAKING_PROGRESS = "set/makingProgress";
+const GET_VIDEO_PLAYLIST = "get/videoPlayList";
+const SET_CHECKOUTDLG_TITLE = "set/checkoutDlg/title";
+
+const backend = "http://localhost:8081";
 
 const initState = {
   selectedPage: "ad",
   adPageTitle: "touch2BuyText",
   checkoutDlgOpen: false,
   coinValue: 0,
-  ovenIsReady: false,
+  coinProgress: 0,
+  ovenIsReady: true,
   heatingUpWarningDlgOpen: false,
   takeCakeWarningDlgOpen: false,
   checkoutDone: false,
-  makingProgress: 0
+  makingProgress: 0,
+  videoPlayList: [],
+  checkoutDlgTitle: "plsInsertCoin"
 };
 
 function checkOvenIsReady(tempature) {
@@ -111,6 +115,22 @@ export default function reducer(state = initState, action) {
         ...state,
         makingProgress: action.payload
       };
+    case GET_VIDEO_PLAYLIST:
+      axios({
+        method: "get",
+        baseURL: backend + "/ad/playList"
+      }).then(function(response) {
+        return {
+          ...state,
+          videoPlayList: response.data
+        };
+      });
+      return state;
+    case SET_CHECKOUTDLG_TITLE:
+      return {
+        ...state,
+        checkoutDlgTitle: action.payload
+      };
   }
 }
 
@@ -147,21 +167,6 @@ export function coinValueDec(data) {
   };
 }
 
-export function setOriginalRecipeStart() {
-  // return dispatch =>
-  //   axios
-  //     .post(companyInfo.backendURL + "/recipe/start/original")
-  //     .then(res => {
-  //       console.log(res);
-  //     })
-  //     .catch(err => {
-  //       console.log(err);
-  //     });
-  return {
-    type: SET_ORIGINAL_RECIPE_START
-  };
-}
-
 export function setADPageTitle(data) {
   return {
     type: SET_ADPAGE_TITLE,
@@ -184,6 +189,31 @@ export function setHeadtingUpWarningDlgClose() {
 export function setMakingProgress(data) {
   return {
     type: SET_MAKING_PROGRESS,
+    payload: data
+  };
+}
+
+export function setOriginalRecipeStart() {
+  return dispatch =>
+    axios
+      .post(backend + "/recipe/start/original")
+      .then(res => {
+        console.log(res);
+      })
+      .catch(err => {
+        console.log(err);
+      });
+}
+
+export function getVideoPlayList() {
+  return {
+    type: GET_VIDEO_PLAYLIST
+  };
+}
+
+export function setCheckoutDlgTitle(data) {
+  return {
+    type: SET_CHECKOUTDLG_TITLE,
     payload: data
   };
 }

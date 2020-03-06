@@ -1,7 +1,7 @@
 {
-  "name": "easytp_backend",
+  "name": "cake_vending_backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "the backend of cake vending machine",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,13 +10,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "binary-file": "^0.2.1",
-    "bitwise": "^2.0.4",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "ftp": "^0.3.10",
-    "modbus-serial": "^7.7.3",
-    "mqtt": "^3.0.0"
+    "express-jwt": "^5.3.1",
+    "morgan": "^1.9.1",
+    "mqtt": "^3.0.0",
+    "rpi-gpio": "^2.1.5",
+    "sqlite3": "^4.1.1"
   }
 }

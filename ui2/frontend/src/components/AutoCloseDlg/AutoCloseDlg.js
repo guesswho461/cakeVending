@@ -8,7 +8,7 @@ import Dialog from "@material-ui/core/Dialog";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import Typography from "@material-ui/core/Typography";
 
-import { DlgTransitionDown } from "../PageBase/PageBaseFunction";
+import { TransitionSlideDown } from "../PageBase/PageBaseFunction";
 
 const styles = theme => ({});
 
@@ -24,7 +24,7 @@ class AutoCloseDlg extends Component {
       <Dialog
         // fullWidth={true}
         maxWidth={"lg"}
-        TransitionComponent={DlgTransitionDown}
+        TransitionComponent={TransitionSlideDown}
         open={openState}
         onClose={closeAction}
       >

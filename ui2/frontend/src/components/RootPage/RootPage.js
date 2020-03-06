@@ -15,7 +15,8 @@ import {
   handleMQTTSubscribeTopics,
   setADPageTitle,
   setPageSelected,
-  setCheckoutDlgClose
+  setCheckoutDlgClose,
+  getVideoPlayList
 } from "../../store/reducers/pageStatus";
 import store from "../../store";
 
@@ -30,6 +31,7 @@ const styles = theme => ({
 class RootPage extends Component {
   constructor(props) {
     super(props);
+    this.props.getVideoPlayList();
     this.idleTimer = null;
     this.onIdle = this.onIdle.bind(this);
   }
@@ -114,7 +116,8 @@ const mapDispatchToProps = dispatch => {
       setHeadtingUpWarningDlgClose: () => setHeadtingUpWarningDlgClose(),
       setADPageTitle: data => setADPageTitle(data),
       setPageSelected: data => setPageSelected(data),
-      setCheckoutDlgClose: () => setCheckoutDlgClose()
+      setCheckoutDlgClose: () => setCheckoutDlgClose(),
+      getVideoPlayList: () => getVideoPlayList()
     },
     dispatch
   );

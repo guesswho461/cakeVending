@@ -1,0 +1,8 @@
+*filter
+:INPUT DROP [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -i lo -j ACCEPT
+-A INPIT -i eth0 -j ACCEPT
+-A INPUT -i ppp0 -p tcp -m tcp —dport 18081 -j ACCEPT
+COMMIT
