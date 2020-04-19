@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 const http = require("http");
-const https = require("https");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const fs = require("fs");
@@ -11,23 +10,13 @@ const mqtt = require("mqtt");
 // const A4988 = require("./A4988");
 const morgan = require("morgan");
 const jwt = require("express-jwt");
-const config = require("./config");
+const config = require("../../config");
+const sqlite3 = require("sqlite3").verbose();
+const os = require("os");
 
 const mqttOpt = {
   port: config.mqttBrokerPort,
-  clientId: config.apiServerVersion
-};
-const hskey = fs.readFileSync(
-  "../../ssl_auth_files/pillaAuth-key.pem",
-  "utf-8"
-);
-const hscert = fs.readFileSync(
-  "../../ssl_auth_files/pillaAuth-cert.pem",
-  "utf-8"
-);
-const credentials = {
-  key: hskey,
-  cert: hscert
+  clientId: config.backendVersion,
 };
 
 const coinPinIdx = 7; //GPIO 4, pin 7
@@ -41,7 +30,7 @@ const gateLimitPinIdx = 15; //GPIO 22, pin 15
 //   ms1: 15, //GPIO 15, pin 10
 //   ms2: 18, //GPIO 18, pin 12
 //   ms3: 23, //GPIO 23, pin 16
-//   enable: 14 //GPIO 14, pin 8
+//   enable: 14, //GPIO 14, pin 8
 // });
 // gateMotor.step_size = "sixteenth";
 
@@ -62,6 +51,8 @@ let gateLimitLastValue = false;
 
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
+const iNameList = os.networkInterfaces();
+
 console.log(mqttOpt.clientId + " started");
 
 app.use(cors());
@@ -70,51 +61,71 @@ app.use(bodyParser.json());
 app.use(morgan("dev"));
 
 app.get("/version", (req, res) => {
-  res.send(config.apiServerVersion);
+  res.send(config.backendVersion);
 });
 
 app.post("/recipe/start/original", (req, res) => {
-  if (req.protocol === "http") {
-    // exec("node /home/pi/recipe/original.js", function(err, stdout, stderr) {
-    //   console.log(req.body.cmd);
-    //   res.send(stdout);
-    // });
-    res.send("OK");
-  }
+  exec("node /home/pi/recipe/original.js", function (err, stdout, stderr) {
+    console.log(req.body.cmd);
+    res.send(stdout);
+  });
+  res.sendStatus(200);
 });
 
 app.get("/ad/playList", (req, res) => {
-  if (req.protocol === "http") {
-    let readDir = fs.readdirSync("/home/guesswho/Downloads");
-    res.send(readDir);
-  }
+  let readDir = fs.readdirSync("/home/guesswho/Downloads");
+  res.send(readDir);
 });
 
 app.post(
   "/shutdown",
   jwt({ subject: config.subject, name: config.name, secret: config.secret }),
   (req, res) => {
-    if (req.protocol === "https") {
-      res.status(200).send("ok");
-    } else {
-      res.status(404).send("not found");
-    }
+    res.sendStatus(200);
   }
 );
 
-http.createServer(app).listen(config.httpApiServerPort, "localhost", () => {
-  console.log(
-    "Express http server listening on port " + config.httpApiServerPort
-  );
+http.createServer(app).listen(config.backendPort, "localhost", () => {
+  console.log("backend listening on port " + config.backendPort);
 });
 
-https.createServer(credentials, app).listen(config.httpsApiServerPort, () => {
-  console.log(
-    "Express https server listening on port " + config.httpsApiServerPort
-  );
+http
+  .createServer(app)
+  .listen(config.backendPort, iNameList.tun0[0].address, () => {
+    console.log(
+      iNameList.tun0[0].address +
+        " " +
+        config.backendVersion +
+        " listening on port " +
+        config.backendPort
+    );
+  });
+
+let db = new sqlite3.Database("mydatebase.db", function (err) {
+  if (err) throw err;
 });
 
-// gpio.on("change", function(channel, value) {
+db.serialize(function () {
+  //db.run 如果 Staff 資料表不存在，那就建立 Staff 資料表
+  db.run("CREATE TABLE IF NOT EXISTS  Stuff (thing TEXT)");
+  let stmt = db.prepare("INSERT INTO Stuff VALUES (?)");
+
+  //寫進10筆資料
+  for (var i = 0; i < 10; i++) {
+    stmt.run("staff_number" + i);
+  }
+
+  stmt.finalize();
+
+  db.each("SELECT rowid AS id, thing FROM Stuff", function (err, row) {
+    //log 出所有的資料
+    console.log(row.id + ": " + row.thing);
+  });
+});
+
+db.close();
+
+// gpio.on("change", function (channel, value) {
 //   // console.log("pin " + channel + " is " + value);
 //   //if (coinEnable) {
 //   if (channel === coinPinIdx) {
@@ -164,15 +175,15 @@ https.createServer(credentials, app).listen(config.httpsApiServerPort, () => {
 //   }
 // });
 
-// mqttClient.on("connect", function() {
-//   console.log("connect to broker OK");
-//   mqttClient.subscribe("coin/cmd/#");
-//   mqttClient.subscribe("kanban/cmd/#");
-//   mqttClient.subscribe("gate/cmd/#");
-//   gateMotor.turn(gateClose);
-// });
+mqttClient.on("connect", function () {
+  console.log("connect to broker OK");
+  mqttClient.subscribe("coin/cmd/#");
+  mqttClient.subscribe("kanban/cmd/#");
+  mqttClient.subscribe("gate/cmd/#");
+  // gateMotor.turn(gateClose);
+});
 
-// mqttClient.on("message", function(topic, message) {
+// mqttClient.on("message", function (topic, message) {
 //   if (topic === "coin/cmd/enable") {
 //     if (message.toString() === "true") {
 //       coinEnable = true;
@@ -190,7 +201,7 @@ https.createServer(credentials, app).listen(config.httpsApiServerPort, () => {
 //   } else if (topic === "gate/cmd/open") {
 //     if (message.toString() === "true") {
 //       gateMotor.enable().then(
-//         gateMotor.turn(gateOpen).then(steps => {
+//         gateMotor.turn(gateOpen).then((steps) => {
 //           console.log(`gate turned ${steps} steps`);
 //           gateMotor.disable();
 //         })
@@ -198,7 +209,7 @@ https.createServer(credentials, app).listen(config.httpsApiServerPort, () => {
 //       console.log("gate/cmd/open true");
 //     } else {
 //       gateMotor.enable().then(
-//         gateMotor.turn(gateClose).then(steps => {
+//         gateMotor.turn(gateClose).then((steps) => {
 //           console.log(`gate turned ${steps} steps`);
 //           gateMotor.disable();
 //         })
@@ -214,10 +225,10 @@ https.createServer(credentials, app).listen(config.httpsApiServerPort, () => {
 //   }
 // });
 
-// gpio.setup(coinEnablePinIdx, gpio.DIR_OUT, function(err) {
+// gpio.setup(coinEnablePinIdx, gpio.DIR_OUT, function (err) {
 //   gpio.write(coinEnablePinIdx, false);
 // });
-// gpio.setup(kanbanEnablePinIdx, gpio.DIR_OUT, function(err) {
+// gpio.setup(kanbanEnablePinIdx, gpio.DIR_OUT, function (err) {
 //   gpio.write(kanbanEnablePinIdx, false);
 // });
 // gpio.setup(coinPinIdx, gpio.DIR_IN, gpio.EDGE_RISING);

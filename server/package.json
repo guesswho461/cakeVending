@@ -1,0 +1,21 @@
+{
+  "name": "cake_vending_server",
+  "version": "1.0.0",
+  "description": "the server of all cake vending machines",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "messaging-api-line": "^0.8.5",
+    "messaging-api-slack": "^0.8.2",
+    "morgan": "^1.9.1"
+  }
+}
