@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "PORT=5001 bottender dev",
+    "dev": "bottender dev",
     "lint": "eslint . ",
     "start": "bottender start",
     "test": "jest"

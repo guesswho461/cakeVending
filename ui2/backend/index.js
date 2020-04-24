@@ -14,6 +14,8 @@ const config = require("../../config");
 const sqlite3 = require("sqlite3").verbose();
 const os = require("os");
 
+//todo: idle的時候每五分鐘回抽
+
 const mqttOpt = {
   port: config.mqttBrokerPort,
   clientId: config.backendVersion,

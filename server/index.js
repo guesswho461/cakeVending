@@ -9,10 +9,9 @@ const morgan = require("morgan");
 const axios = require("axios");
 const config = require("../config");
 const { SlackOAuthClient } = require("messaging-api-slack");
+require("dotenv").config();
 
-const slackClient = SlackOAuthClient.connect(
-  "xoxb-1082926328692-1089407482497-XJENYGhYIJQrZRndVDGrk1aZ"
-);
+const slackClient = SlackOAuthClient.connect(process.env.SLACK_ACCESS_TOKEN);
 
 const https_options = {
   key: fs.readFileSync("./ssl_files/server_private_key.pem"),
@@ -22,7 +21,7 @@ const https_options = {
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.text());
+app.use(bodyParser.json());
 app.use(morgan("dev"));
 
 app.get("/version", (req, res) => {
@@ -30,8 +29,15 @@ app.get("/version", (req, res) => {
 });
 
 app.post("/module/offline", (req, res) => {
-  slackClient.postMessage("#statusreport", req.body);
+  // slackClient.postMessage("#statusreport", req.body);
   res.sendStatus(200);
+});
+
+app.post("/forslack", (req, res) => {
+  // slackClient.postMessage("#statusreport", req.body);
+  // res.status(200).send(req.body.challenge.toString());
+  let str = req.body.challenge.toString();
+  res.send(str);
 });
 
 http.createServer(app).listen(config.serverPort, () => {
