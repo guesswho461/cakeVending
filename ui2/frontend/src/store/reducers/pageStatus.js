@@ -1,4 +1,5 @@
 import axios from "axios";
+// require("dotenv").config();
 
 const SET_PAGE_SELECTED = "set/page/selected";
 const OPEN_CHECKOUT_DLG = "open/checkoutdlg";
@@ -25,7 +26,7 @@ const initState = {
   checkoutDone: false,
   makingProgress: 0,
   videoPlayList: [],
-  checkoutDlgTitle: "plsInsertCoin"
+  checkoutDlgTitle: "plsInsertCoin",
 };
 
 function checkOvenIsReady(tempature) {
@@ -49,48 +50,48 @@ export default function reducer(state = initState, action) {
       return {
         ...state,
         coinValue: decTheCoinValue(state.coinValue, action.payload),
-        checkoutDone: true
+        checkoutDone: true,
       };
     case SET_PAGE_SELECTED:
       return {
         ...state,
-        selectedPage: action.payload
+        selectedPage: action.payload,
       };
     case OPEN_CHECKOUT_DLG:
       return {
         ...state,
         checkoutDlgOpen: true,
-        checkoutDone: false
+        checkoutDone: false,
       };
     case CLOSE_CHECKOUT_DLG:
       return {
         ...state,
-        checkoutDlgOpen: false
+        checkoutDlgOpen: false,
       };
     case SET_ADPAGE_TITLE:
       return {
         ...state,
-        adPageTitle: action.payload
+        adPageTitle: action.payload,
       };
     case SET_HEATINGUP_WARNING_DLG_OPEN:
       return {
         ...state,
-        heatingUpWarningDlgOpen: true
+        heatingUpWarningDlgOpen: true,
       };
     case SET_HEATINGUP_WARNING_DLG_CLOSE:
       return {
         ...state,
-        heatingUpWarningDlgOpen: false
+        heatingUpWarningDlgOpen: false,
       };
     case "oven/status/tempature":
       return {
         ...state,
-        ovenIsReady: checkOvenIsReady(action.payload)
+        ovenIsReady: checkOvenIsReady(action.payload),
       };
     case "coin/status/inc":
       return {
         ...state,
-        coinValue: incTheCoinValue(state.coinValue)
+        coinValue: incTheCoinValue(state.coinValue),
       };
     case "gate/cmd/open":
       if (action.payload === "true") {
@@ -98,7 +99,7 @@ export default function reducer(state = initState, action) {
           ...state,
           takeCakeWarningDlgOpen: true,
           makingProgress: 100,
-          adPageTitle: "completeBake"
+          adPageTitle: "completeBake",
         };
       } else {
         return {
@@ -107,29 +108,32 @@ export default function reducer(state = initState, action) {
           selectedPage: "main",
           checkoutDone: false,
           makingProgress: 0,
-          adPageTitle: "touch2BuyText"
+          adPageTitle: "touch2BuyText",
         };
       }
     case SET_MAKING_PROGRESS:
       return {
         ...state,
-        makingProgress: action.payload
+        makingProgress: action.payload,
       };
     case GET_VIDEO_PLAYLIST:
       axios({
         method: "get",
-        baseURL: backend + "/ad/playList"
-      }).then(function(response) {
+        baseURL: backend + "/ad/playList",
+        headers: {
+          Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+        },
+      }).then((res) => {
         return {
           ...state,
-          videoPlayList: response.data
+          videoPlayList: res.data,
         };
       });
       return state;
     case SET_CHECKOUTDLG_TITLE:
       return {
         ...state,
-        checkoutDlgTitle: action.payload
+        checkoutDlgTitle: action.payload,
       };
   }
 }
@@ -137,83 +141,88 @@ export default function reducer(state = initState, action) {
 export function handleMQTTSubscribeTopics(topic, msg) {
   return {
     type: topic,
-    payload: msg.toString()
+    payload: msg.toString(),
   };
 }
 
 export function setPageSelected(data) {
   return {
     type: SET_PAGE_SELECTED,
-    payload: data
+    payload: data,
   };
 }
 
 export function setCheckoutDlgOpen() {
   return {
-    type: OPEN_CHECKOUT_DLG
+    type: OPEN_CHECKOUT_DLG,
   };
 }
 
 export function setCheckoutDlgClose() {
   return {
-    type: CLOSE_CHECKOUT_DLG
+    type: CLOSE_CHECKOUT_DLG,
   };
 }
 
 export function coinValueDec(data) {
   return {
     type: COIN_VALUE_DEC,
-    payload: data
+    payload: data,
   };
 }
 
 export function setADPageTitle(data) {
   return {
     type: SET_ADPAGE_TITLE,
-    payload: data
+    payload: data,
   };
 }
 
 export function setHeadtingUpWarningDlgOpen() {
   return {
-    type: SET_HEATINGUP_WARNING_DLG_OPEN
+    type: SET_HEATINGUP_WARNING_DLG_OPEN,
   };
 }
 
 export function setHeadtingUpWarningDlgClose() {
   return {
-    type: SET_HEATINGUP_WARNING_DLG_CLOSE
+    type: SET_HEATINGUP_WARNING_DLG_CLOSE,
   };
 }
 
 export function setMakingProgress(data) {
   return {
     type: SET_MAKING_PROGRESS,
-    payload: data
+    payload: data,
   };
 }
 
 export function setOriginalRecipeStart() {
-  return dispatch =>
-    axios
-      .post(backend + "/recipe/start/original")
-      .then(res => {
+  return (dispatch) =>
+    axios({
+      method: "post",
+      baseURL: backend + "/recipe/start/original",
+      headers: {
+        Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+      },
+    })
+      .then((res) => {
         console.log(res);
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
       });
 }
 
 export function getVideoPlayList() {
   return {
-    type: GET_VIDEO_PLAYLIST
+    type: GET_VIDEO_PLAYLIST,
   };
 }
 
 export function setCheckoutDlgTitle(data) {
   return {
     type: SET_CHECKOUTDLG_TITLE,
-    payload: data
+    payload: data,
   };
 }

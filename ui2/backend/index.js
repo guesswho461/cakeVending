@@ -1,24 +1,53 @@
+const version = "cakeVendingBackend v1.0";
+
+const log4js = require("log4js");
+log4js.configure({
+  appenders: {
+    file: {
+      type: "dateFile",
+      filename: "log/cakeBackend.log",
+      maxLogSize: 1000000, // 1 MB
+      backups: 5,
+      category: "normal",
+    },
+    out: {
+      type: "stdout",
+    },
+  },
+  categories: {
+    default: { appenders: ["file", "out"], level: "trace" },
+  },
+});
+const logger = log4js.getLogger("cake");
+
 const express = require("express");
 const app = express();
 const http = require("http");
+const https = require("https");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const fs = require("fs");
 const exec = require("child_process").exec;
 const mqtt = require("mqtt");
-// const gpio = require("rpi-gpio");
-// const A4988 = require("./A4988");
-const morgan = require("morgan");
 const jwt = require("express-jwt");
-const config = require("../../config");
 const sqlite3 = require("sqlite3").verbose();
 const os = require("os");
+const axios = require("axios");
+require("dotenv").config();
+// const gpio = require("rpi-gpio");
+// const A4988 = require("./A4988");
 
 //todo: idle的時候每五分鐘回抽
 
 const mqttOpt = {
-  port: config.mqttBrokerPort,
-  clientId: config.backendVersion,
+  port: process.env.MACHINE_LOCAL_MQTT_BROKER_PORT,
+  clientId: version,
+};
+
+const httpsOptions = {
+  key: fs.readFileSync("./ssl_files/server-key.pem"),
+  ca: [fs.readFileSync("./ssl_files/cert.pem")],
+  cert: fs.readFileSync("./ssl_files/server-cert.pem"),
 };
 
 const coinPinIdx = 7; //GPIO 4, pin 7
@@ -51,55 +80,123 @@ let gateLimitDebounceCnt = 0;
 let gateLimitValue = false;
 let gateLimitLastValue = false;
 
+const checkModuleAliveInterval = 10 * 60 * 1000; //ms
+const maxModuleDeadCnt = 0;
+const maxMachTemp = 70;
+
+let bucketAliveMsg = "bucketAliveMsg";
+let lastBucketAliveMsg = "lastBucketAliveMsg";
+let bucketDeadCnt = 0;
+
+let ovenAliveMsg = "ovenAliveMsg";
+let lastOvenAliveMsg = "lastOvenAliveMsg";
+let ovenDeadCnt = 0;
+
+let robotAliveMsg = "robotAliveMsg";
+let lastRobotAliveMsg = "lastRobotAliveMsg";
+let robotDeadCnt = 0;
+
+let latchAliveMsg = "latchAliveMsg";
+let lastLatchAliveMsg = "lastLatchAliveMsg";
+let latchDeadCnt = 0;
+
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
 const iNameList = os.networkInterfaces();
 
-console.log(mqttOpt.clientId + " started");
+logger.info(version + " started");
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.use(morgan("dev"));
+app.use(bodyParser.text());
+app.use(log4js.connectLogger(logger, { level: "info" }));
 
-app.get("/version", (req, res) => {
-  res.send(config.backendVersion);
-});
-
-app.post("/recipe/start/original", (req, res) => {
-  exec("node /home/pi/recipe/original.js", function (err, stdout, stderr) {
-    console.log(req.body.cmd);
-    res.send(stdout);
-  });
-  res.sendStatus(200);
-});
-
-app.get("/ad/playList", (req, res) => {
-  let readDir = fs.readdirSync("/home/guesswho/Downloads");
-  res.send(readDir);
-});
+app.get(
+  "/version",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    res.send(version);
+  }
+);
 
 app.post(
-  "/shutdown",
-  jwt({ subject: config.subject, name: config.name, secret: config.secret }),
+  "/recipe/start/original",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    exec("node /home/pi/recipe/original.js", function (err, stdout, stderr) {
+      logger.trace(req.body.cmd);
+      res.send(stdout);
+    });
+    res.sendStatus(200);
+  }
+);
+
+app.get(
+  "/ad/playList",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    // let readDir = fs.readdirSync("/home/pi/ad");
+    let readDir = fs.readdirSync("/home");
+    res.send(readDir);
+  }
+);
+
+app.post(
+  "/stop/oven/heating",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
   (req, res) => {
     res.sendStatus(200);
   }
 );
 
-http.createServer(app).listen(config.backendPort, "localhost", () => {
-  console.log("backend listening on port " + config.backendPort);
-});
+app.post(
+  "/machine/alive",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    res.send(res.body);
+  }
+);
 
 http
   .createServer(app)
-  .listen(config.backendPort, iNameList.tun0[0].address, () => {
-    console.log(
+  .listen(process.env.MACHINE_BACKEND_PORT, "localhost", () => {
+    logger.info(
+      "localhost " +
+        version +
+        " listening on port " +
+        process.env.MACHINE_BACKEND_PORT
+    );
+  });
+
+https
+  .createServer(httpsOptions, app)
+  .listen(process.env.MACHINE_BACKEND_PORT, iNameList.tun0[0].address, () => {
+    logger.info(
       iNameList.tun0[0].address +
         " " +
-        config.backendVersion +
+        version +
         " listening on port " +
-        config.backendPort
+        process.env.MACHINE_BACKEND_PORT
     );
   });
 
@@ -121,14 +218,150 @@ db.serialize(function () {
 
   db.each("SELECT rowid AS id, thing FROM Stuff", function (err, row) {
     //log 出所有的資料
-    console.log(row.id + ": " + row.thing);
+    logger.trace(row.id + ": " + row.thing);
   });
 });
 
 db.close();
 
+const postWebAPI = (url, payload) => {
+  axios({
+    method: "post",
+    baseURL: process.env.TELEGRAM_BOT_IP + url,
+    headers: {
+      Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+      "content-type": "text/plain",
+    },
+    data: payload,
+  })
+    .then((res) => {
+      logger.trace("POST " + url + " " + payload + " " + res.status);
+    })
+    .catch((err) => {
+      logger.error(err.message);
+    });
+};
+
+mqttClient.on("message", function (topic, message) {
+  if (topic === "coin/cmd/enable") {
+    if (message.toString() === "true") {
+      coinEnable = true;
+      // gpio.write(coinEnablePinIdx, true);
+      logger.trace("coin/cmd/enable true");
+    }
+  } else if (topic === "kanban/cmd/enable") {
+    if (message.toString() === "true") {
+      // gpio.write(kanbanEnablePinIdx, true);
+      logger.trace("kanban/cmd/enable true");
+    } else {
+      // gpio.write(kanbanEnablePinIdx, false);
+      logger.trace("kanban/cmd/enable false");
+    }
+  } else if (topic === "gate/cmd/open") {
+    if (message.toString() === "true") {
+      // gateMotor.enable().then(
+      //   gateMotor.turn(gateOpen).then((steps) => {
+      //     logger.trace(`gate turned ${steps} steps`);
+      //     gateMotor.disable();
+      //   })
+      // );
+      logger.trace("gate/cmd/open true");
+    } else {
+      // gateMotor.enable().then(
+      //   gateMotor.turn(gateClose).then((steps) => {
+      //     logger.trace(`gate turned ${steps} steps`);
+      //     gateMotor.disable();
+      //   })
+      // );
+      logger.trace("gate/cmd/open false");
+    }
+  } else if (topic === "gate/cmd/stop") {
+    if (message.toString() === "true") {
+      // gateMotor.stop();
+      // gateMotor.disable();
+      logger.trace("gate/cmd/stop true");
+    }
+  } else if (topic === "bucket/status/alive") {
+    bucketAliveMsg = message.toString();
+  } else if (topic === "oven/status/alive") {
+    ovenAliveMsg = message.toString();
+  } else if (topic === "robot/status/alive") {
+    robotAliveMsg = message.toString();
+  } else if (topic === "latch/status/alive") {
+    latchAliveMsg = message.toString();
+  } else if (topic === "bucket/status/machTemp") {
+    const macTempStr = message.toString();
+    if (parseFloat(macTempStr) >= maxMachTemp) {
+      postWebAPI("/machine/alarm", "machine temperature: " + macTempStr);
+    }
+  } else if (topic === "bucket/status/alarm") {
+    postWebAPI("/machine/alarm", message.toString());
+  }
+});
+
+const checkModuleAlive = () => {
+  if (bucketAliveMsg === lastBucketAliveMsg) {
+    bucketDeadCnt = bucketDeadCnt + 1;
+  } else {
+    bucketDeadCnt = 0;
+  }
+  lastBucketAliveMsg = bucketAliveMsg;
+  if (bucketDeadCnt > maxModuleDeadCnt) {
+    postWebAPI("/machine/alarm", "bucket is dead");
+  }
+
+  if (ovenAliveMsg === lastOvenAliveMsg) {
+    ovenDeadCnt = ovenDeadCnt + 1;
+  } else {
+    ovenDeadCnt = 0;
+  }
+  lastOvenAliveMsg = ovenAliveMsg;
+  if (ovenDeadCnt > maxModuleDeadCnt) {
+    postWebAPI("/machine/alarm", "oven is dead");
+  }
+
+  if (robotAliveMsg === lastRobotAliveMsg) {
+    robotDeadCnt = robotDeadCnt + 1;
+  } else {
+    robotDeadCnt = 0;
+  }
+  lastRobotAliveMsg = robotAliveMsg;
+  if (robotDeadCnt > maxModuleDeadCnt) {
+    postWebAPI("/machine/alarm", "robot is dead");
+  }
+
+  if (latchAliveMsg === lastLatchAliveMsg) {
+    latchDeadCnt = latchDeadCnt + 1;
+  } else {
+    latchDeadCnt = 0;
+  }
+  lastLatchAliveMsg = latchAliveMsg;
+  if (latchDeadCnt > maxModuleDeadCnt) {
+    postWebAPI("/machine/alarm", "latch is dead");
+  }
+};
+setInterval(checkModuleAlive, checkModuleAliveInterval);
+
+const mqttSubsTopis = [
+  "coin/cmd/#",
+  "kanban/cmd/#",
+  "gate/cmd/#",
+  "bucket/status/#",
+  "oven/status/#",
+  "robot/status/#",
+  "latch/status/#",
+];
+
+mqttClient.on("connect", function () {
+  // gateMotor.turn(gateClose);
+  logger.info("connect to broker OK");
+  mqttSubsTopis.forEach(function (topic, index, array) {
+    mqttClient.subscribe(topic);
+  });
+});
+
 // gpio.on("change", function (channel, value) {
-//   // console.log("pin " + channel + " is " + value);
+//   // logger.trace("pin " + channel + " is " + value);
 //   //if (coinEnable) {
 //   if (channel === coinPinIdx) {
 //     if (value === true) {
@@ -145,13 +378,13 @@ db.close();
 //     //if (coinValue === true && coinLastValue === false) {
 //     if (value === true) {
 //       coinCnt = coinCnt + 1;
-//       console.log(coinCnt);
+//       logger.trace(coinCnt);
 //       mqttClient.publish("coin/status/inc", "1");
 //       if (coinCnt >= 5) {
 //         coinEnable = false;
 //         coinCnt = 0;
 //         gpio.write(coinEnablePinIdx, false);
-//         console.log("coin disable");
+//         logger.trace("coin disable");
 //       }
 //     }
 //     coinLastValue = coinValue;
@@ -171,59 +404,9 @@ db.close();
 //     }
 //     if (gateLimitValue === true && gateLimitLastValue === false) {
 //       gateMotor.stop();
-//       console.log("gate stoped");
+//       logger.trace("gate stoped");
 //     }
 //     gateLimitLastValue = gateLimitValue;
-//   }
-// });
-
-mqttClient.on("connect", function () {
-  console.log("connect to broker OK");
-  mqttClient.subscribe("coin/cmd/#");
-  mqttClient.subscribe("kanban/cmd/#");
-  mqttClient.subscribe("gate/cmd/#");
-  // gateMotor.turn(gateClose);
-});
-
-// mqttClient.on("message", function (topic, message) {
-//   if (topic === "coin/cmd/enable") {
-//     if (message.toString() === "true") {
-//       coinEnable = true;
-//       gpio.write(coinEnablePinIdx, true);
-//       console.log("coin/cmd/enable true");
-//     }
-//   } else if (topic === "kanban/cmd/enable") {
-//     if (message.toString() === "true") {
-//       gpio.write(kanbanEnablePinIdx, true);
-//       console.log("kanban/cmd/enable true");
-//     } else {
-//       gpio.write(kanbanEnablePinIdx, false);
-//       console.log("kanban/cmd/enable false");
-//     }
-//   } else if (topic === "gate/cmd/open") {
-//     if (message.toString() === "true") {
-//       gateMotor.enable().then(
-//         gateMotor.turn(gateOpen).then((steps) => {
-//           console.log(`gate turned ${steps} steps`);
-//           gateMotor.disable();
-//         })
-//       );
-//       console.log("gate/cmd/open true");
-//     } else {
-//       gateMotor.enable().then(
-//         gateMotor.turn(gateClose).then((steps) => {
-//           console.log(`gate turned ${steps} steps`);
-//           gateMotor.disable();
-//         })
-//       );
-//       console.log("gate/cmd/open false");
-//     }
-//   } else if (topic === "gate/cmd/stop") {
-//     if (message.toString() === "true") {
-//       gateMotor.stop();
-//       gateMotor.disable();
-//       console.log("gate/cmd/stop true");
-//     }
 //   }
 // });
 

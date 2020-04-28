@@ -5,8 +5,7 @@ package-lock.json*
 yarn.lock*
 *.tar.gz
 *.log
-ui2/backend/config.js
-ssl_auth_files/certrequest.csr
-ssl_auth_files/pillaAuth-cert.pem
-ssl_auth_files/pillaAuth-key.pem
-server/.env
+.env
+*.pem
+*.csr
+*.srl
