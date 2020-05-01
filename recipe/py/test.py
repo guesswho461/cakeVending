@@ -4,6 +4,7 @@ import time
 import threading
 import logging
 from datetime import datetime
+import sys
 
 
 class machineStatus:
@@ -175,31 +176,31 @@ def on_message(mqttc, obj, msg):
 
 
 def move_robot(target, pos, isPass="WAIT"):
-    global mqttc, macst
-    macst.robotMotionDone = False
-    mqttc.publish("robot/cmd/jog/" + target, pos)
-    if isPass != "PASS":
-        while macst.robotMotionDone == False:
-            logger.debug("robotMotionDone: " + str(macst.robotMotionDone))
-            time.sleep(0.1)
+    # global mqttc, macst
+    # macst.robotMotionDone = False
+    # mqttc.publish("robot/cmd/jog/" + target, pos)
+    # if isPass != "PASS":
+    #     while macst.robotMotionDone == False:
+    #         logger.debug("robotMotionDone: " + str(macst.robotMotionDone))
+    time.sleep(0.1)
 
 
 def spit_cake(vol):
-    global mqttc, macst
-    macst.bucketStopTrue = False
-    mqttc.publish("bucket/cmd/jog/vol", vol)
-    while macst.bucketStopTrue == False:
-        logger.debug("bucketStopTrue: " + str(macst.bucketStopTrue))
-        time.sleep(0.1)
+    # global mqttc, macst
+    # macst.bucketStopTrue = False
+    # mqttc.publish("bucket/cmd/jog/vol", vol)
+    # while macst.bucketStopTrue == False:
+    #     logger.debug("bucketStopTrue: " + str(macst.bucketStopTrue))
+    time.sleep(0.1)
 
 
 def close_oven():
-    global mqttc, macst
-    macst.ovenOpenFalse = False
-    mqttc.publish("oven/cmd/open", "false")
-    while macst.ovenOpenFalse == False:
-        logger.debug("ovenOpenFalse: " + str(macst.ovenOpenFalse))
-        time.sleep(0.1)
+    # global mqttc, macst
+    # macst.ovenOpenFalse = False
+    # mqttc.publish("oven/cmd/open", "false")
+    # while macst.ovenOpenFalse == False:
+    #     logger.debug("ovenOpenFalse: " + str(macst.ovenOpenFalse))
+    time.sleep(0.1)
 
 
 def move_robot_and_spit(pnt_name, pos, vol):
@@ -210,30 +211,30 @@ def move_robot_and_spit(pnt_name, pos, vol):
 
 
 def flip_oven(cmd):
-    global mqttc, macst
-    if cmd == True:
-        macst.ovenFlipTrue = False
-        mqttc.publish("oven/cmd/flip", "true")
-        while macst.ovenFlipTrue == False:
-            logger.debug("ovenFlipTrue: " + str(macst.ovenFlipTrue))
-            time.sleep(0.1)
-    else:
-        macst.ovenFlipFalse = False
-        mqttc.publish("oven/cmd/flip", "false")
-        while macst.ovenFlipFalse == False:
-            logger.debug("ovenFlipFalse: " + str(macst.ovenFlipFalse))
-            time.sleep(0.1)
+    # global mqttc, macst
+    # if cmd == True:
+    #     macst.ovenFlipTrue = False
+    #     mqttc.publish("oven/cmd/flip", "true")
+    #     while macst.ovenFlipTrue == False:
+    #         logger.debug("ovenFlipTrue: " + str(macst.ovenFlipTrue))
+    #         time.sleep(0.1)
+    # else:
+    #     macst.ovenFlipFalse = False
+    #     mqttc.publish("oven/cmd/flip", "false")
+    #     while macst.ovenFlipFalse == False:
+    #         logger.debug("ovenFlipFalse: " + str(macst.ovenFlipFalse))
+    time.sleep(0.1)
 
 
 def robot_go_home():
-    global mqttc, macst
-    macst.robotMotionDone = False
-    mqttc.publish("robot/cmd/home/z", "true")
-    mqttc.publish("robot/cmd/home/y", "true")
-    mqttc.publish("robot/cmd/home/x", "true")
-    while macst.robotMotionDone == False:
-        logger.debug("robotMotionDone: " + str(macst.robotMotionDone))
-        time.sleep(0.1)
+    # global mqttc, macst
+    # macst.robotMotionDone = False
+    # mqttc.publish("robot/cmd/home/z", "true")
+    # mqttc.publish("robot/cmd/home/y", "true")
+    # mqttc.publish("robot/cmd/home/x", "true")
+    # while macst.robotMotionDone == False:
+    #     logger.debug("robotMotionDone: " + str(macst.robotMotionDone))
+    time.sleep(0.1)
 
 
 def pick_cake_and_drop(pnt_name, pos_y):
@@ -255,49 +256,49 @@ def pick_cake_and_drop(pnt_name, pos_y):
 
 
 def unloading():
-    global mqttc, macst
-    macst.latchBowlReadyTrue = False
-    while macst.latchBowlReadyTrue == False:
-        logger.debug("latchBowlReadyTrue: " + str(macst.latchBowlReadyTrue))
-        time.sleep(0.1)
+    # global mqttc, macst
+    # macst.latchBowlReadyTrue = False
+    # while macst.latchBowlReadyTrue == False:
+    #     logger.debug("latchBowlReadyTrue: " + str(macst.latchBowlReadyTrue))
+    #     time.sleep(0.1)
 
-    # open latch fan
-    macst.latchFanOpenTrue = False
-    mqttc.publish("latch/cmd/fan/open", "true")
-    logger.info("10")
-    while macst.latchFanOpenTrue == False:
-        logger.debug("latchFanOpenTrue: " + str(macst.latchFanOpenTrue))
-        time.sleep(0.1)
+    # # open latch fan
+    # macst.latchFanOpenTrue = False
+    # mqttc.publish("latch/cmd/fan/open", "true")
+    # logger.info("10")
+    # while macst.latchFanOpenTrue == False:
+    #     logger.debug("latchFanOpenTrue: " + str(macst.latchFanOpenTrue))
+    #     time.sleep(0.1)
 
-    # open latch gate
-    macst.latchGateOpenTrue = False
-    mqttc.publish("latch/cmd/gate/open", "true")
-    logger.info("11")
-    while macst.latchGateOpenTrue == False:
-        logger.debug("latchGateOpenTrue: " + str(macst.latchGateOpenTrue))
-        time.sleep(0.1)
-    time.sleep(4)
-    logger.info("12")
+    # # open latch gate
+    # macst.latchGateOpenTrue = False
+    # mqttc.publish("latch/cmd/gate/open", "true")
+    # logger.info("11")
+    # while macst.latchGateOpenTrue == False:
+    #     logger.debug("latchGateOpenTrue: " + str(macst.latchGateOpenTrue))
+    #     time.sleep(0.1)
+    # time.sleep(4)
+    # logger.info("12")
 
-    # close latch gate
-    macst.latchGateOpenFalse = False
-    mqttc.publish("latch/cmd/gate/open", "false")
-    while macst.latchGateOpenFalse == False:
-        logger.debug("latchGateOpenFalse: " + str(macst.latchGateOpenFalse))
-        time.sleep(0.1)
-    time.sleep(1.5)
-    logger.info("13")
+    # # close latch gate
+    # macst.latchGateOpenFalse = False
+    # mqttc.publish("latch/cmd/gate/open", "false")
+    # while macst.latchGateOpenFalse == False:
+    #     logger.debug("latchGateOpenFalse: " + str(macst.latchGateOpenFalse))
+    #     time.sleep(0.1)
+    # time.sleep(1.5)
+    # logger.info("13")
 
-    # close latch fan
-    macst.latchFanOpenFalse = False
-    mqttc.publish("latch/cmd/fan/open", "false")
-    while macst.latchFanOpenFalse == False:
-        logger.debug("latchFanOpenFalse: " + str(macst.latchFanOpenFalse))
-        time.sleep(0.1)
-    time.sleep(0.5)
-    logger.info("14")
+    # # close latch fan
+    # macst.latchFanOpenFalse = False
+    # mqttc.publish("latch/cmd/fan/open", "false")
+    # while macst.latchFanOpenFalse == False:
+    #     logger.debug("latchFanOpenFalse: " + str(macst.latchFanOpenFalse))
+    #     time.sleep(0.1)
+    # time.sleep(0.5)
+    # logger.info("14")
 
-    logger.warning("strBowlCnt: " + macst.strBowlCnt)
+    # logger.warning("strBowlCnt: " + macst.strBowlCnt)
     logger.info("Stock Bowl Process finish!")
 
 
@@ -384,42 +385,42 @@ def ctrl_oven_and_robot():
 
 
 def move_cvt(pos, delay):
-    global mqttc, macst
-    macst.latchCvtStopTrue = False
-    mqttc.publish("latch/cmd/cvt/pos", pos)
-    time.sleep(delay)
-    while macst.latchCvtStopTrue == False:
-        logger.debug("latchCvtStopTrue: " + str(macst.latchCvtStopTrue))
-        time.sleep(0.1)
+    # global mqttc, macst
+    # macst.latchCvtStopTrue = False
+    # mqttc.publish("latch/cmd/cvt/pos", pos)
+    # time.sleep(delay)
+    # while macst.latchCvtStopTrue == False:
+    #     logger.debug("latchCvtStopTrue: " + str(macst.latchCvtStopTrue))
+    time.sleep(0.1)
 
 
 def move_arm(pos, delay):
-    global mqttc, macst
-    macst.latchArmStopTrue = False
-    mqttc.publish("latch/cmd/arm/pos", pos)
-    time.sleep(delay)
-    while macst.latchArmStopTrue == False:
-        logger.debug("latchArmStopTrue: " + str(macst.latchArmStopTrue))
-        time.sleep(0.1)
+    # global mqttc, macst
+    # macst.latchArmStopTrue = False
+    # mqttc.publish("latch/cmd/arm/pos", pos)
+    # time.sleep(delay)
+    # while macst.latchArmStopTrue == False:
+    #     logger.debug("latchArmStopTrue: " + str(macst.latchArmStopTrue))
+    time.sleep(0.1)
 
 
 def arm_suck(cmd, delay):
-    global mqttc, macst
-    if cmd == True:
-        macst.latchSuckStopTrue = False
-        mqttc.publish("latch/cmd/arm/suck", "true")
-        time.sleep(delay)
-        while macst.latchSuckStopTrue == False:
-            logger.debug("latchSuckStopTrue: " + str(macst.latchSuckStopTrue))
-            time.sleep(0.1)
-    else:
-        macst.latchSuckStopFalse = False
-        mqttc.publish("latch/cmd/arm/suck", "false")
-        time.sleep(delay)
-        while macst.latchSuckStopFalse == False:
-            logger.debug("latchSuckStopFalse: " +
-                         str(macst.latchSuckStopFalse))
-            time.sleep(0.1)
+    # global mqttc, macst
+    # if cmd == True:
+    #     macst.latchSuckStopTrue = False
+    #     mqttc.publish("latch/cmd/arm/suck", "true")
+    #     time.sleep(delay)
+    #     while macst.latchSuckStopTrue == False:
+    #         logger.debug("latchSuckStopTrue: " + str(macst.latchSuckStopTrue))
+    #         time.sleep(0.1)
+    # else:
+    #     macst.latchSuckStopFalse = False
+    #     mqttc.publish("latch/cmd/arm/suck", "false")
+    #     time.sleep(delay)
+    #     while macst.latchSuckStopFalse == False:
+    #         logger.debug("latchSuckStopFalse: " +
+    #                      str(macst.latchSuckStopFalse))
+    time.sleep(0.1)
 
 
 def ctrl_latch():
@@ -487,10 +488,10 @@ def ctrl_latch():
         retry_take_bowl = retry_take_bowl + 1
 
         # confirm the cake was catched
-        if macst.latchBowlReadyTrue == False and retry_take_bowl < 10:
-            continue
-        else:
-            break
+        # if macst.latchBowlReadyTrue == False and retry_take_bowl < 10:
+        #     continue
+        # else:
+        break
 
     # suck bowl multiple fail
     if retry_take_bowl >= 10:
@@ -509,7 +510,7 @@ fh = logging.FileHandler(
     'log/{0}.log'.format(log_filename))
 fh.setLevel(logging.INFO)
 # create console handler with a higher log level
-ch = logging.StreamHandler()
+ch = logging.StreamHandler(sys.stdout)
 ch.setLevel(logging.INFO)
 # create formatter and add it to the handlers
 formatter = logging.Formatter(

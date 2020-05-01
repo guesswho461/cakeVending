@@ -13,32 +13,32 @@ import LinearProgress from "@material-ui/core/LinearProgress";
 import {
   setPageSelected,
   setHeadtingUpWarningDlgOpen,
-  setMakingProgress
+  setMakingProgress,
 } from "../../store/reducers/pageStatus";
 import { TransitionSlideDown } from "../PageBase/PageBaseFunction";
 
 const BorderLinearProgress = withStyles({
   root: {
-    height: 20
+    height: 20,
     // backgroundColor: lighten('#ff6c5c', 0.5),
-  }
+  },
   // bar: {
   //   borderRadius: 20,
   //   backgroundColor: '#ff6c5c',
   // },
 })(LinearProgress);
 
-const styles = theme => ({
+const styles = (theme) => ({
   root: {
-    flexGrow: 1
+    flexGrow: 1,
   },
   button: {
     "&$buttonDisabled": {
-      color: theme.palette.grey[900]
+      color: theme.palette.grey[900],
     },
-    flexGrow: 1
+    flexGrow: 1,
   },
-  buttonDisabled: {}
+  buttonDisabled: {},
 });
 
 const TOTAL_MAKING_TIME = 0.5; //mins
@@ -55,7 +55,7 @@ class ADPage extends Component {
   }
 
   state = {
-    progress: 0
+    progress: 0,
   };
 
   makingProgressInc(prev, stepSize) {
@@ -128,7 +128,8 @@ class ADPage extends Component {
             <Grid item xs={12}>
               <div align="center">
                 <ReactPlayer
-                  url="https://media.w3.org/2010/05/sintel/trailer_hd.mp4"
+                  // url="https://media.w3.org/2010/05/sintel/trailer_hd.mp4"
+                  url={this.props.pageStatus.videoPlayList}
                   playing={true}
                   loop={true}
                   controls={false}
@@ -147,18 +148,18 @@ class ADPage extends Component {
   }
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   return {
-    pageStatus: state.pageStatus
+    pageStatus: state.pageStatus,
   };
 };
 
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
-      setPageSelected: data => setPageSelected(data),
+      setPageSelected: (data) => setPageSelected(data),
       setHeadtingUpWarningDlgOpen: () => setHeadtingUpWarningDlgOpen(),
-      setMakingProgress: data => setMakingProgress(data)
+      setMakingProgress: (data) => setMakingProgress(data),
     },
     dispatch
   );

@@ -1,5 +1,4 @@
 import axios from "axios";
-// require("dotenv").config();
 
 const SET_PAGE_SELECTED = "set/page/selected";
 const OPEN_CHECKOUT_DLG = "open/checkoutdlg";
@@ -58,12 +57,38 @@ export default function reducer(state = initState, action) {
         selectedPage: action.payload,
       };
     case OPEN_CHECKOUT_DLG:
+      axios({
+        method: "post",
+        baseURL: backend + "/coin/enable",
+        headers: {
+          Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+        },
+      })
+        .then((res) => {
+          console.log(res);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
       return {
         ...state,
         checkoutDlgOpen: true,
         checkoutDone: false,
       };
     case CLOSE_CHECKOUT_DLG:
+      axios({
+        method: "post",
+        baseURL: backend + "/coin/disable",
+        headers: {
+          Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+        },
+      })
+        .then((res) => {
+          console.log(res);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
       return {
         ...state,
         checkoutDlgOpen: false,
@@ -129,7 +154,7 @@ export default function reducer(state = initState, action) {
           videoPlayList: res.data,
         };
       });
-      return state;
+    // return state;
     case SET_CHECKOUTDLG_TITLE:
       return {
         ...state,

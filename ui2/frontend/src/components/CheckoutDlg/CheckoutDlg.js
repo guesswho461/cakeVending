@@ -19,10 +19,10 @@ import { setCheckoutDlgClose } from "../../store/reducers/pageStatus";
 import demoCake from "../../imgs/demoCake.jpg";
 import { TransitionGrow } from "../PageBase/PageBaseFunction";
 
-const styles = theme => ({
+const styles = (theme) => ({
   image: {
-    height: 200
-  }
+    height: 200,
+  },
 });
 
 class CheckoutDlg extends Component {
@@ -102,7 +102,9 @@ class CheckoutDlg extends Component {
             // variant="contained"
             color="primary"
             size="large"
-            onClick={this.props.setCheckoutDlgClose}
+            onClick={() => {
+              this.props.setCheckoutDlgClose();
+            }}
           >
             <Typography variant="h5">
               <Translate value="cancel" />
@@ -128,16 +130,16 @@ class CheckoutDlg extends Component {
   }
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   return {
-    pageStatus: state.pageStatus
+    pageStatus: state.pageStatus,
   };
 };
 
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
-      setCheckoutDlgClose: () => setCheckoutDlgClose()
+      setCheckoutDlgClose: () => setCheckoutDlgClose(),
     },
     dispatch
   );

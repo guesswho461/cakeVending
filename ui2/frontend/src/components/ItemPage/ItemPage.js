@@ -15,21 +15,21 @@ import { setCheckoutDlgOpen } from "../../store/reducers/pageStatus";
 
 const girdCellHeight = 320;
 
-const styles = theme => ({
+const styles = (theme) => ({
   root: {
     flexGrow: 1,
     display: "flex",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   item: {
-    height: girdCellHeight
+    height: girdCellHeight,
   },
   gridList: {
-    width: "100vh"
+    width: "100vh",
   },
   icon: {
-    color: "rgba(255, 255, 255, 0.54)"
-  }
+    color: "rgba(255, 255, 255, 0.54)",
+  },
 });
 
 class ItemPage extends Component {
@@ -38,7 +38,7 @@ class ItemPage extends Component {
     return (
       <div className={classes.root}>
         <GridList cellHeight={girdCellHeight} className={classes.gridList}>
-          {items.map(item => (
+          {items.map((item) => (
             <GridListTile key={item.img}>
               {/* <Button> */}
               <CardActionArea
@@ -73,14 +73,14 @@ class ItemPage extends Component {
   }
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   return {};
 };
 
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
-      setCheckoutDlgOpen: () => setCheckoutDlgOpen()
+      setCheckoutDlgOpen: () => setCheckoutDlgOpen(),
     },
     dispatch
   );

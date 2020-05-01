@@ -143,12 +143,8 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    const root = "/home/guesswho/Downloads/demoMP4";
-    // const root = "/home/pi/ad";
-    let ret = fs.readdirSync(root).map(function (file, index, array) {
-      return { src: root + "/" + file, type: "video/mp4" };
-    });
-    res.send(ret);
+    let readDir = fs.readdirSync("/home/pi/ad");
+    res.send(readDir);
   }
 );
 
@@ -202,19 +198,19 @@ app.post(
   }
 );
 
-http.createServer(app).listen(process.env.MACHINE_BACKEND_PORT, () => {
-  logger.info(
-    version + " listening on port " + process.env.MACHINE_BACKEND_PORT
-  );
-});
+// http.createServer(app).listen(process.env.MACHINE_BACKEND_PORT, () => {
+//   logger.info(
+//     version + " listening on port " + process.env.MACHINE_BACKEND_PORT
+//   );
+// });
 
-// https
-//   .createServer(httpsOptions, app)
-//   .listen(process.env.MACHINE_BACKEND_PORT, () => {
-//     logger.info(
-//       version + " listening on port " + process.env.MACHINE_BACKEND_PORT
-//     );
-//   });
+https
+  .createServer(httpsOptions, app)
+  .listen(process.env.MACHINE_BACKEND_PORT, () => {
+    logger.info(
+      version + " listening on port " + process.env.MACHINE_BACKEND_PORT
+    );
+  });
 
 // http
 //   .createServer(app)

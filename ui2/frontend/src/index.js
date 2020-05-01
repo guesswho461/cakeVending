@@ -7,7 +7,7 @@ import { Provider } from "react-redux";
 import {
   loadTranslations,
   setLocale,
-  syncTranslationWithStore
+  syncTranslationWithStore,
 } from "react-redux-i18n";
 
 import { Connector } from "mqtt-react";

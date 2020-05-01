@@ -1,0 +1,11 @@
+[Unit]
+Description=cake vending frontend web browser
+After=cakeBackend.service
+
+[Service]
+ExecStart=xinit /home/pi/start-c.sh
+WorkingDirectory=/home/pi/
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
