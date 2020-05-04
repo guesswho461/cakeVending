@@ -128,16 +128,20 @@ class ADPage extends Component {
             <Grid item xs={12}>
               <div align="center">
                 <ReactPlayer
-                  // url="https://media.w3.org/2010/05/sintel/trailer_hd.mp4"
-                  url={this.props.pageStatus.videoPlayList}
+                  url="https://media.w3.org/2010/05/sintel/trailer_hd.mp4"
+                  // url={this.props.pageStatus.videoPlayList}
+                  // url={[
+                  //   "https://www.youtube.com/watch?v=ysz5S6PUM-U",
+                  //   "https://www.youtube.com/watch?v=d46Azg3Pm4c",
+                  // ]}
                   playing={true}
                   loop={true}
-                  controls={false}
+                  // controls={false}
                   volume={0}
                   muted={true}
                   playsinline={true}
-                  width="70%"
-                  height="70%"
+                  // width="70%"
+                  // height="70%"
                 />
               </div>
             </Grid>

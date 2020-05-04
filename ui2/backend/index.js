@@ -123,7 +123,7 @@ app.post(
   }),
   (req, res) => {
     // exec("node /home/pi/recipe/original.js", function (err, stdout, stderr) {
-    exec("python /home/pi/recipe/test.py", function (err, stdout, stderr) {
+    exec("python /home/pi/recipe/dummy.py", function (err, stdout, stderr) {
       if (err !== null) {
         res.sendStatus(500);
         logger.error(stderr);
@@ -143,8 +143,8 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    const root = "/home/guesswho/Downloads/demoMP4";
-    // const root = "/home/pi/ad";
+    // const root = "/home/guesswho/Downloads/demoMP4";
+    const root = "/home/pi/ad";
     let ret = fs.readdirSync(root).map(function (file, index, array) {
       return { src: root + "/" + file, type: "video/mp4" };
     });
@@ -185,7 +185,9 @@ app.post(
   }),
   (req, res) => {
     mqttClient.publish("coin/cmd/enable", "true");
-    res.sendStatus(200);
+    setTimeout(() => {
+      res.sendStatus(200);
+    }, 5000);
   }
 );
 

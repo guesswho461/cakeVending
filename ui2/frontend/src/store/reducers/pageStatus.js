@@ -24,7 +24,10 @@ const initState = {
   takeCakeWarningDlgOpen: false,
   checkoutDone: false,
   makingProgress: 0,
-  videoPlayList: [],
+  videoPlayList: [
+    "/home/guesswho/Downloads/demoMP4/DLP_PART_2_768k.mp4",
+    "/home/guesswho/Downloads/demoMP4/P6090053.mp4",
+  ],
   checkoutDlgTitle: "plsInsertCoin",
 };
 
@@ -142,19 +145,10 @@ export default function reducer(state = initState, action) {
         makingProgress: action.payload,
       };
     case GET_VIDEO_PLAYLIST:
-      axios({
-        method: "get",
-        baseURL: backend + "/ad/playList",
-        headers: {
-          Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
-        },
-      }).then((res) => {
-        return {
-          ...state,
-          videoPlayList: res.data,
-        };
-      });
-    // return state;
+      return {
+        ...state,
+        // videoPlayList: action.payload,
+      };
     case SET_CHECKOUTDLG_TITLE:
       return {
         ...state,
@@ -240,8 +234,19 @@ export function setOriginalRecipeStart() {
 }
 
 export function getVideoPlayList() {
-  return {
-    type: GET_VIDEO_PLAYLIST,
+  return (dispatch) => {
+    axios({
+      method: "get",
+      baseURL: backend + "/ad/playList",
+      headers: {
+        Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+      },
+    }).then((res) => {
+      dispatch({
+        type: GET_VIDEO_PLAYLIST,
+        payload: res.data,
+      });
+    });
   };
 }
 
