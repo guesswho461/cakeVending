@@ -10,6 +10,7 @@ const SET_HEATINGUP_WARNING_DLG_CLOSE = "set/heatingupWarningDlg/close";
 const SET_MAKING_PROGRESS = "set/makingProgress";
 const GET_VIDEO_PLAYLIST = "get/videoPlayList";
 const SET_CHECKOUTDLG_TITLE = "set/checkoutDlg/title";
+const SET_RECIPE_PROGRESS_VISABLE = "set/recipe/progress/visable";
 
 const backend = "http://localhost:8081";
 
@@ -29,6 +30,7 @@ const initState = {
     "/home/guesswho/Downloads/demoMP4/P6090053.mp4",
   ],
   checkoutDlgTitle: "plsInsertCoin",
+  showRecipeProgress: false,
 };
 
 function checkOvenIsReady(tempature) {
@@ -128,6 +130,7 @@ export default function reducer(state = initState, action) {
           takeCakeWarningDlgOpen: true,
           makingProgress: 100,
           adPageTitle: "completeBake",
+          showRecipeProgress: false,
         };
       } else {
         return {
@@ -153,6 +156,11 @@ export default function reducer(state = initState, action) {
       return {
         ...state,
         checkoutDlgTitle: action.payload,
+      };
+    case SET_RECIPE_PROGRESS_VISABLE:
+      return {
+        ...state,
+        showRecipeProgress: true,
       };
   }
 }
@@ -217,20 +225,22 @@ export function setMakingProgress(data) {
 }
 
 export function setOriginalRecipeStart() {
-  return (dispatch) =>
-    axios({
-      method: "post",
-      baseURL: backend + "/recipe/start/original",
-      headers: {
-        Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
-      },
+  axios({
+    method: "post",
+    baseURL: backend + "/recipe/start/original",
+    headers: {
+      Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+    },
+  })
+    .then((res) => {
+      console.log(res);
     })
-      .then((res) => {
-        console.log(res);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    .catch((err) => {
+      console.log(err);
+    });
+  return {
+    type: SET_RECIPE_PROGRESS_VISABLE,
+  };
 }
 
 export function getVideoPlayList() {

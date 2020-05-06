@@ -30,6 +30,9 @@ const styles = (theme) => ({
   icon: {
     color: "rgba(255, 255, 255, 0.54)",
   },
+  gridTitle: {
+    height: 128,
+  },
 });
 
 class ItemPage extends Component {
@@ -51,15 +54,15 @@ class ItemPage extends Component {
               >
                 <img src={item.img} alt={<Translate value={item.title} />} />
                 <GridListTileBar
+                  className={classes.gridTitle}
                   title={
-                    <Typography variant="h5">
+                    <Typography variant="h3">
                       <Translate value={item.title} />
                     </Typography>
                   }
                   subtitle={
-                    <Typography variant="h6">
-                      <Translate value="cakeUnit" />{" "}
-                      <Translate value={item.priceStr} />
+                    <Typography variant="h4">
+                      <Translate value={item.subtitle} />
                     </Typography>
                   }
                 />

@@ -3,8 +3,8 @@ const translationsObject = {
     brandName: "cake vending",
     originalFlavorTitle: "original",
     originalFlavorContent: "good to eat",
-    originalFlavorPrice: "$1.99",
-    cakeUnit: "every package",
+    originalFlavorSubTitle: "6 cakes only $1.99",
+    originalFlavorPriceStr: "$1.99",
     itemPageTitle: "goods",
     usageGuidingPageTitle: "guiding",
     aboutUsPageTitle: "about us",
@@ -18,14 +18,14 @@ const translationsObject = {
     cakeTakeText: "please take the cake",
     startBake: "start to bake",
     completeBake: "bake complete",
-    plsPressSart: "please press start..."
+    plsPressSart: "please press start...",
   },
   tw: {
     brandName: "老闆不在雞蛋糕",
     originalFlavorTitle: "原味",
     originalFlavorContent: "超級好吃111111111111111111111111",
-    originalFlavorPrice: "$50",
-    cakeUnit: "每份",
+    originalFlavorSubTitle: "每份6顆$50",
+    originalFlavorPriceStr: "$50",
     itemPageTitle: "購買",
     usageGuidingPageTitle: "使用教學",
     aboutUsPageTitle: "關於",
@@ -39,8 +39,8 @@ const translationsObject = {
     cakeTakeText: "請取餐",
     startBake: "開始製作",
     completeBake: "完成製作",
-    plsPressSart: "請按開始製作..."
-  }
+    plsPressSart: "請按開始製作...",
+  },
 };
 
 export default translationsObject;

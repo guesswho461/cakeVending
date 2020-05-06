@@ -14,6 +14,7 @@
     "object.omit": "^3.0.0",
     "react": "^16.9.0",
     "react-circular-progressbar": "^2.0.3",
+    "react-countdown": "^2.2.1",
     "react-dom": "^16.9.0",
     "react-idle-timer": "^4.2.12",
     "react-player": "^1.15.2",

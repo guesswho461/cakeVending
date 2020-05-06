@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const version = "cakeVendingBackend v1.3";
+const version = "cakeVendingBackend v1.4";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -49,7 +49,13 @@ const httpsOptions = {
 
 const checkModuleAliveInterval = 10 * 60 * 1000; //ms
 const maxModuleDeadCnt = 0;
-const maxMachTemp = 70;
+const maxMachTemp = 70; //Celsius
+const bowlCntWarningLevel = 80; //greater means lower
+const bowlCntAlarmLevel = 100; //greater means lower
+const batterLevelWarningLevel = 40; //greater means lower
+const batterLevelAlarmLevel = 50; //greater means lower
+let maxFridgeTemp = 20; //Celsius
+const checkGateCmdDelay = 10 * 60 * 1000; //ms
 
 let bucketAliveMsg = "bucketAliveMsg";
 let lastBucketAliveMsg = "lastBucketAliveMsg";
@@ -165,7 +171,7 @@ app.post(
 );
 
 app.post(
-  "/machine/alive",
+  "/machine/echo",
   jwt({
     subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
     name: process.env.CAKE_ACCESS_TOKEN_NAME,
@@ -259,6 +265,14 @@ const postWebAPI = (url, payload) => {
     });
 };
 
+const postAlarm = (payload) => {
+  postWebAPI("/machine/alarm", payload);
+};
+
+const postWarning = (payload) => {
+  postWebAPI("/machine/warning", payload);
+};
+
 mqttClient.on("message", function (topic, message) {
   if (topic === "bucket/status/alive") {
     bucketAliveMsg = message.toString();
@@ -269,12 +283,48 @@ mqttClient.on("message", function (topic, message) {
   } else if (topic === "latch/status/alive") {
     latchAliveMsg = message.toString();
   } else if (topic === "bucket/status/machTemp") {
-    const macTempStr = message.toString();
-    if (parseFloat(macTempStr) >= maxMachTemp) {
-      postWebAPI("/machine/alarm", "machine temperature: " + macTempStr);
+    const macTemp = parseFloat(message.toString());
+    if (macTemp >= maxMachTemp) {
+      postAlarm("machine temperature: " + macTempStr);
     }
   } else if (topic === "bucket/status/alarm") {
-    postWebAPI("/machine/alarm", message.toString());
+    postAlarm(message.toString());
+  } else if (topic === "latch/status/bowl/cnt") {
+    const bowlCnt = parseInt(message.toString());
+    if (bowlCnt >= bowlCntWarningLevel) {
+      postWarning("bowl cnt too low");
+    } else if (bowlCnt >= bowlCntAlarmLevel) {
+      postAlarm("out of bowl");
+    }
+  } else if (topic === "bucket/status/resiVol") {
+    const batterLevel = parseFloat(message.toString());
+    if (batterLevel >= batterLevelWarningLevel) {
+      postWarning("batter vol too low");
+    } else if (batterLevel >= batterLevelAlarmLevel) {
+      postAlarm("out of batter");
+    }
+  } else if (topic === "bucket/status/refrigTemp") {
+    const fridgeTemp = parseFloat(message.toString());
+    if (fridgeTemp >= maxFridgeTemp) {
+      postWarning("firdge temperature to high");
+    }
+  } else if (topic === "bucket/cmd/refrigTemp") {
+    maxFridgeTemp = parseFloat(message.toString());
+  } else if (topic === "gate/cmd/open") {
+    let gateCmd = message.toString() === "true" ? true : false;
+    let checkGateCmdDelayObj;
+    if (gateCmd === true) {
+      if (checkGateCmdDelayObj) {
+        clearTimeout(checkGateCmdDelayObj);
+      }
+      checkGateCmdDelayObj = setTimeout(() => {
+        if (gateCmd === true) {
+          postAlarm("gate open too long");
+        }
+      }, checkGateCmdDelay);
+    } else {
+      clearTimeout(checkGateCmdDelayObj);
+    }
   }
 });
 
@@ -286,7 +336,7 @@ const checkModuleAlive = () => {
   }
   lastBucketAliveMsg = bucketAliveMsg;
   if (bucketDeadCnt > maxModuleDeadCnt) {
-    postWebAPI("/machine/alarm", "bucket is dead");
+    postAlarm("bucket is dead");
   }
 
   if (ovenAliveMsg === lastOvenAliveMsg) {
@@ -296,7 +346,7 @@ const checkModuleAlive = () => {
   }
   lastOvenAliveMsg = ovenAliveMsg;
   if (ovenDeadCnt > maxModuleDeadCnt) {
-    postWebAPI("/machine/alarm", "oven is dead");
+    postAlarm("oven is dead");
   }
 
   if (robotAliveMsg === lastRobotAliveMsg) {
@@ -306,7 +356,7 @@ const checkModuleAlive = () => {
   }
   lastRobotAliveMsg = robotAliveMsg;
   if (robotDeadCnt > maxModuleDeadCnt) {
-    postWebAPI("/machine/alarm", "robot is dead");
+    postAlarm("robot is dead");
   }
 
   if (latchAliveMsg === lastLatchAliveMsg) {
@@ -316,7 +366,7 @@ const checkModuleAlive = () => {
   }
   lastLatchAliveMsg = latchAliveMsg;
   if (latchDeadCnt > maxModuleDeadCnt) {
-    postWebAPI("/machine/alarm", "latch is dead");
+    postAlarm("latch is dead");
   }
 };
 setInterval(checkModuleAlive, checkModuleAliveInterval);
@@ -326,6 +376,8 @@ const mqttSubsTopis = [
   "oven/status/#",
   "robot/status/#",
   "latch/status/#",
+  "bucket/cmd/refrigTemp",
+  "gate/cmd/open",
 ];
 
 mqttClient.on("connect", function () {

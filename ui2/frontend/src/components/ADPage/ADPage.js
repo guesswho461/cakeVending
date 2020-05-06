@@ -115,10 +115,14 @@ class ADPage extends Component {
             // alignItems="center"
           >
             <Grid item xs={12}>
-              <BorderLinearProgress
-                variant="determinate"
-                value={this.props.pageStatus.makingProgress}
-              />
+              {this.props.pageStatus.showRecipeProgress ? (
+                <BorderLinearProgress
+                  variant="determinate"
+                  value={this.props.pageStatus.makingProgress}
+                />
+              ) : (
+                ""
+              )}
             </Grid>
             <Grid item xs={12}>
               <Typography variant="h2" align="center">
@@ -140,8 +144,8 @@ class ADPage extends Component {
                   volume={0}
                   muted={true}
                   playsinline={true}
-                  // width="70%"
-                  // height="70%"
+                  width="80%"
+                  height="80%"
                 />
               </div>
             </Grid>

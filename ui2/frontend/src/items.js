@@ -4,10 +4,11 @@ const items = [
   {
     img: [demoCake],
     title: "originalFlavorTitle",
+    subtitle: "originalFlavorSubTitle",
+    priceStr: "originalFlavorPriceStr",
     content: "originalFlavorContent",
-    priceStr: "originalFlavorPrice",
-    priceNum: 50
-  }
+    priceNum: 50,
+  },
 ];
 
 export default items;

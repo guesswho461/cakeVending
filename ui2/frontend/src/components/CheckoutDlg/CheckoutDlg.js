@@ -4,6 +4,7 @@ import { bindActionCreators } from "redux";
 import { Translate } from "react-redux-i18n";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import Countdown from "react-countdown";
 
 import { withStyles } from "@material-ui/core/styles";
 import Dialog from "@material-ui/core/Dialog";
@@ -30,6 +31,11 @@ class CheckoutDlg extends Component {
     super(props);
   }
 
+  startTheRecipe = () => {
+    this.props.setCheckoutDlgClose();
+    this.props.confirmAction();
+  };
+
   render() {
     const { classes, item, confirmAction } = this.props;
 
@@ -39,7 +45,11 @@ class CheckoutDlg extends Component {
         // maxWidth={"lg"}
         TransitionComponent={TransitionGrow}
         open={this.props.pageStatus.checkoutDlgOpen}
-        onClose={this.props.setCheckoutDlgClose}
+        onClose={() => {
+          if (this.props.pageStatus.coinValue <= 0) {
+            this.props.setCheckoutDlgClose();
+          }
+        }}
       >
         <DialogTitle>
           <Typography variant="h3" align="center">
@@ -102,9 +112,8 @@ class CheckoutDlg extends Component {
             // variant="contained"
             color="primary"
             size="large"
-            onClick={() => {
-              this.props.setCheckoutDlgClose();
-            }}
+            disabled={this.props.pageStatus.coinValue > 0}
+            onClick={this.props.setCheckoutDlgClose}
           >
             <Typography variant="h5">
               <Translate value="cancel" />
@@ -115,14 +124,20 @@ class CheckoutDlg extends Component {
             color="primary"
             size="large"
             disabled={this.props.pageStatus.coinValue < item.priceNum}
-            onClick={() => {
-              this.props.setCheckoutDlgClose();
-              confirmAction();
-            }}
+            onClick={this.startTheRecipe}
           >
             <Typography variant="h5">
               <Translate value="startBake" />
             </Typography>
+            {this.props.pageStatus.coinValue < item.priceNum ? (
+              ""
+            ) : (
+              <Countdown
+                date={Date.now() + 10000}
+                renderer={(props) => <div>({props.seconds})</div>}
+                onComplete={this.startTheRecipe}
+              />
+            )}
           </Button>
         </DialogActions>
       </Dialog>

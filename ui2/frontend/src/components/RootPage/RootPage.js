@@ -16,16 +16,16 @@ import {
   setADPageTitle,
   setPageSelected,
   setCheckoutDlgClose,
-  getVideoPlayList
+  getVideoPlayList,
 } from "../../store/reducers/pageStatus";
 import store from "../../store";
 
 const IDLE_TIME = 30; //sec.
 
-const styles = theme => ({
+const styles = (theme) => ({
   root: {
-    flexGrow: 1
-  }
+    flexGrow: 1,
+  },
 });
 
 class RootPage extends Component {
@@ -56,7 +56,7 @@ class RootPage extends Component {
     return (
       <div className={classes.root}>
         <IdleTimer
-          ref={ref => {
+          ref={(ref) => {
             this.idleTimer = ref;
           }}
           element={document}
@@ -100,24 +100,24 @@ class RootPage extends Component {
   }
 }
 
-const mqttTopicsSubscribeDispatch = function(topic, message, packet) {
+const mqttTopicsSubscribeDispatch = function (topic, message, packet) {
   store.dispatch(handleMQTTSubscribeTopics(topic, message));
 };
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   return {
-    pageStatus: state.pageStatus
+    pageStatus: state.pageStatus,
   };
 };
 
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       setHeadtingUpWarningDlgClose: () => setHeadtingUpWarningDlgClose(),
-      setADPageTitle: data => setADPageTitle(data),
-      setPageSelected: data => setPageSelected(data),
+      setADPageTitle: (data) => setADPageTitle(data),
+      setPageSelected: (data) => setPageSelected(data),
       setCheckoutDlgClose: () => setCheckoutDlgClose(),
-      getVideoPlayList: () => getVideoPlayList()
+      getVideoPlayList: () => getVideoPlayList(),
     },
     dispatch
   );
@@ -130,5 +130,5 @@ const mapDispatchToProps = dispatch => {
 
 export default subscribe({
   topic: "#",
-  dispatch: mqttTopicsSubscribeDispatch
+  dispatch: mqttTopicsSubscribeDispatch,
 })(connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(RootPage)));

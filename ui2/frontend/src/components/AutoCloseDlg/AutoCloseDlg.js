@@ -7,10 +7,16 @@ import { withStyles } from "@material-ui/core/styles";
 import Dialog from "@material-ui/core/Dialog";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import Typography from "@material-ui/core/Typography";
+import DialogContent from "@material-ui/core/DialogContent";
 
 import { TransitionSlideDown } from "../PageBase/PageBaseFunction";
 
-const styles = theme => ({});
+const styles = (theme) => ({
+  dialogPaper: {
+    minWidth: "50vh",
+    minHeight: "25vh",
+  },
+});
 
 class AutoCloseDlg extends Component {
   render() {
@@ -23,7 +29,8 @@ class AutoCloseDlg extends Component {
     return (
       <Dialog
         // fullWidth={true}
-        maxWidth={"lg"}
+        // maxWidth={"lg"}
+        classes={{ paper: classes.dialogPaper }}
         TransitionComponent={TransitionSlideDown}
         open={openState}
         onClose={closeAction}
@@ -38,11 +45,11 @@ class AutoCloseDlg extends Component {
   }
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   return {};
 };
 
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators({}, dispatch);
 };
 
