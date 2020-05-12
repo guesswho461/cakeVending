@@ -18,23 +18,22 @@ import {
   setADPageTitle,
   coinValueDec,
   setPageSelected,
-  setMakingProgress
+  setMakingProgress,
 } from "../../store/reducers/pageStatus";
 
-const styles = theme => ({
+const styles = (theme) => ({
   root: {
-    flexGrow: 1
+    flexGrow: 1,
   },
   tabs: {
-    borderRight: `1px solid ${theme.palette.divider}`
+    borderRight: `1px solid ${theme.palette.divider}`,
   },
   content: {
     paddingTop: "5vh",
-    // paddingBottom: "15vh"
-    backgroundColor: theme.palette.background.paper,
+    paddingBottom: "5vh",
     display: "flex",
-    height: "80vh"
-  }
+    height: "80vh",
+  },
 });
 
 class MainPage extends Component {
@@ -45,7 +44,7 @@ class MainPage extends Component {
   }
 
   state = {
-    tabIdx: 0
+    tabIdx: 0,
   };
 
   tabTitle(child) {
@@ -54,7 +53,7 @@ class MainPage extends Component {
 
   handleChange(event, newTabIdx) {
     this.setState({
-      tabIdx: newTabIdx
+      tabIdx: newTabIdx,
     });
   }
 
@@ -107,18 +106,18 @@ class MainPage extends Component {
   }
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   return {};
 };
 
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       setOriginalRecipeStart: () => setOriginalRecipeStart(),
-      setADPageTitle: data => setADPageTitle(data),
-      setPageSelected: data => setPageSelected(data),
-      coinValueDec: data => coinValueDec(data),
-      setMakingProgress: data => setMakingProgress(data)
+      setADPageTitle: (data) => setADPageTitle(data),
+      setPageSelected: (data) => setPageSelected(data),
+      coinValueDec: (data) => coinValueDec(data),
+      setMakingProgress: (data) => setMakingProgress(data),
     },
     dispatch
   );

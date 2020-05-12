@@ -27,9 +27,6 @@ const styles = (theme) => ({
   gridList: {
     width: "100vh",
   },
-  icon: {
-    color: "rgba(255, 255, 255, 0.54)",
-  },
   gridTitle: {
     height: 128,
   },
@@ -43,14 +40,13 @@ class ItemPage extends Component {
         <GridList cellHeight={girdCellHeight} className={classes.gridList}>
           {items.map((item) => (
             <GridListTile key={item.img}>
-              {/* <Button> */}
               <CardActionArea
                 className={classes.item}
                 onClick={() => {
                   this.props.setCheckoutDlgOpen();
                 }}
-                // disableRipple={true}
-                // disableTouchRipple={true}
+                disableRipple={true}
+                disableTouchRipple={true}
               >
                 <img src={item.img} alt={<Translate value={item.title} />} />
                 <GridListTileBar

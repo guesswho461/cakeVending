@@ -6,42 +6,37 @@ import ReactPlayer from "react-player";
 
 import { withStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
-import Grid from "@material-ui/core/Grid";
-import Button from "@material-ui/core/Button";
 import LinearProgress from "@material-ui/core/LinearProgress";
+import CardActionArea from "@material-ui/core/CardActionArea";
+
+import "./adpage.css";
 
 import {
   setPageSelected,
   setHeadtingUpWarningDlgOpen,
   setMakingProgress,
 } from "../../store/reducers/pageStatus";
-import { TransitionSlideDown } from "../PageBase/PageBaseFunction";
 
 const BorderLinearProgress = withStyles({
   root: {
     height: 20,
-    // backgroundColor: lighten('#ff6c5c', 0.5),
+    backgroundColor: process.env.REACT_APP_YELLOW,
   },
-  // bar: {
-  //   borderRadius: 20,
-  //   backgroundColor: '#ff6c5c',
-  // },
+  bar: {
+    borderRadius: 20,
+    backgroundColor: process.env.REACT_APP_LIGHT_BLUE,
+  },
 })(LinearProgress);
 
 const styles = (theme) => ({
   root: {
     flexGrow: 1,
+    height: "100vh",
+    backgroundColor: process.env.REACT_APP_YELLOW,
   },
-  button: {
-    "&$buttonDisabled": {
-      color: theme.palette.grey[900],
-    },
-    flexGrow: 1,
-  },
-  buttonDisabled: {},
 });
 
-const TOTAL_MAKING_TIME = 0.5; //mins
+const TOTAL_MAKING_TIME = 3.5; //mins
 const MAX_MAKING_PROGRESS = 95;
 const MAKING_PROGRESS_STEP = 1;
 const MAKING_TICK_TIME =
@@ -95,63 +90,43 @@ class ADPage extends Component {
     const { classes } = this.props;
 
     return (
-      <div className={classes.root}>
-        <Button
-          onClick={() => {
-            if (this.props.pageStatus.ovenIsReady) {
-              this.props.setPageSelected("main");
-            } else {
-              this.props.setHeadtingUpWarningDlgOpen();
-            }
-          }}
-          disabled={this.props.pageStatus.checkoutDone}
-          classes={{ root: classes.button, disabled: classes.buttonDisabled }}
-        >
-          <Grid
-            container
-            spacing={2}
-            // direction="row"
-            // justify="space-between"
-            // alignItems="center"
-          >
-            <Grid item xs={12}>
-              {this.props.pageStatus.showRecipeProgress ? (
-                <BorderLinearProgress
-                  variant="determinate"
-                  value={this.props.pageStatus.makingProgress}
-                />
-              ) : (
-                ""
-              )}
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="h2" align="center">
-                <Translate value={this.props.pageStatus.adPageTitle} />
-              </Typography>
-            </Grid>
-            <Grid item xs={12}>
-              <div align="center">
-                <ReactPlayer
-                  url="https://media.w3.org/2010/05/sintel/trailer_hd.mp4"
-                  // url={this.props.pageStatus.videoPlayList}
-                  // url={[
-                  //   "https://www.youtube.com/watch?v=ysz5S6PUM-U",
-                  //   "https://www.youtube.com/watch?v=d46Azg3Pm4c",
-                  // ]}
-                  playing={true}
-                  loop={true}
-                  // controls={false}
-                  volume={0}
-                  muted={true}
-                  playsinline={true}
-                  width="80%"
-                  height="80%"
-                />
-              </div>
-            </Grid>
-          </Grid>
-        </Button>
-      </div>
+      <CardActionArea
+        disableRipple={true}
+        disableTouchRipple={true}
+        onClick={() => {
+          if (this.props.pageStatus.ovenIsReady) {
+            this.props.setPageSelected("main");
+          } else {
+            this.props.setHeadtingUpWarningDlgOpen();
+          }
+        }}
+        disabled={this.props.pageStatus.checkoutDone}
+      >
+        <div className={classes.root}>
+          <BorderLinearProgress
+            variant="determinate"
+            value={this.props.pageStatus.makingProgress}
+          />
+          <Typography variant="h2" align="center">
+            <Translate value={this.props.pageStatus.adPageTitle} />
+          </Typography>
+          <div className="player-wrapper">
+            <ReactPlayer
+              className="react-player"
+              url="https://www.youtube.com/watch?v=ysz5S6PUM-U"
+              // url="https://media.w3.org/2010/05/sintel/trailer_hd.mp4"
+              width="100%"
+              height="100%"
+              playing={true}
+              loop={true}
+              volume={0}
+              muted={true}
+              playsinline={true}
+              controls={false}
+            />
+          </div>
+        </div>
+      </CardActionArea>
     );
   }
 }

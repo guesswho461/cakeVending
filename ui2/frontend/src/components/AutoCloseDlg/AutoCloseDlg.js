@@ -7,14 +7,15 @@ import { withStyles } from "@material-ui/core/styles";
 import Dialog from "@material-ui/core/Dialog";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import Typography from "@material-ui/core/Typography";
-import DialogContent from "@material-ui/core/DialogContent";
 
 import { TransitionSlideDown } from "../PageBase/PageBaseFunction";
 
 const styles = (theme) => ({
-  dialogPaper: {
+  dlgPaper: {
     minWidth: "50vh",
     minHeight: "25vh",
+    paddingTop: "10vh",
+    backgroundColor: process.env.REACT_APP_LIGHT_YELLOW,
   },
 });
 
@@ -30,13 +31,13 @@ class AutoCloseDlg extends Component {
       <Dialog
         // fullWidth={true}
         // maxWidth={"lg"}
-        classes={{ paper: classes.dialogPaper }}
+        classes={{ paper: classes.dlgPaper }}
         TransitionComponent={TransitionSlideDown}
         open={openState}
         onClose={closeAction}
       >
         <DialogTitle>
-          <Typography variant="h2" align="center">
+          <Typography variant="h1" align="center">
             <Translate value={title} />
           </Typography>
         </DialogTitle>

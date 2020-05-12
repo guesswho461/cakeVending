@@ -4,16 +4,15 @@ import { bindActionCreators } from "redux";
 
 import { withStyles } from "@material-ui/core/styles";
 
-import Header from "../components/Header";
-
-const styles = theme => ({
+const styles = (theme) => ({
   root: {
-    flexGrow: 1
+    flexGrow: 1,
+    backgroundColor: process.env.REACT_APP_LIGHT_YELLOW,
   },
   content: {
-    paddingTop: "5vh"
+    // paddingTop: "5vh",
     // paddingBottom: "15vh"
-  }
+  },
 });
 
 class Home extends Component {
@@ -22,7 +21,6 @@ class Home extends Component {
     return (
       <Fragment>
         <div className={classes.root}>
-          <Header />
           <main className={classes.content}>{children}</main>
         </div>
       </Fragment>
@@ -30,11 +28,11 @@ class Home extends Component {
   }
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   return {};
 };
 
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return bindActionCreators({}, dispatch);
 };
 

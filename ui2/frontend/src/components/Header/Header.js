@@ -4,7 +4,6 @@ import { bindActionCreators } from "redux";
 import { Translate, Localize } from "react-redux-i18n";
 
 import { withStyles } from "@material-ui/core/styles";
-import { spacing } from "@material-ui/system";
 import AppBar from "@material-ui/core/AppBar";
 import Typography from "@material-ui/core/Typography";
 import Toolbar from "@material-ui/core/Toolbar";
