@@ -165,7 +165,7 @@ gpio.setup(coinEnablePinIdx, gpio.DIR_OUT, function (err) {
   gpio.write(coinEnablePinIdx, false);
 });
 gpio.setup(kanbanEnablePinIdx, gpio.DIR_OUT, function (err) {
-  gpio.write(kanbanEnablePinIdx, false);
+  gpio.write(kanbanEnablePinIdx, true);
 });
 gpio.setup(coinPinIdx, gpio.DIR_IN, gpio.EDGE_RISING);
 gpio.setup(gateLimitPinIdx, gpio.DIR_IN, gpio.EDGE_RISING, checkGateAndClose);

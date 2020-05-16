@@ -14,8 +14,12 @@ const styles = (theme) => ({
   dlgPaper: {
     minWidth: "50vh",
     minHeight: "25vh",
-    paddingTop: "10vh",
+    paddingTop: "5vh",
     backgroundColor: process.env.REACT_APP_LIGHT_YELLOW,
+  },
+  dlg: {
+    width: 480,
+    height: 100,
   },
 });
 
@@ -36,11 +40,13 @@ class AutoCloseDlg extends Component {
         open={openState}
         onClose={closeAction}
       >
-        <DialogTitle>
-          <Typography variant="h1" align="center">
-            <Translate value={title} />
-          </Typography>
-        </DialogTitle>
+        <div className={classes.dlg}>
+          <DialogTitle>
+            <Typography variant="h1" align="center">
+              <Translate value={title} />
+            </Typography>
+          </DialogTitle>
+        </div>
       </Dialog>
     );
   }

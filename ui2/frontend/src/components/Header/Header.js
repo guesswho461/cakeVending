@@ -19,6 +19,7 @@ const styles = (theme) => ({
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
+    // fontWeight: "fontWeightBold",
   },
 });
 
@@ -35,7 +36,9 @@ class Header extends Component {
           <Box p={2}>
             <Toolbar>
               <Typography variant="h2" className={classes.title}>
-                <Translate value="brandName" />
+                <Box fontWeight="fontWeightBold">
+                  <Translate value="brandName" />
+                </Box>
               </Typography>
               <Typography variant="h4">
                 <Localize value={Date()} dateFormat="date" />

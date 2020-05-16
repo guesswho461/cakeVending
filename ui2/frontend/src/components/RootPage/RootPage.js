@@ -10,6 +10,8 @@ import Slide from "@material-ui/core/Slide";
 import MainPage from "../MainPage";
 import ADPage from "../ADPage";
 import AutoCloseDlg from "../AutoCloseDlg";
+import MaintainPage from "../MaintainPage";
+
 import {
   setHeadtingUpWarningDlgClose,
   handleMQTTSubscribeTopics,
@@ -95,6 +97,16 @@ class RootPage extends Component {
           delay={0}
           openState={this.props.pageStatus.takeCakeWarningDlgOpen}
         />
+        <Slide
+          direction="down"
+          in={this.props.pageStatus.selectedPage === "maintain"}
+          mountOnEnter
+          unmountOnExit
+        >
+          <div>
+            <MaintainPage />
+          </div>
+        </Slide>
       </div>
     );
   }

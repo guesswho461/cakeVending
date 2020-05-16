@@ -10,3 +10,5 @@ yarn.lock*
 *.pem
 *.csr
 *.srl
+*.img
+*.mp4

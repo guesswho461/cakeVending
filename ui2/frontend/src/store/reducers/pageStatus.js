@@ -46,6 +46,33 @@ function incTheCoinValue(coinValue) {
   return coinValue + 10;
 }
 
+function post(url) {
+  axios({
+    method: "post",
+    baseURL: backend + url,
+    headers: {
+      Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+    },
+  })
+    .then((res) => {
+      console.log(res);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+}
+
+function checkOvenTemperatureCmd(data) {
+  const temperatureCmd = parseInt(data, 10);
+  if (temperatureCmd <= 30) {
+    post("/kanban/disable");
+    return "maintain";
+  } else {
+    post("/kanban/enable");
+    return "ad";
+  }
+}
+
 export default function reducer(state = initState, action) {
   switch (action.type) {
     default:
@@ -62,38 +89,14 @@ export default function reducer(state = initState, action) {
         selectedPage: action.payload,
       };
     case OPEN_CHECKOUT_DLG:
-      axios({
-        method: "post",
-        baseURL: backend + "/coin/enable",
-        headers: {
-          Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
-        },
-      })
-        .then((res) => {
-          console.log(res);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+      post("/coin/enable");
       return {
         ...state,
         checkoutDlgOpen: true,
         checkoutDone: false,
       };
     case CLOSE_CHECKOUT_DLG:
-      axios({
-        method: "post",
-        baseURL: backend + "/coin/disable",
-        headers: {
-          Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
-        },
-      })
-        .then((res) => {
-          console.log(res);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+      post("/coin/disable");
       return {
         ...state,
         checkoutDlgOpen: false,
@@ -162,6 +165,11 @@ export default function reducer(state = initState, action) {
         ...state,
         showRecipeProgress: true,
       };
+    case "oven/cmd/temperature":
+      return {
+        ...state,
+        selectedPage: checkOvenTemperatureCmd(action.payload.toString()),
+      };
   }
 }
 
@@ -225,19 +233,7 @@ export function setMakingProgress(data) {
 }
 
 export function setOriginalRecipeStart() {
-  axios({
-    method: "post",
-    baseURL: backend + "/recipe/start/original",
-    headers: {
-      Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
-    },
-  })
-    .then((res) => {
-      console.log(res);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+  post("/recipe/start/original");
   return {
     type: SET_RECIPE_PROGRESS_VISABLE,
   };

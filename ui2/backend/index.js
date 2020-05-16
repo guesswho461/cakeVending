@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const version = "cakeVendingBackend v1.4";
+const version = "cakeVendingBackend v1.6";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -35,6 +35,8 @@ const jwt = require("express-jwt");
 const sqlite3 = require("sqlite3").verbose();
 const os = require("os");
 const axios = require("axios");
+const util = require("util");
+const { stringify } = require("comment-json");
 
 const mqttOpt = {
   port: process.env.MACHINE_LOCAL_MQTT_BROKER_PORT,
@@ -50,10 +52,10 @@ const httpsOptions = {
 const checkModuleAliveInterval = 10 * 60 * 1000; //ms
 const maxModuleDeadCnt = 0;
 const maxMachTemp = 70; //Celsius
-const bowlCntWarningLevel = 80; //greater means lower
-const bowlCntAlarmLevel = 100; //greater means lower
-const batterLevelWarningLevel = 40; //greater means lower
-const batterLevelAlarmLevel = 50; //greater means lower
+const bowlCntWarningLevel = 60; //bowl count
+const bowlCntAlarmLevel = 40; //bowl count
+const batterVolWarningLevel = 14; //distance, greater means lower
+const batterVolAlarmLevel = 16; //distance, greater means lower
 let maxFridgeTemp = 20; //Celsius
 const checkGateCmdDelay = 10 * 60 * 1000; //ms
 
@@ -76,32 +78,81 @@ let latchDeadCnt = 0;
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
 const iNameList = os.networkInterfaces();
+const localIP = iNameList.tun0[0].address;
+
+const machineInfo = {
+  name: process.env.LOCALNAME,
+  ip: localIP,
+};
+
+const postWebAPI = (url, payload) => {
+  axios({
+    method: "post",
+    // baseURL: process.env.TELEGRAM_BOT_IP + url,
+    baseURL: "https://localhost:10010" + url,
+    headers: {
+      Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+      "content-type": "text/plain",
+    },
+    httpsAgent: new https.Agent({
+      rejectUnauthorized: false,
+    }),
+    data: payload,
+  })
+    .then((res) => {
+      logger.trace("POST " + url + " " + payload + " " + res.status);
+    })
+    .catch((err) => {
+      logger.error(err.message);
+    });
+};
 
 logger.info(version + " started");
+postWebAPI("/machine/online", stringify(machineInfo));
+
+const today = new Date();
+const tableName =
+  "[" +
+  today.getFullYear() +
+  "-" +
+  today.getMonth() +
+  "-" +
+  today.getDate() +
+  "]";
 
 let db = new sqlite3.Database("mydatebase.db", function (err) {
   if (err) throw err;
 });
 
-// db.serialize(function () {
-//   //db.run 如果 Staff 資料表不存在，那就建立 Staff 資料表
-//   db.run("CREATE TABLE IF NOT EXISTS  Stuff (thing TEXT)");
-//   let stmt = db.prepare("INSERT INTO Stuff VALUES (?)");
+db.serialize(function () {
+  const statement = util.format(
+    "CREATE TABLE IF NOT EXISTS %s (time TEXT PRIMARY KEY, sellCnt TEXT, batterVol TEXT, bowlCnt TEXT, fridgeTemp TEXT, macTemp TEXT)",
+    tableName
+  );
+  db.run(statement);
+});
 
-//   //寫進10筆資料
-//   for (var i = 0; i < 10; i++) {
-//     stmt.run("staff_number" + i);
-//   }
-
-//   stmt.finalize();
-
-//   db.each("SELECT rowid AS id, thing FROM Stuff", function (err, row) {
-//     //log 出所有的資料
-//     logger.trace(row.id + ": " + row.thing);
-//   });
-// });
-
-db.close();
+const setToDB = (
+  tableName,
+  date,
+  sellCnt,
+  batterVol,
+  bowlCnt,
+  fridgeTemp,
+  macTemp
+) => {
+  const statement = util.format(
+    "INSERT INTO %s VALUES (%d, %d, %s, %s, %s, %s)",
+    tableName,
+    date,
+    sellCnt,
+    batterVol,
+    bowlCnt,
+    fridgeTemp,
+    macTemp
+  );
+  db.run(statement);
+};
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -116,6 +167,15 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
+    setToDB(
+      tableName,
+      Date.now(),
+      1,
+      batterVolStr,
+      bowlCntStr,
+      fridgeTempStr,
+      macTempStr
+    );
     res.send(version);
   }
 );
@@ -128,6 +188,15 @@ app.post(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
+    setToDB(
+      tableName,
+      Date.now(),
+      1,
+      batterVolStr,
+      bowlCntStr,
+      fridgeTempStr,
+      macTempStr
+    );
     // exec("node /home/pi/recipe/original.js", function (err, stdout, stderr) {
     exec("python /home/pi/recipe/dummy.py", function (err, stdout, stderr) {
       if (err !== null) {
@@ -149,7 +218,7 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    // const root = "/home/guesswho/Downloads/demoMP4";
+    //const root = "C:/Users/guess/Downloads/demoMP4/";
     const root = "/home/pi/ad";
     let ret = fs.readdirSync(root).map(function (file, index, array) {
       return { src: root + "/" + file, type: "video/mp4" };
@@ -178,7 +247,7 @@ app.post(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    res.send(res.body);
+    res.send(req.body);
   }
 );
 
@@ -210,11 +279,40 @@ app.post(
   }
 );
 
-http.createServer(app).listen(process.env.MACHINE_BACKEND_PORT, () => {
-  logger.info(
-    version + " listening on port " + process.env.MACHINE_BACKEND_PORT
-  );
-});
+app.post(
+  "/kanban/enable",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    mqttClient.publish("kanban/cmd/enable", "true");
+    res.sendStatus(200);
+  }
+);
+
+app.post(
+  "/kanban/disable",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    mqttClient.publish("kanban/cmd/enable", "false");
+    res.sendStatus(200);
+  }
+);
+
+// http.createServer(app).listen(process.env.MACHINE_BACKEND_PORT, () => {
+//   logger.info(
+//     version + " listening on port " + process.env.MACHINE_BACKEND_PORT
+//   );
+// });
+
+// for test purpose so listening on all interface
+// for production should change to http <--> localhost, https <--> tun0
 
 // https
 //   .createServer(httpsOptions, app)
@@ -224,46 +322,28 @@ http.createServer(app).listen(process.env.MACHINE_BACKEND_PORT, () => {
 //     );
 //   });
 
-// http
-//   .createServer(app)
-//   .listen(process.env.MACHINE_BACKEND_PORT, "localhost", () => {
-//     logger.info(
-//       "localhost " +
-//         version +
-//         " listening on port " +
-//         process.env.MACHINE_BACKEND_PORT
-//     );
-//   });
+http
+  .createServer(app)
+  .listen(process.env.MACHINE_BACKEND_PORT, "localhost", () => {
+    logger.info(
+      "localhost " +
+        version +
+        " listening on port " +
+        process.env.MACHINE_BACKEND_PORT
+    );
+  });
 
-// https
-//   .createServer(httpsOptions, app)
-//   .listen(process.env.MACHINE_BACKEND_PORT, iNameList.tun0[0].address, () => {
-//     logger.info(
-//       iNameList.tun0[0].address +
-//         " " +
-//         version +
-//         " listening on port " +
-//         process.env.MACHINE_BACKEND_PORT
-//     );
-//   });
-
-const postWebAPI = (url, payload) => {
-  axios({
-    method: "post",
-    baseURL: process.env.TELEGRAM_BOT_IP + url,
-    headers: {
-      Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
-      "content-type": "text/plain",
-    },
-    data: payload,
-  })
-    .then((res) => {
-      logger.trace("POST " + url + " " + payload + " " + res.status);
-    })
-    .catch((err) => {
-      logger.error(err.message);
-    });
-};
+https
+  .createServer(httpsOptions, app)
+  .listen(process.env.MACHINE_BACKEND_PORT, localIP, () => {
+    logger.info(
+      localIP +
+        " " +
+        version +
+        " listening on port " +
+        process.env.MACHINE_BACKEND_PORT
+    );
+  });
 
 const postAlarm = (payload) => {
   postWebAPI("/machine/alarm", payload);
@@ -285,23 +365,23 @@ mqttClient.on("message", function (topic, message) {
   } else if (topic === "bucket/status/machTemp") {
     const macTemp = parseFloat(message.toString());
     if (macTemp >= maxMachTemp) {
-      postAlarm("machine temperature: " + macTempStr);
+      postAlarm("machine temperature too high");
     }
   } else if (topic === "bucket/status/alarm") {
     postAlarm(message.toString());
   } else if (topic === "latch/status/bowl/cnt") {
     const bowlCnt = parseInt(message.toString());
-    if (bowlCnt >= bowlCntWarningLevel) {
-      postWarning("bowl cnt too low");
-    } else if (bowlCnt >= bowlCntAlarmLevel) {
+    if (bowlCnt <= bowlCntAlarmLevel) {
       postAlarm("out of bowl");
+    } else if (bowlCnt <= bowlCntWarningLevel) {
+      postWarning("bowl cnt too low");
     }
   } else if (topic === "bucket/status/resiVol") {
-    const batterLevel = parseFloat(message.toString());
-    if (batterLevel >= batterLevelWarningLevel) {
-      postWarning("batter vol too low");
-    } else if (batterLevel >= batterLevelAlarmLevel) {
+    const batterVol = parseFloat(message.toString());
+    if (batterVol >= batterVolAlarmLevel) {
       postAlarm("out of batter");
+    } else if (batterVol >= batterVolWarningLevel) {
+      postWarning("batter vol too low");
     }
   } else if (topic === "bucket/status/refrigTemp") {
     const fridgeTemp = parseFloat(message.toString());

@@ -20,6 +20,7 @@ import {
   setPageSelected,
   setMakingProgress,
 } from "../../store/reducers/pageStatus";
+import AboutPage from "../AboutPage";
 
 const styles = (theme) => ({
   root: {
@@ -30,7 +31,7 @@ const styles = (theme) => ({
   },
   content: {
     paddingTop: "5vh",
-    paddingBottom: "5vh",
+    paddingBottom: "0.5vh",
     display: "flex",
     height: "80vh",
   },
@@ -87,6 +88,11 @@ class MainPage extends Component {
             {this.state.tabIdx === 0 && (
               <Box p={3}>
                 <ItemPage />
+              </Box>
+            )}
+            {this.state.tabIdx === 2 && (
+              <Box p={3}>
+                <AboutPage />
               </Box>
             )}
           </main>

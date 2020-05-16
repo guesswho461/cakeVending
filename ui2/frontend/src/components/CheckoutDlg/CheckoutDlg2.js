@@ -25,6 +25,7 @@ const styles = (theme) => ({
   },
   dlg: {
     backgroundColor: process.env.REACT_APP_LIGHT_YELLOW,
+    width: 480,
   },
 });
 
@@ -64,44 +65,58 @@ class CheckoutDlg extends Component {
             </Typography>
           </DialogTitle>
           <DialogContent dividers>
-            <Grid item xs={12} align="center">
-              <CircularProgressbar
-                value={this.props.pageStatus.coinValue}
-                maxValue={50}
-                text={"$" + `${this.props.pageStatus.coinValue}`}
-                // strokeWidth={50}
-                styles={buildStyles({
-                  strokeLinecap: "butt",
-                  textSize: "28px",
-                  pathTransitionDuration: 0.5,
-                  pathColor: process.env.REACT_APP_LIGHT_BLUE,
-                  textColor: process.env.REACT_APP_LIGHT_BLUE,
-                  trailColor: process.env.REACT_APP_LIGHT_YELLOW,
-                })}
-              />
+            <Grid
+              container
+              direction="row"
+              justify="center"
+              alignItems="center"
+            >
+              <Grid item xs={6} align="center">
+                <CircularProgressbar
+                  value={this.props.pageStatus.coinValue}
+                  maxValue={50}
+                  text={"$" + `${this.props.pageStatus.coinValue}`}
+                  // strokeWidth={50}
+                  styles={buildStyles({
+                    strokeLinecap: "butt",
+                    textSize: "28px",
+                    pathTransitionDuration: 0.5,
+                    pathColor: process.env.REACT_APP_LIGHT_BLUE,
+                    textColor: process.env.REACT_APP_LIGHT_BLUE,
+                    trailColor: process.env.REACT_APP_LIGHT_YELLOW,
+                  })}
+                />
+              </Grid>
             </Grid>
             <Grid
               container
-              spacing={2}
+              spacing={1}
               direction="row"
               justify="space-between"
-              alignItems="flex-start"
+              alignItems="center"
             >
-              <Grid item xs={9}>
+              <Grid item xs>
                 <Typography variant="h4">
                   <Translate value={item.title} />
                 </Typography>
               </Grid>
-              <Grid item xs>
-                <Typography variant="h5">
+              <Grid item xs={3}>
+                <Typography variant="h4">
                   <Translate value={item.priceStr} />
                 </Typography>
               </Grid>
             </Grid>
-            <Grid item xs>
-              <Typography variant="h6">
-                <Translate value={item.content} />
-              </Typography>
+            <Grid
+              container
+              direction="row"
+              justify="center"
+              alignItems="center"
+            >
+              <Grid item xs>
+                <Typography variant="h6">
+                  <Translate value={item.content} />
+                </Typography>
+              </Grid>
             </Grid>
           </DialogContent>
           <DialogActions>
@@ -127,7 +142,7 @@ class CheckoutDlg extends Component {
                 <Translate value="startBake" />
               </Typography>
               {this.props.pageStatus.coinValue < item.priceNum ? (
-                ""
+                "(10)"
               ) : (
                 <Countdown
                   date={Date.now() + 10000}

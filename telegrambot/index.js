@@ -2,7 +2,27 @@
 //todo: polling all machines's alive
 //todo: save all machines's ip address as a list
 
-const version = "cakeVendingServer v1.0";
+const version = "cakeVendingBot v1.1";
+
+const log4js = require("log4js");
+log4js.configure({
+  appenders: {
+    file: {
+      type: "dateFile",
+      filename: "log/cakeVendingBot.log",
+      maxLogSize: 1000000, // 1 MB
+      backups: 5,
+      category: "normal",
+    },
+    out: {
+      type: "stdout",
+    },
+  },
+  categories: {
+    default: { appenders: ["file", "out"], level: "trace" },
+  },
+});
+const logger = log4js.getLogger("cake");
 
 const express = require("express");
 const app = express();
@@ -16,16 +36,21 @@ const axios = require("axios");
 const TelegramBot = require("node-telegram-bot-api");
 const jwt = require("express-jwt");
 require("dotenv").config();
+const { parse } = require("comment-json");
+const HashMap = require("hashmap");
+const util = require("util");
 
 const httpsOptions = {
-  key: fs.readFileSync("./ssl_files/server-key.pem"),
+  key: fs.readFileSync("./ssl_files/server_private_key.pem"),
   ca: [fs.readFileSync("./ssl_files/cert.pem")],
-  cert: fs.readFileSync("./ssl_files/server-cert.pem"),
+  cert: fs.readFileSync("./ssl_files/server_cert.pem"),
 };
 
 const bot = new TelegramBot(process.env.TELEGRAM_ACCESS_TOKEN, {
   polling: true,
 });
+
+let machineMap = new HashMap();
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -81,26 +106,104 @@ app.post(
   }
 );
 
+app.post(
+  "/machine/online",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    const machineInfo = parse(req.body);
+    if (machineMap.has(machineInfo.ip)) {
+      machineMap.delete(machineMap);
+    }
+    machineMap.set(machineInfo.ip, machineInfo);
+    bot.sendMessage(
+      process.env.TELEGRAM_CHAT_ID,
+      appendPrefix(req, "ONLINE", machineInfo.name + ": " + machineInfo.ip)
+    );
+    res.sendStatus(200);
+  }
+);
 const PORT = process.env.PORT || process.env.SERVER_PORT;
-http.createServer(app).listen(PORT, () => {
-  console.log(version + " listening on port " + PORT);
-});
-
-// https.createServer(httpsOptions, app).listen(PORT, () => {
+// http.createServer(app).listen(PORT, () => {
 //   console.log(version + " listening on port " + PORT);
 // });
 
+https.createServer(httpsOptions, app).listen(PORT, () => {
+  console.log(version + " listening on port " + PORT);
+});
+
 // Matches "/echo [whatever]"
 bot.onText(/\/echo (.+)/, (msg, match) => {
-  // 'msg' is the received Message from Telegram
-  // 'match' is the result of executing the regexp above on the text content
-  // of the message
-
   const chatId = msg.chat.id;
-  const resp = match[1]; // the captured "whatever"
-
-  // send back the matched "whatever" to the chat
+  const resp = match[1];
   bot.sendMessage(chatId, resp);
+});
+
+const postWebAPI = (ip, url, payload) => {
+  return new Promise((resolve, reject) => {
+    axios({
+      method: "post",
+      baseURL: "https://" + ip + ":" + process.env.MACHINE_BACKEND_PORT + url,
+      headers: {
+        Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+        "content-type": "text/plain",
+      },
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+      }),
+      data: payload,
+    })
+      .then((res) => {
+        logger.trace("POST " + url + " " + payload + " " + res.status);
+        return resolve(res.data);
+      })
+      .catch((err) => {
+        logger.error(err.message);
+        return reject(err.message);
+      });
+  });
+};
+
+const cakeBotAction = (words) => {
+  return new Promise((resolve, reject) => {
+    let resp;
+    if (words[0] === "list") {
+      resp = "machine list: [\n";
+      machineMap.forEach(function (value, key) {
+        resp += value.name + ": " + value.ip + "\n";
+      });
+      resp += "]";
+      return resolve(resp);
+    } else if (words[0] === "echo") {
+      postWebAPI(words[1], "/machine/echo", words[2]).then((msg) => {
+        return resolve(words[1] + ": " + msg);
+      });
+      // if (machineMap.has(words[1])) {
+      //   const machine = machineMap.get(words[1]);
+      //   postWebAPI(machine.ip, "/machine/echo", words[2]).then((msg) => {
+      //     return resolve(msg);
+      //   });
+      // } else {
+      //   resp = "sorry, " + words[1] + " is offline";
+      //   return resolve(resp);
+      // }
+    } else {
+      resp = "sorry, I dont understand";
+      return resolve(resp);
+    }
+  });
+};
+
+// Matches "/cake"
+bot.onText(/\/cake (.+)/, (msg, match) => {
+  const chatId = msg.chat.id;
+  const words = match[1].split(" ");
+  cakeBotAction(words).then(function (resp) {
+    bot.sendMessage(chatId, resp);
+  });
 });
 
 bot.sendMessage(process.env.TELEGRAM_CHAT_ID, version + " online");

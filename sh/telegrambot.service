@@ -1,0 +1,13 @@
+[Unit]
+Description=telegram bot
+After=openvpn@.service
+
+[Service]
+User=guesswho461
+Environment=NODE_ENV=production
+ExecStart=node /home/guesswho461/telegrambot/index.js
+WorkingDirectory=/home/guesswho461/telegrambot
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

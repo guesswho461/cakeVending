@@ -57,7 +57,7 @@ class ItemPage extends Component {
                     </Typography>
                   }
                   subtitle={
-                    <Typography variant="h4">
+                    <Typography variant="h5">
                       <Translate value={item.subtitle} />
                     </Typography>
                   }

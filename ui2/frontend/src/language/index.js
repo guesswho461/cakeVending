@@ -19,11 +19,12 @@ const translationsObject = {
     startBake: "start to bake",
     completeBake: "bake complete",
     plsPressSart: "please press start...",
+    maintainMsg: "sorry, we are out of service for a moment...",
   },
   tw: {
     brandName: "老闆不在雞蛋糕",
     originalFlavorTitle: "原味",
-    originalFlavorContent: "超級好吃111111111111111111111111",
+    originalFlavorContent: "超級好吃",
     originalFlavorSubTitle: "每份6顆$50",
     originalFlavorPriceStr: "$50",
     itemPageTitle: "購買",
@@ -40,6 +41,7 @@ const translationsObject = {
     startBake: "開始製作",
     completeBake: "完成製作",
     plsPressSart: "請按開始製作...",
+    maintainMsg: "維修中, 暫停使用",
   },
 };
 

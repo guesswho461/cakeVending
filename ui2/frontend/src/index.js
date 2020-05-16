@@ -10,16 +10,26 @@ import {
   syncTranslationWithStore,
 } from "react-redux-i18n";
 
+import { MuiThemeProvider, createMuiTheme } from "@material-ui/core/styles";
+
 import { Connector } from "mqtt-react";
 
 import store from "./store";
 import translationsObject from "./language";
 
+const THEME = createMuiTheme({
+  typography: {
+    fontFamily: `"Microsoft JhengHei", "Noto Sans TC", "Arial", sans-serif`,
+  },
+});
+
 ReactDOM.render(
   <Connector mqttProps={"ws://" + window.location.hostname + ":8000"}>
-    <Provider store={store}>
-      <App />
-    </Provider>
+    <MuiThemeProvider theme={THEME}>
+      <Provider store={store}>
+        <App />
+      </Provider>
+    </MuiThemeProvider>
   </Connector>,
   document.getElementById("root")
 );
