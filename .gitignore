@@ -12,3 +12,4 @@ yarn.lock*
 *.srl
 *.img
 *.mp4
+*.db

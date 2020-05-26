@@ -1,8 +1,6 @@
 //todo: shutdown
-//todo: polling all machines's alive
-//todo: save all machines's ip address as a list
 
-const version = "cakeVendingBot v1.1";
+const version = "cakeVendingBot v1.10";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -107,6 +105,22 @@ app.post(
 );
 
 app.post(
+  "/machine/info",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    bot.sendMessage(
+      process.env.TELEGRAM_CHAT_ID,
+      appendPrefix(req, "INFO", req.body)
+    );
+    res.sendStatus(200);
+  }
+);
+
+app.post(
   "/machine/online",
   jwt({
     subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
@@ -121,7 +135,11 @@ app.post(
     machineMap.set(machineInfo.ip, machineInfo);
     bot.sendMessage(
       process.env.TELEGRAM_CHAT_ID,
-      appendPrefix(req, "ONLINE", machineInfo.name + ": " + machineInfo.ip)
+      appendPrefix(
+        req,
+        "INFO",
+        machineInfo.name + ": " + machineInfo.ip + " is online"
+      )
     );
     res.sendStatus(200);
   }
@@ -167,7 +185,114 @@ const postWebAPI = (ip, url, payload) => {
   });
 };
 
-const cakeBotAction = (words) => {
+const getWebAPI = (ip, url) => {
+  return new Promise((resolve, reject) => {
+    axios({
+      method: "get",
+      baseURL: "https://" + ip + ":" + process.env.MACHINE_BACKEND_PORT + url,
+      headers: {
+        Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+        "content-type": "text/plain",
+      },
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+      }),
+    })
+      .then((res) => {
+        logger.trace("GET " + url + " " + res.status);
+        return resolve(res.data);
+      })
+      .catch((err) => {
+        logger.error(err.message);
+        return reject(err.message);
+      });
+  });
+};
+
+const getFileWebAPI = (ip, url) => {
+  return new Promise((resolve, reject) => {
+    axios({
+      method: "get",
+      baseURL: "https://" + ip + ":" + process.env.MACHINE_BACKEND_PORT + url,
+      headers: {
+        Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+      },
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+      }),
+      responseType: "stream",
+    })
+      .then((res) => {
+        console.log("GET " + url + " " + res.status);
+        return resolve(res.data);
+      })
+      .catch((err) => {
+        console.log(err.message);
+        return reject(err.message);
+      });
+  });
+};
+
+const findMachineAndPost = (words, url) => {
+  return new Promise((resolve, reject) => {
+    if (machineMap.has(words[1])) {
+      const machine = machineMap.get(words[1]);
+      let payload = "";
+      if (words.length >= 2) {
+        for (let i = 2; i < words.length; i++) {
+          payload = payload + " " + words[i];
+        }
+      }
+      postWebAPI(machine.ip, url, payload)
+        .then((msg) => {
+          return resolve(machine.ip + ": " + msg);
+        })
+        .catch((err) => {
+          return reject(err.message);
+        });
+    } else {
+      resp = "sorry, " + words[1] + " is offline";
+      return reject(resp);
+    }
+  });
+};
+
+const findMachineAndGet = (words, url) => {
+  return new Promise((resolve, reject) => {
+    if (machineMap.has(words[1])) {
+      const machine = machineMap.get(words[1]);
+      getWebAPI(machine.ip, url)
+        .then((msg) => {
+          return resolve(machine.ip + ": " + msg);
+        })
+        .catch((err) => {
+          return reject(err.message);
+        });
+    } else {
+      resp = "sorry, " + words[1] + " is offline";
+      return reject(resp);
+    }
+  });
+};
+
+const findMachineAndDownload = (words, url) => {
+  return new Promise((resolve, reject) => {
+    if (machineMap.has(words[1])) {
+      const machine = machineMap.get(words[1]);
+      getFileWebAPI(machine.ip, url)
+        .then((data) => {
+          return resolve(data);
+        })
+        .catch((err) => {
+          return reject(err.message);
+        });
+    } else {
+      resp = "sorry, " + words[1] + " is offline";
+      return reject(resp);
+    }
+  });
+};
+const cakeBotAction = (chatId, words) => {
   return new Promise((resolve, reject) => {
     let resp;
     if (words[0] === "list") {
@@ -178,21 +303,60 @@ const cakeBotAction = (words) => {
       resp += "]";
       return resolve(resp);
     } else if (words[0] === "echo") {
-      postWebAPI(words[1], "/machine/echo", words[2]).then((msg) => {
-        return resolve(words[1] + ": " + msg);
-      });
-      // if (machineMap.has(words[1])) {
-      //   const machine = machineMap.get(words[1]);
-      //   postWebAPI(machine.ip, "/machine/echo", words[2]).then((msg) => {
-      //     return resolve(msg);
-      //   });
-      // } else {
-      //   resp = "sorry, " + words[1] + " is offline";
-      //   return resolve(resp);
-      // }
+      // postWebAPI(words[1], "/machine/echo", words[2]).then((msg) => {
+      //   return resolve(words[1] + ": " + msg);
+      // });
+      findMachineAndPost(words, "/machine/echo")
+        .then((msg) => {
+          return resolve(msg);
+        })
+        .catch((err) => {
+          return reject(err);
+        });
+    } else if (words[0] === "disable") {
+      findMachineAndPost(words, "/machine/disable")
+        .then((msg) => {
+          return resolve(msg);
+        })
+        .catch((err) => {
+          return reject(err);
+        });
+    } else if (words[0] === "enable") {
+      findMachineAndPost(words, "/machine/enable")
+        .then((msg) => {
+          return resolve(msg);
+        })
+        .catch((err) => {
+          return reject(err);
+        });
+    } else if (words[0] === "turnover" && words[2] === "today") {
+      findMachineAndGet(words, "/turnover/today")
+        .then((msg) => {
+          return resolve(msg);
+        })
+        .catch((err) => {
+          return reject(err);
+        });
+    } else if (words[0] === "get" && words[2] === "db") {
+      findMachineAndDownload(words, "/db")
+        .then((data) => {
+          const filePath = "./machine.db";
+          data
+            .pipe(fs.createWriteStream(filePath))
+            .on("finish", () => {
+              bot.sendDocument(chatId, filePath);
+              return resolve("get db from " + words[1] + " done");
+            })
+            .on("error", (err) => {
+              return reject(err);
+            });
+        })
+        .catch((err) => {
+          return reject(err);
+        });
     } else {
       resp = "sorry, I dont understand";
-      return resolve(resp);
+      return reject(resp);
     }
   });
 };
@@ -201,9 +365,13 @@ const cakeBotAction = (words) => {
 bot.onText(/\/cake (.+)/, (msg, match) => {
   const chatId = msg.chat.id;
   const words = match[1].split(" ");
-  cakeBotAction(words).then(function (resp) {
-    bot.sendMessage(chatId, resp);
-  });
+  cakeBotAction(chatId, words)
+    .then((resp) => {
+      bot.sendMessage(chatId, resp);
+    })
+    .catch((err) => {
+      bot.sendMessage(chatId, err);
+    });
 });
 
 bot.sendMessage(process.env.TELEGRAM_CHAT_ID, version + " online");
