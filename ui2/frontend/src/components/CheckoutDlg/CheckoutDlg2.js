@@ -19,6 +19,10 @@ import { setCheckoutDlgClose } from "../../store/reducers/pageStatus";
 import demoCake from "../../imgs/demoCake.jpg";
 import { TransitionGrow } from "../PageBase/PageBaseFunction";
 
+import UIfx from "uifx";
+import pop from "../../sounds/pop.flac";
+const popSfx = new UIfx(pop);
+
 const styles = (theme) => ({
   image: {
     height: 200,
@@ -35,6 +39,7 @@ class CheckoutDlg extends Component {
   }
 
   startTheRecipe = () => {
+    popSfx.play();
     this.props.setCheckoutDlgClose();
     this.props.confirmAction();
   };

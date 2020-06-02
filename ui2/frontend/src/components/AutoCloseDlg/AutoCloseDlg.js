@@ -18,14 +18,14 @@ const styles = (theme) => ({
     backgroundColor: process.env.REACT_APP_LIGHT_YELLOW,
   },
   dlg: {
-    width: 480,
-    height: 100,
+    // width: 640,
+    // height: 100,
   },
 });
 
 class AutoCloseDlg extends Component {
   render() {
-    const { classes, title, delay, openState, closeAction } = this.props;
+    const { classes, title, delay, openState, closeAction, sfx } = this.props;
 
     if (delay > 0) {
       setTimeout(closeAction, delay * 1000);
@@ -39,6 +39,11 @@ class AutoCloseDlg extends Component {
         TransitionComponent={TransitionSlideDown}
         open={openState}
         onClose={closeAction}
+        onEntering={() => {
+          if (sfx) {
+            sfx.play();
+          }
+        }}
       >
         <div className={classes.dlg}>
           <DialogTitle>

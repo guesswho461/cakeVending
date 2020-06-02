@@ -17,6 +17,10 @@ import {
   setMakingProgress,
 } from "../../store/reducers/pageStatus";
 
+import UIfx from "uifx";
+import pop from "../../sounds/pop.flac";
+const popSfx = new UIfx(pop);
+
 const BorderLinearProgress = withStyles({
   root: {
     height: 20,
@@ -95,6 +99,7 @@ class ADPage extends Component {
         disableTouchRipple={true}
         onClick={() => {
           if (this.props.pageStatus.ovenIsReady) {
+            popSfx.play();
             this.props.setPageSelected("main");
           } else {
             this.props.setHeadtingUpWarningDlgOpen();

@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const version = "cakeVendingBackend v1.9";
+const version = "cakeVendingBackend v1.10";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -290,12 +290,14 @@ const machineDisable = () => {
   mqttClient.publish("oven/cmd/temperature", "9");
   postWebAPI("/machine/info", "is disable");
   canPost = false;
+  logger.info("machine disable");
 };
 
 const machineEnable = () => {
   mqttClient.publish("oven/cmd/temperature", "180");
   canPost = true;
   postWebAPI("/machine/info", "is enable");
+  logger.info("machine enable");
 };
 
 app.post(
@@ -433,10 +435,12 @@ https
 const postAlarm = (payload) => {
   machineDisable();
   postWebAPI("/machine/alarm", payload);
+  logger.error(payload);
 };
 
 const postWarning = (payload) => {
   postWebAPI("/machine/warning", payload);
+  logger.warn(payload);
 };
 
 mqttClient.on("message", function (topic, message) {
@@ -453,6 +457,7 @@ mqttClient.on("message", function (topic, message) {
     macTempStr = macTemp.toString();
     if (macTemp >= maxMachTemp) {
       postAlarm("machine temperature too high");
+      machineDisable();
     }
   } else if (topic === "bucket/status/alarm") {
     postAlarm(message.toString());

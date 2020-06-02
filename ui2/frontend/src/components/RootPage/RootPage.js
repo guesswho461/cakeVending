@@ -22,6 +22,10 @@ import {
 } from "../../store/reducers/pageStatus";
 import store from "../../store";
 
+import UIfx from "uifx";
+import ding from "../../sounds/ding.wav";
+const dingSfx = new UIfx(ding);
+
 const IDLE_TIME = 30; //sec.
 
 const styles = (theme) => ({
@@ -91,11 +95,13 @@ class RootPage extends Component {
           delay={10} //sec.
           openState={this.props.pageStatus.heatingUpWarningDlgOpen}
           closeAction={this.props.setHeadtingUpWarningDlgClose}
+          sfx={dingSfx}
         />
         <AutoCloseDlg
           title="cakeTakeText"
           delay={0}
           openState={this.props.pageStatus.takeCakeWarningDlgOpen}
+          sfx={dingSfx}
         />
         <Slide
           direction="down"

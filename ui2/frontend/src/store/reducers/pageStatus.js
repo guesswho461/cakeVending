@@ -1,5 +1,9 @@
 import axios from "axios";
 
+import UIfx from "uifx";
+import beep from "../../sounds/beep.wav";
+const beepSfx = new UIfx(beep);
+
 const SET_PAGE_SELECTED = "set/page/selected";
 const OPEN_CHECKOUT_DLG = "open/checkoutdlg";
 const CLOSE_CHECKOUT_DLG = "close/checkoutdlg";
@@ -146,6 +150,7 @@ export default function reducer(state = initState, action) {
         };
       }
     case SET_MAKING_PROGRESS:
+      beepSfx.play();
       return {
         ...state,
         makingProgress: action.payload,

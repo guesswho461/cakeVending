@@ -13,6 +13,10 @@ import GridListTileBar from "@material-ui/core/GridListTileBar";
 import items from "../../items";
 import { setCheckoutDlgOpen } from "../../store/reducers/pageStatus";
 
+import UIfx from "uifx";
+import pop from "../../sounds/pop.flac";
+const popSfx = new UIfx(pop);
+
 const girdCellHeight = 320;
 
 const styles = (theme) => ({
@@ -43,6 +47,7 @@ class ItemPage extends Component {
               <CardActionArea
                 className={classes.item}
                 onClick={() => {
+                  popSfx.play();
                   this.props.setCheckoutDlgOpen();
                 }}
                 disableRipple={true}
