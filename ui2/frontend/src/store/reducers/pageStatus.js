@@ -1,9 +1,5 @@
 import axios from "axios";
 
-import UIfx from "uifx";
-import beep from "../../sounds/beep.wav";
-const beepSfx = new UIfx(beep);
-
 const SET_PAGE_SELECTED = "set/page/selected";
 const OPEN_CHECKOUT_DLG = "open/checkoutdlg";
 const CLOSE_CHECKOUT_DLG = "close/checkoutdlg";
@@ -15,6 +11,7 @@ const SET_MAKING_PROGRESS = "set/makingProgress";
 const GET_VIDEO_PLAYLIST = "get/videoPlayList";
 const SET_CHECKOUTDLG_TITLE = "set/checkoutDlg/title";
 const SET_RECIPE_PROGRESS_VISABLE = "set/recipe/progress/visable";
+const GET_NEXT_VIDEO_URL = "get/next/video/url";
 
 const backend = "http://localhost:8081";
 
@@ -29,10 +26,8 @@ const initState = {
   takeCakeWarningDlgOpen: false,
   checkoutDone: false,
   makingProgress: 0,
-  videoPlayList: [
-    "/home/guesswho/Downloads/demoMP4/DLP_PART_2_768k.mp4",
-    "/home/guesswho/Downloads/demoMP4/P6090053.mp4",
-  ],
+  videoPlayList: [],
+  video: { idx: 0, url: "" },
   checkoutDlgTitle: "plsInsertCoin",
   showRecipeProgress: false,
 };
@@ -75,6 +70,14 @@ function checkOvenTemperatureCmd(data) {
     post("/kanban/enable");
     return "ad";
   }
+}
+
+function getNextVideoURLFromVideoList(list, idx) {
+  let newIdx = idx + 1;
+  if (newIdx >= list.length) {
+    newIdx = 0;
+  }
+  return { idx: newIdx, url: list[newIdx] };
 }
 
 export default function reducer(state = initState, action) {
@@ -150,7 +153,6 @@ export default function reducer(state = initState, action) {
         };
       }
     case SET_MAKING_PROGRESS:
-      beepSfx.play();
       return {
         ...state,
         makingProgress: action.payload,
@@ -158,7 +160,8 @@ export default function reducer(state = initState, action) {
     case GET_VIDEO_PLAYLIST:
       return {
         ...state,
-        // videoPlayList: action.payload,
+        videoPlayList: action.payload,
+        video: { idx: 0, url: action.payload[0] },
       };
     case SET_CHECKOUTDLG_TITLE:
       return {
@@ -174,6 +177,14 @@ export default function reducer(state = initState, action) {
       return {
         ...state,
         selectedPage: checkOvenTemperatureCmd(action.payload.toString()),
+      };
+    case GET_NEXT_VIDEO_URL:
+      return {
+        ...state,
+        video: getNextVideoURLFromVideoList(
+          state.videoPlayList,
+          state.video.idx
+        ),
       };
   }
 }
@@ -252,12 +263,16 @@ export function getVideoPlayList() {
       headers: {
         Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
       },
-    }).then((res) => {
-      dispatch({
-        type: GET_VIDEO_PLAYLIST,
-        payload: res.data,
+    })
+      .then((res) => {
+        dispatch({
+          type: GET_VIDEO_PLAYLIST,
+          payload: res.data,
+        });
+      })
+      .catch((err) => {
+        console.log(err.message);
       });
-    });
   };
 }
 
@@ -265,5 +280,11 @@ export function setCheckoutDlgTitle(data) {
   return {
     type: SET_CHECKOUTDLG_TITLE,
     payload: data,
+  };
+}
+
+export function getNextVideoURL() {
+  return {
+    type: GET_NEXT_VIDEO_URL,
   };
 }

@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const version = "cakeVendingBackend v1.10";
+const version = "cakeVendingBackend v1.11";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -88,12 +88,12 @@ let canPost = true;
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
 const iNameList = os.networkInterfaces();
-const localIP = iNameList.tun0[0].address;
-// const localIP = "localhost";
+// const localIP = iNameList.tun0[0].address;
+const localIP = "localhost";
 // const localIP = "172.27.240.59";
 
 const machineInfo = {
-  name: process.env.LOCALNAME,
+  name: process.env.LOCALNAME + " " + version,
   ip: localIP,
 };
 
@@ -234,10 +234,12 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    //const root = "C:/Users/guess/Downloads/demoMP4/";
-    const root = "/home/pi/ad";
+    const root = "C:\\codes\\cakeVending\\ui2\\frontend\\public\\video";
+    // const root = "/home/pi/ad";
     let ret = fs.readdirSync(root).map(function (file, index, array) {
-      return { src: root + "/" + file, type: "video/mp4" };
+      // return { src: root + "/" + file, type: "video/mp4" };
+      // return { src: ".\\video\\" + file, type: "video/mp4" };
+      return ".\\video\\" + file;
     });
     res.send(ret);
   }
@@ -409,38 +411,38 @@ app.post(
 //     );
 //   });
 
-// http
-//   .createServer(app)
-//   .listen(process.env.MACHINE_BACKEND_PORT, "localhost", () => {
-//     logger.info(
-//       "localhost " +
-//         version +
-//         " listening on port " +
-//         process.env.MACHINE_BACKEND_PORT
-//     );
-//   });
-
-https
-  .createServer(httpsOptions, app)
-  .listen(process.env.MACHINE_BACKEND_PORT, localIP, () => {
+http
+  .createServer(app)
+  .listen(process.env.MACHINE_BACKEND_PORT, "localhost", () => {
     logger.info(
-      localIP +
-        " " +
+      "localhost " +
         version +
         " listening on port " +
         process.env.MACHINE_BACKEND_PORT
     );
   });
 
+// https
+//   .createServer(httpsOptions, app)
+//   .listen(process.env.MACHINE_BACKEND_PORT, localIP, () => {
+//     logger.info(
+//       localIP +
+//         " " +
+//         version +
+//         " listening on port " +
+//         process.env.MACHINE_BACKEND_PORT
+//     );
+//   });
+
 const postAlarm = (payload) => {
-  machineDisable();
-  postWebAPI("/machine/alarm", payload);
   logger.error(payload);
+  postWebAPI("/machine/alarm", payload);
+  machineDisable();
 };
 
 const postWarning = (payload) => {
-  postWebAPI("/machine/warning", payload);
   logger.warn(payload);
+  postWebAPI("/machine/warning", payload);
 };
 
 mqttClient.on("message", function (topic, message) {
@@ -457,7 +459,6 @@ mqttClient.on("message", function (topic, message) {
     macTempStr = macTemp.toString();
     if (macTemp >= maxMachTemp) {
       postAlarm("machine temperature too high");
-      machineDisable();
     }
   } else if (topic === "bucket/status/alarm") {
     postAlarm(message.toString());

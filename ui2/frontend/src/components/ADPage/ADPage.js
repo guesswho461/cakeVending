@@ -15,6 +15,7 @@ import {
   setPageSelected,
   setHeadtingUpWarningDlgOpen,
   setMakingProgress,
+  getNextVideoURL,
 } from "../../store/reducers/pageStatus";
 
 import UIfx from "uifx";
@@ -118,18 +119,16 @@ class ADPage extends Component {
           <div className="player-wrapper">
             <ReactPlayer
               className="react-player"
-              url="https://www.youtube.com/watch?v=ysz5S6PUM-U"
-              // url="https://media.w3.org/2010/05/sintel/trailer_hd.mp4"
-              // url={myVideo}
-              // url={adList}
+              url={this.props.pageStatus.video.url}
               width="100%"
               height="100%"
               playing={true}
-              loop={true}
+              // loop={true}
               volume={0}
               muted={true}
               playsinline={true}
               controls={false}
+              onEnded={this.props.getNextVideoURL}
             />
           </div>
         </div>
@@ -150,6 +149,7 @@ const mapDispatchToProps = (dispatch) => {
       setPageSelected: (data) => setPageSelected(data),
       setHeadtingUpWarningDlgOpen: () => setHeadtingUpWarningDlgOpen(),
       setMakingProgress: (data) => setMakingProgress(data),
+      getNextVideoURL: () => getNextVideoURL(),
     },
     dispatch
   );
