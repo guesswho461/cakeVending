@@ -234,8 +234,8 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    const root = "C:\\codes\\cakeVending\\ui2\\frontend\\public\\video";
-    // const root = "/home/pi/ad";
+    // const root = "C:\\codes\\cakeVending\\ui2\\frontend\\public\\video";
+    const root = "/home/pi/ui2/frontend/build/video";
     let ret = fs.readdirSync(root).map(function (file, index, array) {
       // return { src: root + "/" + file, type: "video/mp4" };
       // return { src: ".\\video\\" + file, type: "video/mp4" };

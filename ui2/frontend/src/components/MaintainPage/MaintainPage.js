@@ -14,7 +14,7 @@ const styles = (theme) => ({
     flexGrow: 1,
   },
   box: {
-    height: "100vh",
+    height: "90vh",
     display: "flex",
     // flexDirection: "column",
     justifyContent: "center",
