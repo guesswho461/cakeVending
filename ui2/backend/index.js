@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const version = "cakeVendingBackend v1.11";
+const version = "cakeVendingBackend v1.15";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -88,13 +88,14 @@ let canPost = true;
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
 const iNameList = os.networkInterfaces();
-// const localIP = iNameList.tun0[0].address;
-const localIP = "localhost";
+const tun0IP = iNameList.tun0[0].address;
+// const localIP = "localhost";
 // const localIP = "172.27.240.59";
 
 const machineInfo = {
-  name: process.env.LOCALNAME + " " + version,
-  ip: localIP,
+  name: process.env.LOCALNAME,
+  ver: version,
+  ip: tun0IP,
 };
 
 const postWebAPI = (url, payload) => {
@@ -120,6 +121,10 @@ const postWebAPI = (url, payload) => {
         logger.error(err.message);
       });
   }
+};
+
+const postWebAPI2 = (url, payload) => {
+  return postWebAPI(url, process.env.LOCALNAME + " " + payload);
 };
 
 logger.info(version + " started");
@@ -182,15 +187,6 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    setToDB(
-      tableName,
-      Date.now(),
-      1,
-      batterVolStr,
-      bowlCntStr,
-      fridgeTempStr,
-      macTempStr
-    );
     res.send(version);
   }
 );
@@ -290,7 +286,7 @@ app.get(
 
 const machineDisable = () => {
   mqttClient.publish("oven/cmd/temperature", "9");
-  postWebAPI("/machine/info", "is disable");
+  postWebAPI2("/machine/info", "is disable");
   canPost = false;
   logger.info("machine disable");
 };
@@ -298,7 +294,7 @@ const machineDisable = () => {
 const machineEnable = () => {
   mqttClient.publish("oven/cmd/temperature", "180");
   canPost = true;
-  postWebAPI("/machine/info", "is enable");
+  postWebAPI2("/machine/info", "is enable");
   logger.info("machine enable");
 };
 
@@ -422,27 +418,27 @@ http
     );
   });
 
-// https
-//   .createServer(httpsOptions, app)
-//   .listen(process.env.MACHINE_BACKEND_PORT, localIP, () => {
-//     logger.info(
-//       localIP +
-//         " " +
-//         version +
-//         " listening on port " +
-//         process.env.MACHINE_BACKEND_PORT
-//     );
-//   });
+https
+  .createServer(httpsOptions, app)
+  .listen(process.env.MACHINE_BACKEND_PORT, tun0IP, () => {
+    logger.info(
+      tun0IP +
+        " " +
+        version +
+        " listening on port " +
+        process.env.MACHINE_BACKEND_PORT
+    );
+  });
 
 const postAlarm = (payload) => {
   logger.error(payload);
-  postWebAPI("/machine/alarm", payload);
+  postWebAPI2("/machine/alarm", payload);
   machineDisable();
 };
 
 const postWarning = (payload) => {
   logger.warn(payload);
-  postWebAPI("/machine/warning", payload);
+  postWebAPI2("/machine/warning", payload);
 };
 
 mqttClient.on("message", function (topic, message) {

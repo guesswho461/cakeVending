@@ -1,6 +1,6 @@
 //todo: shutdown
 
-const version = "cakeVendingBot v1.10";
+const version = "cakeVendingBot v1.13";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -129,16 +129,21 @@ app.post(
   }),
   (req, res) => {
     const machineInfo = parse(req.body);
-    if (machineMap.has(machineInfo.ip)) {
+    if (machineMap.has(machineInfo.name)) {
       machineMap.delete(machineMap);
     }
-    machineMap.set(machineInfo.ip, machineInfo);
+    machineMap.set(machineInfo.name, machineInfo);
     bot.sendMessage(
       process.env.TELEGRAM_CHAT_ID,
       appendPrefix(
         req,
         "INFO",
-        machineInfo.name + ": " + machineInfo.ip + " is online"
+        machineInfo.name +
+          " " +
+          machineInfo.ver +
+          ": " +
+          machineInfo.ip +
+          " is online"
       )
     );
     res.sendStatus(200);
@@ -245,7 +250,7 @@ const findMachineAndPost = (words, url) => {
       }
       postWebAPI(machine.ip, url, payload)
         .then((msg) => {
-          return resolve(machine.ip + ": " + msg);
+          return resolve(machine.name + ": " + msg);
         })
         .catch((err) => {
           return reject(err.message);
@@ -263,7 +268,7 @@ const findMachineAndGet = (words, url) => {
       const machine = machineMap.get(words[1]);
       getWebAPI(machine.ip, url)
         .then((msg) => {
-          return resolve(machine.ip + ": " + msg);
+          return resolve(machine.name + ": " + msg);
         })
         .catch((err) => {
           return reject(err.message);
@@ -298,7 +303,7 @@ const cakeBotAction = (chatId, words) => {
     if (words[0] === "list") {
       resp = "machine list: [\n";
       machineMap.forEach(function (value, key) {
-        resp += value.name + ": " + value.ip + "\n";
+        resp += value.name + "(" + value.ver + "): " + value.ip + "\n";
       });
       resp += "]";
       return resolve(resp);
