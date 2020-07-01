@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const version = "cakeVendingBackend v1.15";
+const version = "cakeVendingBackend v1.21";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -52,10 +52,10 @@ const httpsOptions = {
 const checkModuleAliveInterval = 10 * 60 * 1000; //ms
 const maxModuleDeadCnt = 0;
 const maxMachTemp = 70; //Celsius
-const bowlCntWarningLevel = 60; //bowl count
-const bowlCntAlarmLevel = 40; //bowl count
-const batterVolWarningLevel = 14; //distance, greater means lower
-const batterVolAlarmLevel = 16; //distance, greater means lower
+const bowlCntWarningLevel = 60; //distance, greater means lower
+const bowlCntAlarmLevel = 64; //distance, greater means lower
+const batterVolWarningLevel = 43; //distance, greater means lower
+const batterVolAlarmLevel = 45; //distance, greater means lower
 let maxFridgeTemp = 20; //Celsius
 const checkGateCmdDelay = 10 * 60 * 1000; //ms
 const unitPrice = 50; //NTD
@@ -84,6 +84,7 @@ let fridgeTempStr = "1";
 let macTempStr = "1";
 
 let canPost = true;
+let checkGateCmdDelayObj;
 
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
@@ -433,7 +434,7 @@ https
 const postAlarm = (payload) => {
   logger.error(payload);
   postWebAPI2("/machine/alarm", payload);
-  machineDisable();
+  //machineDisable();
 };
 
 const postWarning = (payload) => {
@@ -461,9 +462,9 @@ mqttClient.on("message", function (topic, message) {
   } else if (topic === "latch/status/bowl/cnt") {
     const bowlCnt = parseInt(message.toString());
     bowlCntStr = bowlCnt.toString();
-    if (bowlCnt <= bowlCntAlarmLevel) {
+    if (bowlCnt >= bowlCntAlarmLevel) {
       postAlarm("out of bowl");
-    } else if (bowlCnt <= bowlCntWarningLevel) {
+    } else if (bowlCnt >= bowlCntWarningLevel) {
       postWarning("bowl cnt too low");
     }
   } else if (topic === "bucket/status/resiVol") {
@@ -484,7 +485,6 @@ mqttClient.on("message", function (topic, message) {
     maxFridgeTemp = parseFloat(message.toString());
   } else if (topic === "gate/cmd/open") {
     let gateCmd = message.toString() === "true" ? true : false;
-    let checkGateCmdDelayObj;
     if (gateCmd === true) {
       if (checkGateCmdDelayObj) {
         clearTimeout(checkGateCmdDelayObj);

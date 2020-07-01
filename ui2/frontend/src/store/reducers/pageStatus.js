@@ -146,7 +146,7 @@ export default function reducer(state = initState, action) {
         return {
           ...state,
           takeCakeWarningDlgOpen: false,
-          selectedPage: "main",
+          // selectedPage: "main",
           checkoutDone: false,
           makingProgress: 0,
           adPageTitle: "touch2BuyText",

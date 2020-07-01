@@ -21,4 +21,6 @@ DISPLAY=:0.0 xset s off
 DISPLAY=:0.0 xset -dpms
 DISPLAY=:0.0 xset s noblank
 
+sudo amixer cset numid=1 100%
+
 exit 0

@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const version = "cakeVendingBackendGPIO v1.3";
+const version = "cakeVendingBackendGPIO v1.8";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -90,6 +90,8 @@ const closeTheGate = () => {
         gateIsOpen = false;
       })
     );
+    mqttClient.publish("latch/cmd/light/open", "false");
+    logger.debug("latch/cmd/light/open false");
   }
 };
 
@@ -138,25 +140,25 @@ gpio.on("change", function (channel, value) {
     }
   }
   if (channel === gateLimitPinIdx) {
-    if (value === gateLimitLastValue) {
-      if (gateLimitDebounceCnt < gateLimitDebounceLimit) {
-        gateLimitDebounceCnt = gateLimitDebounceCnt + 1;
-      } else {
-        gateLimitDebounceCnt = 0;
-        if (value === false) {
-          if (gateIsStop === false) {
-            gateMotor.stop();
-            gateMotor.disable();
-            gateIsStop = true;
-            logger.debug("gate stoped");
-          }
-        } else {
-          gateIsStop = false;
-        }
+    // if (value === gateLimitLastValue) {
+    //   if (gateLimitDebounceCnt < gateLimitDebounceLimit) {
+    //     gateLimitDebounceCnt = gateLimitDebounceCnt + 1;
+    //   } else {
+    //     gateLimitDebounceCnt = 0;
+    if (value === false) {
+      if (gateIsStop === false) {
+        gateMotor.stop();
+        gateMotor.disable();
+        gateIsStop = true;
+        logger.debug("gate stoped");
       }
     } else {
-      gateLimitDebounceCnt = 0;
+      gateIsStop = false;
     }
+    //   }
+    // } else {
+    //   gateLimitDebounceCnt = 0;
+    // }
     gateLimitLastValue = value;
   }
 });
@@ -210,7 +212,7 @@ mqttClient.on("message", function (topic, message) {
     }
   } else if (topic === "latch/status/bowl/ready") {
     if (message.toString() === "false") {
-      logger.trace("latch/status/bowl/ready true");
+      logger.trace("latch/status/bowl/ready false");
       if (gateIsOpen === true) {
         setTimeout(() => {
           mqttClient.publish("gate/cmd/open", "false");
