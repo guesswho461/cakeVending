@@ -52,11 +52,11 @@ class ADPage extends Component {
   constructor(props) {
     super(props);
     this.makingTimeTick = this.makingTimeTick.bind(this);
+    this.getMakingCountDown = this.getMakingCountDown.bind(this);
+    // this.secToMinAndSec = this.secToMinAndSec.bind(this);
   }
 
-  state = {
-    progress: 0,
-  };
+  state = {};
 
   makingProgressInc(prev, stepSize) {
     if (prev < MAX_MAKING_PROGRESS) {
@@ -91,6 +91,23 @@ class ADPage extends Component {
     clearInterval(this.makingTimerID);
   }
 
+  secToMinAndSec(timeInSec) {
+    let date = new Date(null);
+    date.setSeconds(timeInSec);
+    return date.getUTCMinutes() + ":" + date.getUTCSeconds();
+  }
+
+  getMakingCountDown() {
+    if (this.props.pageStatus.checkoutDone) {
+      return this.secToMinAndSec(
+        TOTAL_MAKING_TIME * 60 -
+          (this.props.pageStatus.makingProgress * MAKING_TICK_TIME) / 1000
+      );
+    } else {
+      return "";
+    }
+  }
+
   render() {
     const { classes } = this.props;
 
@@ -115,6 +132,17 @@ class ADPage extends Component {
           />
           <Typography variant="h2" align="center">
             <Translate value={this.props.pageStatus.adPageTitle} />
+            {this.props.pageStatus.checkoutDone ? (
+              <Translate value={"andAbout"} />
+            ) : (
+              ""
+            )}
+            {this.getMakingCountDown()}
+            {this.props.pageStatus.checkoutDone ? (
+              <Translate value={"toDone"} />
+            ) : (
+              ""
+            )}
           </Typography>
           <div className="player-wrapper">
             <ReactPlayer
@@ -127,7 +155,8 @@ class ADPage extends Component {
               volume={1}
               muted={false}
               playsinline={false}
-              controls={false}
+              // controls={false}
+              controls={true}
               onEnded={this.props.getNextVideoURL}
             />
           </div>

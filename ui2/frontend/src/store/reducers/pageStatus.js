@@ -1,5 +1,9 @@
 import axios from "axios";
 
+import UIfx from "uifx";
+import coin from "../../sounds/coin.ogg";
+const coinSfx = new UIfx(coin);
+
 const SET_PAGE_SELECTED = "set/page/selected";
 const OPEN_CHECKOUT_DLG = "open/checkoutdlg";
 const CLOSE_CHECKOUT_DLG = "close/checkoutdlg";
@@ -12,6 +16,7 @@ const GET_VIDEO_PLAYLIST = "get/videoPlayList";
 const SET_CHECKOUTDLG_TITLE = "set/checkoutDlg/title";
 const SET_RECIPE_PROGRESS_VISABLE = "set/recipe/progress/visable";
 const GET_NEXT_VIDEO_URL = "get/next/video/url";
+const SET_PRESS_TO_BAKE_DLG = "set/pressToBake";
 
 const backend = "http://localhost:8081";
 
@@ -30,6 +35,7 @@ const initState = {
   video: { idx: 0, url: "" },
   checkoutDlgTitle: "plsInsertCoin",
   showRecipeProgress: false,
+  pressToBakeDlgOpen: false,
 };
 
 function checkOvenIsReady(tempature) {
@@ -42,6 +48,7 @@ function decTheCoinValue(coinValue, data) {
 }
 
 function incTheCoinValue(coinValue) {
+  coinSfx.play();
   return coinValue + 10;
 }
 
@@ -186,6 +193,11 @@ export default function reducer(state = initState, action) {
           state.video.idx
         ),
       };
+    case SET_PRESS_TO_BAKE_DLG:
+      return {
+        ...state,
+        pressToBakeDlgOpen: action.payload,
+      };
   }
 }
 
@@ -286,5 +298,19 @@ export function setCheckoutDlgTitle(data) {
 export function getNextVideoURL() {
   return {
     type: GET_NEXT_VIDEO_URL,
+  };
+}
+
+export function setPressToBakeDlgOpen() {
+  return {
+    type: SET_PRESS_TO_BAKE_DLG,
+    payload: true,
+  };
+}
+
+export function setPressToBakeDlgClose() {
+  return {
+    type: SET_PRESS_TO_BAKE_DLG,
+    payload: false,
   };
 }

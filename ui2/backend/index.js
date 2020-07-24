@@ -89,9 +89,9 @@ let checkGateCmdDelayObj;
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
 const iNameList = os.networkInterfaces();
-const tun0IP = iNameList.tun0[0].address;
-// const localIP = "localhost";
-// const localIP = "172.27.240.59";
+// const tun0IP = iNameList.tun0[0].address;
+const tun0IP = "localhost";
+// const tun0IP = "172.27.240.59";
 
 const machineInfo = {
   name: process.env.LOCALNAME,
@@ -231,8 +231,8 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    // const root = "C:\\codes\\cakeVending\\ui2\\frontend\\public\\video";
-    const root = "/home/pi/ui2/frontend/build/video";
+    const root = "C:\\codes\\cakeVending\\ui2\\frontend\\public\\video";
+    // const root = "/home/pi/ui2/frontend/build/video";
     let ret = fs.readdirSync(root).map(function (file, index, array) {
       // return { src: root + "/" + file, type: "video/mp4" };
       // return { src: ".\\video\\" + file, type: "video/mp4" };
@@ -419,17 +419,17 @@ http
     );
   });
 
-https
-  .createServer(httpsOptions, app)
-  .listen(process.env.MACHINE_BACKEND_PORT, tun0IP, () => {
-    logger.info(
-      tun0IP +
-        " " +
-        version +
-        " listening on port " +
-        process.env.MACHINE_BACKEND_PORT
-    );
-  });
+// https
+//   .createServer(httpsOptions, app)
+//   .listen(process.env.MACHINE_BACKEND_PORT, tun0IP, () => {
+//     logger.info(
+//       tun0IP +
+//         " " +
+//         version +
+//         " listening on port " +
+//         process.env.MACHINE_BACKEND_PORT
+//     );
+//   });
 
 const postAlarm = (payload) => {
   logger.error(payload);

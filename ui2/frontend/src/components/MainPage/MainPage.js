@@ -19,8 +19,14 @@ import {
   coinValueDec,
   setPageSelected,
   setMakingProgress,
+  setPressToBakeDlgClose,
 } from "../../store/reducers/pageStatus";
 import AboutPage from "../AboutPage";
+import AutoCloseBtnDlg from "../AutoCloseBtnDlg";
+
+import UIfx from "uifx";
+import pop from "../../sounds/pop.flac";
+const popSfx = new UIfx(pop);
 
 const styles = (theme) => ({
   root: {
@@ -106,6 +112,20 @@ class MainPage extends Component {
               this.props.setMakingProgress(0);
             }}
           />
+          <AutoCloseBtnDlg
+            title="pressToBake"
+            delay={3}
+            openState={this.props.pageStatus.pressToBakeDlgOpen}
+            closeSfx={popSfx}
+            closeAction={() => {
+              this.props.setPressToBakeDlgClose();
+              this.props.setOriginalRecipeStart();
+              this.props.setADPageTitle("makingText");
+              this.props.coinValueDec(items[0].priceNum);
+              this.props.setPageSelected("ad");
+              this.props.setMakingProgress(0);
+            }}
+          />
         </div>
       </Fragment>
     );
@@ -113,7 +133,9 @@ class MainPage extends Component {
 }
 
 const mapStateToProps = (state) => {
-  return {};
+  return {
+    pageStatus: state.pageStatus,
+  };
 };
 
 const mapDispatchToProps = (dispatch) => {
@@ -124,6 +146,7 @@ const mapDispatchToProps = (dispatch) => {
       setPageSelected: (data) => setPageSelected(data),
       coinValueDec: (data) => coinValueDec(data),
       setMakingProgress: (data) => setMakingProgress(data),
+      setPressToBakeDlgClose: () => setPressToBakeDlgClose(),
     },
     dispatch
   );
