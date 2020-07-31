@@ -13,12 +13,17 @@ import DialogTitle from "@material-ui/core/DialogTitle";
 import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import Grid from "@material-ui/core/Grid";
+import Box from "@material-ui/core/Box";
 
 import {
   setCheckoutDlgClose,
   setPressToBakeDlgOpen,
 } from "../../store/reducers/pageStatus";
-import { TransitionGrow } from "../PageBase/PageBaseFunction";
+import {
+  TransitionGrow,
+  FlashMonetizationOnIcon,
+  BounceInLeftDoubleArrownIcon,
+} from "../PageBase/PageBaseFunction";
 
 const styles = (theme) => ({
   image: {
@@ -63,7 +68,19 @@ class CheckoutDlg extends Component {
           <DialogTitle>
             <Typography variant="h3" align="center">
               {this.props.pageStatus.coinValue < item.priceNum ? (
-                <Translate value="plsInsertCoin" />
+                <Box display="flex" justifyContent="center" alignItems="center">
+                  <Translate value="plsInsertCoin" />
+                  <FlashMonetizationOnIcon
+                    style={{
+                      fontSize: 48,
+                    }}
+                  />
+                  <BounceInLeftDoubleArrownIcon
+                    style={{
+                      fontSize: 48,
+                    }}
+                  />
+                </Box>
               ) : (
                 <Translate value="plsPressSart" />
               )}
@@ -79,7 +96,7 @@ class CheckoutDlg extends Component {
               <Grid item xs={6} align="center">
                 <CircularProgressbar
                   value={this.props.pageStatus.coinValue}
-                  maxValue={50}
+                  maxValue={process.env.REACT_APP_PIECE_PER_PRICE}
                   text={"$" + `${this.props.pageStatus.coinValue}`}
                   // strokeWidth={50}
                   styles={buildStyles({

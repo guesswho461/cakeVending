@@ -8,8 +8,12 @@ import { withStyles } from "@material-ui/core/styles";
 import Dialog from "@material-ui/core/Dialog";
 import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
+import Box from "@material-ui/core/Box";
 
-import { TransitionSlideDown } from "../PageBase/PageBaseFunction";
+import {
+  TransitionSlideDown,
+  FlashTouchAppIcon,
+} from "../PageBase/PageBaseFunction";
 
 const styles = (theme) => ({
   dlgPaper: {
@@ -66,15 +70,18 @@ class AutoCloseBtnDlg extends Component {
             onClick={this.closeAction}
           >
             <Typography variant="h3">
-              <Translate value={title} />
-              ...
-            </Typography>
-            <Typography variant="h3">
-              <Countdown
-                date={Date.now() + delay * 1000}
-                renderer={(props) => <div>{props.seconds}</div>}
-                onComplete={this.closeAction}
-              />
+              <Box display="flex" justifyContent="center" alignItems="center">
+                <Translate value={title} />
+                ...
+                <Countdown
+                  date={Date.now() + delay * 1000}
+                  renderer={(props) => <div>{props.seconds}</div>}
+                  onComplete={this.closeAction}
+                />
+                <FlashTouchAppIcon
+                  style={{ fontSize: 64, transform: "rotate(-45deg)" }}
+                />
+              </Box>
             </Typography>
           </Button>
         </div>

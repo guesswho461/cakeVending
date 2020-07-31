@@ -14,7 +14,7 @@ const styles = (theme) => ({
   dlgPaper: {
     minWidth: "50vh",
     minHeight: "25vh",
-    paddingTop: "5vh",
+    // paddingTop: "5vh",
     backgroundColor: process.env.REACT_APP_LIGHT_YELLOW,
   },
   dlg: {
@@ -25,11 +25,7 @@ const styles = (theme) => ({
 
 class AutoCloseDlg extends Component {
   render() {
-    const { classes, title, delay, openState, closeAction, sfx } = this.props;
-
-    if (delay > 0) {
-      setTimeout(closeAction, delay * 1000);
-    }
+    const { classes, title, openState, sfx } = this.props;
 
     return (
       <Dialog
@@ -38,7 +34,6 @@ class AutoCloseDlg extends Component {
         classes={{ paper: classes.dlgPaper }}
         TransitionComponent={TransitionSlideDown}
         open={openState}
-        onClose={closeAction}
         onEntering={() => {
           if (sfx) {
             sfx.play();

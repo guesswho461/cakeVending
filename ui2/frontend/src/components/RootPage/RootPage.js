@@ -9,7 +9,7 @@ import Slide from "@material-ui/core/Slide";
 
 import MainPage from "../MainPage";
 import ADPage from "../ADPage";
-import AutoCloseDlg from "../AutoCloseDlg";
+import MsgBox from "../MsgBox";
 import MaintainPage from "../MaintainPage";
 
 import {
@@ -25,8 +25,6 @@ import store from "../../store";
 import UIfx from "uifx";
 import ding from "../../sounds/ding.wav";
 const dingSfx = new UIfx(ding);
-
-const IDLE_TIME = 30; //sec.
 
 const styles = (theme) => ({
   root: {
@@ -68,7 +66,7 @@ class RootPage extends Component {
           element={document}
           onIdle={this.onIdle}
           debounce={250}
-          timeout={1000 * IDLE_TIME}
+          timeout={1000 * process.env.REACT_APP_IDLE_TIME}
         />
         <Slide
           direction="right"
@@ -90,16 +88,13 @@ class RootPage extends Component {
             <ADPage />
           </div>
         </Slide>
-        <AutoCloseDlg
+        <MsgBox
           title="heatingText"
-          delay={10} //sec.
           openState={this.props.pageStatus.heatingUpWarningDlgOpen}
-          closeAction={this.props.setHeadtingUpWarningDlgClose}
           sfx={dingSfx}
         />
-        <AutoCloseDlg
+        <MsgBox
           title="cakeTakeText"
-          delay={0}
           openState={this.props.pageStatus.takeCakeWarningDlgOpen}
           sfx={dingSfx}
         />

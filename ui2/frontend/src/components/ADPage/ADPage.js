@@ -8,6 +8,7 @@ import { withStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
 import LinearProgress from "@material-ui/core/LinearProgress";
 import CardActionArea from "@material-ui/core/CardActionArea";
+import Box from "@material-ui/core/Box";
 
 import "./adpage.css";
 
@@ -16,7 +17,9 @@ import {
   setHeadtingUpWarningDlgOpen,
   setMakingProgress,
   getNextVideoURL,
+  setHeadtingUpWarningDlgClose,
 } from "../../store/reducers/pageStatus";
+import { FlashTouchAppIcon } from "../PageBase/PageBaseFunction";
 
 import UIfx from "uifx";
 import pop from "../../sounds/pop.flac";
@@ -41,7 +44,7 @@ const styles = (theme) => ({
   },
 });
 
-const TOTAL_MAKING_TIME = 3.5; //mins
+const TOTAL_MAKING_TIME = process.env.REACT_APP_ETA; //mins
 const MAX_MAKING_PROGRESS = 95;
 const MAKING_PROGRESS_STEP = 1;
 const MAKING_TICK_TIME =
@@ -108,6 +111,26 @@ class ADPage extends Component {
     }
   }
 
+  toAppendTheTitle() {
+    if (this.props.pageStatus.checkoutDone) {
+      return (
+        <Box display="flex" justifyContent="center" alignItems="center">
+          <Translate value={"andAbout"} />
+          {this.getMakingCountDown()}
+          <Translate value={"toDone"} />
+        </Box>
+      );
+    } else {
+      if (this.props.pageStatus.takeCakeWarningDlgOpen === false) {
+        return (
+          <FlashTouchAppIcon
+            style={{ fontSize: 64, transform: "rotate(-45deg)" }}
+          />
+        );
+      }
+    }
+  }
+
   render() {
     const { classes } = this.props;
 
@@ -121,6 +144,7 @@ class ADPage extends Component {
             this.props.setPageSelected("main");
           } else {
             this.props.setHeadtingUpWarningDlgOpen();
+            setTimeout(this.props.setHeadtingUpWarningDlgClose, 5 * 1000);
           }
         }}
         disabled={this.props.pageStatus.checkoutDone}
@@ -131,18 +155,10 @@ class ADPage extends Component {
             value={this.props.pageStatus.makingProgress}
           />
           <Typography variant="h2" align="center">
-            <Translate value={this.props.pageStatus.adPageTitle} />
-            {this.props.pageStatus.checkoutDone ? (
-              <Translate value={"andAbout"} />
-            ) : (
-              ""
-            )}
-            {this.getMakingCountDown()}
-            {this.props.pageStatus.checkoutDone ? (
-              <Translate value={"toDone"} />
-            ) : (
-              ""
-            )}
+            <Box display="flex" justifyContent="center" alignItems="center">
+              <Translate value={this.props.pageStatus.adPageTitle} />
+              {this.toAppendTheTitle()}
+            </Box>
           </Typography>
           <div className="player-wrapper">
             <ReactPlayer
@@ -151,12 +167,10 @@ class ADPage extends Component {
               width="100%"
               height="100%"
               playing={true}
-              // loop={true}
               volume={1}
               muted={false}
               playsinline={false}
-              // controls={false}
-              controls={true}
+              controls={false}
               onEnded={this.props.getNextVideoURL}
             />
           </div>
@@ -179,6 +193,7 @@ const mapDispatchToProps = (dispatch) => {
       setHeadtingUpWarningDlgOpen: () => setHeadtingUpWarningDlgOpen(),
       setMakingProgress: (data) => setMakingProgress(data),
       getNextVideoURL: () => getNextVideoURL(),
+      setHeadtingUpWarningDlgClose: () => setHeadtingUpWarningDlgClose(),
     },
     dispatch
   );

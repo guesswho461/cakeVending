@@ -9,9 +9,11 @@ import CardActionArea from "@material-ui/core/CardActionArea";
 import GridList from "@material-ui/core/GridList";
 import GridListTile from "@material-ui/core/GridListTile";
 import GridListTileBar from "@material-ui/core/GridListTileBar";
+import Box from "@material-ui/core/Box";
 
 import items from "../../items";
 import { setCheckoutDlgOpen } from "../../store/reducers/pageStatus";
+import { FlashTouchAppIcon } from "../PageBase/PageBaseFunction";
 
 import UIfx from "uifx";
 import pop from "../../sounds/pop.flac";
@@ -63,10 +65,29 @@ class ItemPage extends Component {
                   }
                   subtitle={
                     <Typography variant="h5">
-                      <Translate value={item.subtitle} />
+                      <Box
+                        display="flex"
+                        // justifyContent="flex-start"
+                        alignItems="center"
+                      >
+                        <Box flexGrow={1}>
+                          <Translate value={item.subtitle} />
+                        </Box>
+                        <Box>
+                          <FlashTouchAppIcon
+                            style={{
+                              fontSize: 48,
+                              transform: "rotate(-45deg)",
+                            }}
+                          />
+                        </Box>
+                      </Box>
                     </Typography>
+                    // <Typography variant="h5">
+                    //   <Translate value={item.subtitle} />
+                    // </Typography>
                   }
-                />
+                ></GridListTileBar>
               </CardActionArea>
               {/* // </Button> */}
             </GridListTile>

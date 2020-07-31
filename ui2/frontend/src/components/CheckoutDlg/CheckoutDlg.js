@@ -92,7 +92,7 @@ class CheckoutDlg extends Component {
               <Grid item xs>
                 <CircularProgressbar
                   value={this.props.pageStatus.coinValue}
-                  maxValue={50}
+                  maxValue={process.env.REACT_APP_PIECE_PER_PRICE}
                   text={"$" + `${this.props.pageStatus.coinValue}`}
                   // strokeWidth={50}
                   styles={buildStyles({

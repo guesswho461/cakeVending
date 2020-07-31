@@ -1,7 +1,8 @@
 import axios from "axios";
 
 import UIfx from "uifx";
-import coin from "../../sounds/coin.ogg";
+// import coin from "../../sounds/coin.ogg";
+import coin from "../../sounds/beep2.wav";
 const coinSfx = new UIfx(coin);
 
 const SET_PAGE_SELECTED = "set/page/selected";
@@ -40,16 +41,18 @@ const initState = {
 
 function checkOvenIsReady(tempature) {
   const parsed = parseInt(tempature, 10);
-  return parsed >= 180 ? true : false;
+  return parsed >= process.env.REACT_APP_OVEN_GOOD_TEMPERATURE ? true : false;
 }
 
 function decTheCoinValue(coinValue, data) {
   return coinValue - data;
 }
 
+const coinPerValue = parseInt(process.env.REACT_APP_COIN_PER_VALUE, 10);
+
 function incTheCoinValue(coinValue) {
   coinSfx.play();
-  return coinValue + 10;
+  return coinValue + coinPerValue;
 }
 
 function post(url) {
@@ -70,7 +73,7 @@ function post(url) {
 
 function checkOvenTemperatureCmd(data) {
   const temperatureCmd = parseInt(data, 10);
-  if (temperatureCmd <= 30) {
+  if (temperatureCmd <= process.env.REACT_APP_OVEN_GOOD_TEMPERATURE) {
     post("/kanban/disable");
     return "maintain";
   } else {
@@ -130,10 +133,15 @@ export default function reducer(state = initState, action) {
         ...state,
         heatingUpWarningDlgOpen: false,
       };
-    case "oven/status/tempature":
+    case "oven/status/temperature":
       return {
         ...state,
         ovenIsReady: checkOvenIsReady(action.payload),
+      };
+    case "oven/cmd/temperature":
+      return {
+        ...state,
+        selectedPage: checkOvenTemperatureCmd(action.payload.toString()),
       };
     case "coin/status/inc":
       return {
@@ -179,11 +187,6 @@ export default function reducer(state = initState, action) {
       return {
         ...state,
         showRecipeProgress: true,
-      };
-    case "oven/cmd/temperature":
-      return {
-        ...state,
-        selectedPage: checkOvenTemperatureCmd(action.payload.toString()),
       };
     case GET_NEXT_VIDEO_URL:
       return {

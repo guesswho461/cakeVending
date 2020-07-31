@@ -26,7 +26,10 @@ import AutoCloseBtnDlg from "../AutoCloseBtnDlg";
 
 import UIfx from "uifx";
 import pop from "../../sounds/pop.flac";
+import ratchet from "../../sounds/ratchet.wav";
+
 const popSfx = new UIfx(pop);
+const ratchetSfx = new UIfx(ratchet);
 
 const styles = (theme) => ({
   root: {
@@ -62,6 +65,7 @@ class MainPage extends Component {
     this.setState({
       tabIdx: newTabIdx,
     });
+    ratchetSfx.play();
   }
 
   render() {
@@ -102,6 +106,7 @@ class MainPage extends Component {
               </Box>
             )}
           </main>
+
           <CheckoutDlg
             item={items[0]}
             confirmAction={() => {

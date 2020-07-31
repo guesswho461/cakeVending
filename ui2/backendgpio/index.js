@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const version = "cakeVendingBackendGPIO v1.8";
+const version = "cakeVendingBackendGPIO v1.9";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -71,25 +71,31 @@ logger.info(version + " started");
 
 const openTheGate = () => {
   if (gateIsOpen === false) {
-    gateMotor.enable().then(
-      gateMotor.turn(gateOpen).then((steps) => {
-        logger.trace(`gate turned ${steps} steps`);
-        gateMotor.disable();
-        gateIsOpen = true;
-      })
-    );
+    if (gateMotor.enabled === false) {
+      gateMotor.enable();
+    }
+    // gateMotor.enable().then(
+    gateMotor.turn(gateOpen).then((steps) => {
+      logger.trace(`gate turned ${steps} steps`);
+      // gateMotor.disable();
+      gateIsOpen = true;
+    });
+    // );
   }
 };
 
 const closeTheGate = () => {
   if (gateIsOpen === true) {
-    gateMotor.enable().then(
-      gateMotor.turn(gateClose).then((steps) => {
-        logger.trace(`gate turned ${steps} steps`);
-        gateMotor.disable();
-        gateIsOpen = false;
-      })
-    );
+    if (gateMotor.enabled === false) {
+      gateMotor.enable();
+    }
+    // gateMotor.enable().then(
+    gateMotor.turn(gateClose).then((steps) => {
+      logger.trace(`gate turned ${steps} steps`);
+      // gateMotor.disable();
+      gateIsOpen = false;
+    });
+    // );
     mqttClient.publish("latch/cmd/light/open", "false");
     logger.debug("latch/cmd/light/open false");
   }
@@ -148,7 +154,7 @@ gpio.on("change", function (channel, value) {
     if (value === false) {
       if (gateIsStop === false) {
         gateMotor.stop();
-        gateMotor.disable();
+        // gateMotor.disable();
         gateIsStop = true;
         logger.debug("gate stoped");
       }
@@ -207,7 +213,7 @@ mqttClient.on("message", function (topic, message) {
   } else if (topic === "gate/cmd/stop") {
     if (message.toString() === "true") {
       gateMotor.stop();
-      gateMotor.disable();
+      // gateMotor.disable();
       logger.debug("gate/cmd/stop true");
     }
   } else if (topic === "latch/status/bowl/ready") {
