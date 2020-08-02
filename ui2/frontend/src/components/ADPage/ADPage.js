@@ -101,25 +101,25 @@ class ADPage extends Component {
   }
 
   getMakingCountDown() {
-    if (this.props.pageStatus.checkoutDone) {
-      return this.secToMinAndSec(
-        TOTAL_MAKING_TIME * 60 -
-          (this.props.pageStatus.makingProgress * MAKING_TICK_TIME) / 1000
-      );
-    } else {
-      return "";
-    }
+    return this.secToMinAndSec(
+      TOTAL_MAKING_TIME * 60 -
+        (this.props.pageStatus.makingProgress * MAKING_TICK_TIME) / 1000
+    );
   }
 
   toAppendTheTitle() {
     if (this.props.pageStatus.checkoutDone) {
-      return (
-        <Box display="flex" justifyContent="center" alignItems="center">
-          <Translate value={"andAbout"} />
-          {this.getMakingCountDown()}
-          <Translate value={"toDone"} />
-        </Box>
-      );
+      if (this.props.pageStatus.makingProgress < 100) {
+        return (
+          <Box display="flex" justifyContent="center" alignItems="center">
+            <Translate value={"andAbout"} />
+            {this.getMakingCountDown()}
+            <Translate value={"toDone"} />
+          </Box>
+        );
+      } else {
+        return null;
+      }
     } else {
       if (this.props.pageStatus.takeCakeWarningDlgOpen === false) {
         return (
@@ -127,6 +127,8 @@ class ADPage extends Component {
             style={{ fontSize: 64, transform: "rotate(-45deg)" }}
           />
         );
+      } else {
+        return null;
       }
     }
   }
@@ -144,7 +146,10 @@ class ADPage extends Component {
             this.props.setPageSelected("main");
           } else {
             this.props.setHeadtingUpWarningDlgOpen();
-            setTimeout(this.props.setHeadtingUpWarningDlgClose, 5 * 1000);
+            setTimeout(
+              this.props.setHeadtingUpWarningDlgClose,
+              process.env.REACT_APP_HEATING_UP_WARNING_DELAY * 1000
+            );
           }
         }}
         disabled={this.props.pageStatus.checkoutDone}

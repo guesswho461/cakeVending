@@ -27,7 +27,7 @@ const translationsObject = {
   tw: {
     brandName: "老闆不在雞蛋糕",
     originalFlavorTitle: "原味",
-    originalFlavorContent: "超級好吃, 大約需要3.5分鐘的製作時間",
+    originalFlavorContent: "超級好吃, 大約需要3分半的製作時間",
     originalFlavorSubTitle: "每份6顆$50",
     originalFlavorPriceStr: "$50",
     itemPageTitle: "購買",

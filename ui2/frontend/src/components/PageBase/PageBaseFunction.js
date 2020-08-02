@@ -4,7 +4,7 @@ import { Localize } from "react-redux-i18n";
 import Slide from "@material-ui/core/Slide";
 import Grow from "@material-ui/core/Grow";
 import styled, { keyframes } from "styled-components";
-import { flash, bounceInLeft, fadeInLeft } from "react-animations";
+import { flash, fadeInLeft } from "react-animations";
 
 import TouchAppIcon from "@material-ui/icons/TouchApp";
 import MonetizationOnIcon from "@material-ui/icons/MonetizationOn";
@@ -68,14 +68,14 @@ export const FlashMonetizationOnIcon = (props) => {
   );
 };
 
-const BounceInLeftAnimation = keyframes`${fadeInLeft}`;
-const BounceInLeftDiv = styled.div`
-  animation: infinite 2s ${BounceInLeftAnimation};
+const FadeInLeftAnimation = keyframes`${fadeInLeft}`;
+const FadeInLeftDiv = styled.div`
+  animation: infinite 2s ${FadeInLeftAnimation};
 `;
 export const BounceInLeftDoubleArrownIcon = (props) => {
   return (
-    <BounceInLeftDiv>
+    <FadeInLeftDiv>
       <DoubleArrownIcon {...props} />
-    </BounceInLeftDiv>
+    </FadeInLeftDiv>
   );
 };
