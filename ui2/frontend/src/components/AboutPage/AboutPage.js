@@ -29,8 +29,17 @@ class AboutPage extends Component {
     return (
       <div className={classes.root}>
         <div className="text">
-          <Typography variant="h2" align="center">
-            {/* <Translate value={"about"} /> */}
+          <Typography variant="h4" align="left" paragraph="true">
+            {
+              <strong>
+                <pre>
+                  <Translate value={"aboutMsg"} />
+                </pre>
+              </strong>
+            }
+          </Typography>
+
+          <Typography variant="h7" align="right">
             {process.env.REACT_APP_VERSION}
           </Typography>
         </div>

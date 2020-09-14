@@ -41,12 +41,23 @@ const initState = {
   isDevMode: false,
 };
 
+let robotModeChk = false;
+let bucketModeChk = false;
+let ovenModeChk = false;
 function checkOvenIsReady(isDevMode, tempature) {
   if (isDevMode) {
     return true;
   } else {
     const parsed = parseInt(tempature, 10);
     return parsed >= process.env.REACT_APP_OVEN_GOOD_TEMPERATURE ? true : false;
+  }
+}
+
+function checkRemoteIsReady() {
+  if (robotModeChk == false || bucketModeChk == false || ovenModeChk == false) {
+    return "maintain";
+  } else {
+    return "ad";
   }
 }
 
@@ -212,6 +223,48 @@ export default function reducer(state = initState, action) {
         ...state,
         isDevMode: action.payload,
       };
+    case "robot/status/mode":
+      if (action.payload === "MQTT") {
+        robotModeChk = true;
+        return {
+          ...state,
+          //    selectedPage: checkRemoteIsReady(),
+        };
+      } else {
+        robotModeChk = false;
+        return {
+          ...state,
+          selectedPage: "maintain",
+        };
+      }
+    case "bucket/status/mode":
+      if (action.payload === "MQTT") {
+        bucketModeChk = true;
+        return {
+          ...state,
+          //    selectedPage: checkRemoteIsReady(),
+        };
+      } else {
+        bucketModeChk = false;
+        return {
+          ...state,
+          selectedPage: "maintain",
+        };
+      }
+    case "oven/status/mode":
+      if (action.payload === "MQTT") {
+        ovenModeChk = true;
+        return {
+          ...state,
+          //    selectedPage: checkRemoteIsReady(),
+        };
+      } else {
+        ovenModeChk = false;
+        return {
+          ...state,
+          selectedPage: "maintain",
+        };
+      }
   }
 }
 

@@ -30,6 +30,8 @@ import UIfx from "uifx";
 import pop from "../../sounds/pop.flac";
 import ratchet from "../../sounds/ratchet.wav";
 
+import useTeach from "../../imgs/useTeach.gif";
+
 const popSfx = new UIfx(pop);
 const ratchetSfx = new UIfx(ratchet);
 
@@ -103,6 +105,16 @@ class MainPage extends Component {
             {this.state.tabIdx === 0 && (
               <Box p={3}>
                 <ItemPage />
+              </Box>
+            )}
+            {this.state.tabIdx === 1 && (
+              <Box position="absolute" top="20vh" left="40vh">
+                <img
+                  src={useTeach}
+                  Position="center"
+                  width="800vh"
+                  height="500vh"
+                />
               </Box>
             )}
             {this.state.tabIdx === 2 && (

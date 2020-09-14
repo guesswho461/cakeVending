@@ -19,10 +19,11 @@ const translationsObject = {
     pressToBake: "please press me to start to bake",
     completeBake: "bake complete",
     plsPressSart: "please press start...",
-    maintainMsg: "sorry, we are out of service for a moment...",
+    maintainMsg: "sorry, we are sold out ...",
     andAbout: "and about",
     toDone: "to done",
     countDown: "count down",
+    aboutMsg:"From love to eat to knowing how to eat, we create our exclusive flavors.\n\nReduced sugar, Less oil, and Freshness control\nPay attention to the ingredients~ We will give you the most care~ Bake it right now~ \n\n ~\nYou are on a diet.  Want to eat a little bit\nYou're hungry in the middle of the night.  Don’t want to fry.\nA small national delicacy that you can meet around the corner~ 24 hours a day without closing\n\ncake vending, the delicious food is always with you",
   },
   tw: {
     brandName: "老闆不在雞蛋糕",
@@ -44,10 +45,11 @@ const translationsObject = {
     pressToBake: "請按這裡開始製作",
     completeBake: "完成製作",
     plsPressSart: "請按開始製作...",
-    maintainMsg: "維修中, 暫停使用",
+    maintainMsg: "已完售, 暫停使用",
     andAbout: "還有大約",
     toDone: "完成",
     countDown: "倒數",
+    aboutMsg:"從愛吃到懂吃，創造屬於我們的獨家口味\n\n減糖、少油、鮮度控制\n食材不馬虎~ 給您最呵護~ 現點立刻烤~ 出爐剛剛好~\n\n當您~\n減肥不想吃多\n半夜小餓又不想油炸\n轉角就能遇到的小巧國民美食~24小時不打烊\n\n老闆不在，但美味一直與您同在",
   },
 };
 

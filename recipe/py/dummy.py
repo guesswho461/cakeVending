@@ -31,10 +31,15 @@ class machineStatus:
     strArmPos = "0"
     strCvtPos = "0"
     ovenOpMode = "manual"
-    bucketOpMode = "manual"
-    robotOpMode = "manual"
-    allModuleGood2Go = False
-    modeRecheckCnt = 0
+
+
+<< << << < HEAD
+bucketOpMode = "manual"
+robotOpMode = "manual"
+allModuleGood2Go = False
+modeRecheckCnt = 0
+== == == =
+>>>>>> > 392290c... 增加操作模式防呆
 
 
 macst = machineStatus()

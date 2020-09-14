@@ -202,11 +202,11 @@ app.use(log4js.connectLogger(logger, { level: "info" }));
 
 app.get(
   "/version",
-  jwt({
-    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
-    name: process.env.CAKE_ACCESS_TOKEN_NAME,
-    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
-  }),
+  // jwt({
+  //   subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+  //   name: process.env.CAKE_ACCESS_TOKEN_NAME,
+  //   secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  // }),
   (req, res) => {
     res.send(machineInfo.ver);
   }

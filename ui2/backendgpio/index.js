@@ -25,6 +25,7 @@ const logger = log4js.getLogger("cake");
 const mqtt = require("mqtt");
 const gpio = require("rpi-gpio");
 const A4988 = require("./A4988");
+const { time } = require("console");
 
 //todo: idle的時候每五分鐘回抽
 
@@ -60,6 +61,11 @@ let coinValue = false;
 let coinLastValue = true;
 const coinValueDebounceLimit = 0;
 let coinValueDebounceCnt = 0;
+
+let endtime = 0;
+let startime = 0;
+let sTime = 0;
+let coinTrig = false;
 
 const gateLimitDebounceLimit = 50;
 let gateLimitDebounceCnt = 0;
@@ -122,27 +128,46 @@ gpio.on("change", function (channel, value) {
   logger.trace("pin " + channel + " is " + value);
   if (coinEnable) {
     if (channel === coinPinIdx) {
-      if (value === coinLastValue) {
-        if (coinValueDebounceCnt < coinValueDebounceLimit) {
+      //if (value === coinLastValue) {
+        /*if (coinValueDebounceCnt < coinValueDebounceLimit) {
           coinValueDebounceCnt = coinValueDebounceCnt + 1;
         } else {
-          coinValueDebounceCnt = 0;
+          coinValueDebounceCnt = 0;*/
+          if(sTime==0)
+            sTime=new Date().getTime();
+
           if (value === true) {
-            coinCnt = coinCnt + 1;
-            logger.debug(coinCnt);
-            mqttClient.publish("coin/status/inc", "1");
-            if (coinCnt >= 5) {
-              coinEnable = false;
-              coinCnt = 0;
-              mqttClient.publish("coin/cmd/enable", "false");
-              logger.debug("coin disable");
+            logger.info("coinTrue");
+            endtime = new Date().getTime();
+            
+              logger.info((endtime-sTime));
+            if((endtime-sTime) >= 25){
+              sTime=new Date().getTime();
+              coinCnt = coinCnt + 1;
+              logger.debug(coinCnt);
+              mqttClient.publish("coin/status/inc", "1");
+
+              if (coinCnt >= 5) {
+                coinEnable = false;
+                coinCnt = 0;
+                mqttClient.publish("coin/cmd/enable", "false");
+                logger.debug("coin disable");
+              }
             }
+            coinTrig = false;
           }
-        }
+          else{
+            //if (coinTrig === false)
+              //sTime = new Date().getTime();
+            coinTrig = true;
+            logger.info("coinFalse");
+          }
+
+       /* }
       } else {
         coinValueDebounceCnt = 0;
       }
-      coinValueDebounceCnt = value;
+      coinValueDebounceCnt = value;*/
     }
   }
   if (channel === gateLimitPinIdx) {
