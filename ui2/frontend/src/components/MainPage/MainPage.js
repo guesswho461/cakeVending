@@ -109,13 +109,13 @@ class MainPage extends Component {
 
           <CheckoutDlg
             item={items[0]}
-            confirmAction={() => {
-              this.props.setOriginalRecipeStart();
-              this.props.setADPageTitle("makingText");
-              this.props.coinValueDec(items[0].priceNum);
-              this.props.setPageSelected("ad");
-              this.props.setMakingProgress(0);
-            }}
+            // confirmAction={() => {
+            //   this.props.setOriginalRecipeStart();
+            //   this.props.setADPageTitle("makingText");
+            //   this.props.coinValueDec(items[0].priceNum);
+            //   this.props.setPageSelected("ad");
+            //   this.props.setMakingProgress(0);
+            // }}
           />
           <AutoCloseBtnDlg
             title="pressToBake"

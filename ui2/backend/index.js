@@ -1,6 +1,8 @@
-require("dotenv").config();
+require("dotenv").config({ path: "../.env" });
 
-const version = "cakeVendingBackend v1.21";
+const version = "cakeVendingBackend v1.23";
+//不會跟telegram bot相連
+//腳本路徑是/home/pi/recipe/dummy.py
 
 const log4js = require("log4js");
 log4js.configure({
@@ -88,10 +90,11 @@ let checkGateCmdDelayObj;
 
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
-const iNameList = os.networkInterfaces();
+// const iNameList = os.networkInterfaces();
 // const tun0IP = iNameList.tun0[0].address;
-const tun0IP = "localhost";
-// const tun0IP = "172.27.240.59";
+const tun0IP = "192.168.1.99";
+// const localIP = "localhost";
+// const localIP = "172.27.240.59";
 
 const machineInfo = {
   name: process.env.LOCALNAME,
@@ -101,26 +104,27 @@ const machineInfo = {
 
 const postWebAPI = (url, payload) => {
   if (canPost) {
-    axios({
-      method: "post",
-      baseURL:
-        process.env.TELEGRAM_BOT_IP + ":" + process.env.SERVER_PORT + url,
-      // baseURL: "https://localhost:10010" + url,
-      headers: {
-        Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
-        "content-type": "text/plain",
-      },
-      httpsAgent: new https.Agent({
-        rejectUnauthorized: false,
-      }),
-      data: payload,
-    })
-      .then((res) => {
-        logger.trace("POST " + url + " " + payload + " " + res.status);
-      })
-      .catch((err) => {
-        logger.error(err.message);
-      });
+    // axios({
+    //   method: "post",
+    //   baseURL:
+    //     process.env.TELEGRAM_BOT_IP + ":" + process.env.SERVER_PORT + url,
+    //   // baseURL: "https://localhost:10010" + url,
+    //   headers: {
+    //     Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+    //     "content-type": "text/plain",
+    //   },
+    //   httpsAgent: new https.Agent({
+    //     rejectUnauthorized: false,
+    //   }),
+    //   data: payload,
+    // })
+    //   .then((res) => {
+    //     logger.trace("POST " + url + " " + payload + " " + res.status);
+    //   })
+    //   .catch((err) => {
+    //     logger.error(err.message);
+    //   });
+    logger.trace("POST " + url + " " + payload);
   }
 };
 
@@ -129,7 +133,7 @@ const postWebAPI2 = (url, payload) => {
 };
 
 logger.info(version + " started");
-postWebAPI("/machine/online", stringify(machineInfo));
+// postWebAPI("/machine/online", stringify(machineInfo));
 
 const today = new Date();
 const tableName =
@@ -182,11 +186,11 @@ app.use(log4js.connectLogger(logger, { level: "info" }));
 
 app.get(
   "/version",
-  jwt({
-    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
-    name: process.env.CAKE_ACCESS_TOKEN_NAME,
-    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
-  }),
+  // jwt({
+  //   subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+  //   name: process.env.CAKE_ACCESS_TOKEN_NAME,
+  //   secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  // }),
   (req, res) => {
     res.send(version);
   }
@@ -231,8 +235,8 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    const root = "C:\\codes\\cakeVending\\ui2\\frontend\\public\\video";
-    // const root = "/home/pi/ui2/frontend/build/video";
+    // const root = "C:\\codes\\cakeVending\\ui2\\frontend\\public\\video";
+    const root = "/home/pi/ui2/frontend/build/video";
     let ret = fs.readdirSync(root).map(function (file, index, array) {
       // return { src: root + "/" + file, type: "video/mp4" };
       // return { src: ".\\video\\" + file, type: "video/mp4" };

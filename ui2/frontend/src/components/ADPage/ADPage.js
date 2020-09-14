@@ -176,7 +176,8 @@ class ADPage extends Component {
               muted={false}
               playsinline={false}
               controls={false}
-              onEnded={this.props.getNextVideoURL}
+              // onEnded={this.props.getNextVideoURL}
+              loop={true}
             />
           </div>
         </div>
