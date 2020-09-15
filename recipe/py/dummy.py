@@ -31,6 +31,10 @@ class machineStatus:
     strArmPos = "0"
     strCvtPos = "0"
     ovenOpMode = "manual"
+    bucketOpMode = "manual"
+    robotOpMode = "manual"
+    allModuleGood2Go = False
+    modeRecheckCnt = 0
 
 
 macst = machineStatus()
@@ -602,7 +606,19 @@ mqttc.on_connect = on_connect
 mqttc.connect("localhost", 1883, 60)
 mqttc.loop_start()
 
-if macst.ovenOpMode == "remote":
+while True:
+    if macst.ovenOpMode == "remote" and macst.bucketOpMode == "remote" and macst.robotOpMode == "remote":
+        macst.allModuleGood2Go = True
+        break
+    else:
+        macst.allModuleGood2Go = False
+        if macst.modeRecheckCnt >= 3:
+            break
+        else:
+            macst.modeRecheckCnt = macst.modeRecheckCnt + 1
+            time.sleep(1)
+
+if macst.allModuleGood2Go == True:
     thread1 = threading.Thread(target=ctrl_oven_and_robot)
     thread2 = threading.Thread(target=ctrl_latch)
 
@@ -614,7 +630,13 @@ if macst.ovenOpMode == "remote":
 
     mqttc.publish("gate/cmd/open", "true")
 else:
-    logger.fatal("the mode of oven is not remote")
+    msg = ("recipe: the modules are not all in the remote mode" +
+           ", modeRecheckCnt: " + str(macst.modeRecheckCnt) +
+           ", ovenOpMode: " + str(macst.ovenOpMode) +
+           ", bucketOpMode: " + str(macst.bucketOpMode) +
+           ", robotOpMode: " + str(macst.robotOpMode))
+    logger.fatal(msg)
+    mqttc.publish("bucket/status/alarm", msg)
 
 mqttc.disconnect()
 mqttc.loop_stop()

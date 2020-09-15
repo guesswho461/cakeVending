@@ -24,6 +24,8 @@ import {
 import AboutPage from "../AboutPage";
 import AutoCloseBtnDlg from "../AutoCloseBtnDlg";
 
+import logo from "../../imgs/logo.svg";
+
 import UIfx from "uifx";
 import pop from "../../sounds/pop.flac";
 import ratchet from "../../sounds/ratchet.wav";
@@ -34,6 +36,9 @@ const ratchetSfx = new UIfx(ratchet);
 const styles = (theme) => ({
   root: {
     flexGrow: 1,
+    backgroundImage: `url(${logo})`,
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
   },
   tabs: {
     borderRight: `1px solid ${theme.palette.divider}`,
@@ -107,16 +112,7 @@ class MainPage extends Component {
             )}
           </main>
 
-          <CheckoutDlg
-            item={items[0]}
-            // confirmAction={() => {
-            //   this.props.setOriginalRecipeStart();
-            //   this.props.setADPageTitle("makingText");
-            //   this.props.coinValueDec(items[0].priceNum);
-            //   this.props.setPageSelected("ad");
-            //   this.props.setMakingProgress(0);
-            // }}
-          />
+          <CheckoutDlg item={items[0]} />
           <AutoCloseBtnDlg
             title="pressToBake"
             delay={3}

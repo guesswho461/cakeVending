@@ -19,6 +19,7 @@ import {
   setPageSelected,
   setCheckoutDlgClose,
   getVideoPlayList,
+  getDevMode,
 } from "../../store/reducers/pageStatus";
 import store from "../../store";
 
@@ -36,6 +37,7 @@ class RootPage extends Component {
   constructor(props) {
     super(props);
     this.props.getVideoPlayList();
+    this.props.getDevMode();
     this.idleTimer = null;
     this.onIdle = this.onIdle.bind(this);
   }
@@ -131,6 +133,7 @@ const mapDispatchToProps = (dispatch) => {
       setPageSelected: (data) => setPageSelected(data),
       setCheckoutDlgClose: () => setCheckoutDlgClose(),
       getVideoPlayList: () => getVideoPlayList(),
+      getDevMode: () => getDevMode(),
     },
     dispatch
   );

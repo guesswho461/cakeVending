@@ -9,9 +9,14 @@ import Box from "@material-ui/core/Box";
 
 import {} from "../../store/reducers/pageStatus";
 
+import logo from "../../imgs/logo_gray_45.svg";
+
 const styles = (theme) => ({
   root: {
     flexGrow: 1,
+    backgroundImage: `url(${logo})`,
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
   },
   box: {
     height: "90vh",

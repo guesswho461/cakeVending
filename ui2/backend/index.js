@@ -1,8 +1,4 @@
-require("dotenv").config({ path: "../.env" });
-
-const version = "cakeVendingBackend v1.23";
-//不會跟telegram bot相連
-//腳本路徑是/home/pi/recipe/dummy.py
+require("dotenv").config({ path: "../frontend/.env" });
 
 const log4js = require("log4js");
 log4js.configure({
@@ -40,28 +36,40 @@ const axios = require("axios");
 const util = require("util");
 const { stringify } = require("comment-json");
 
-const mqttOpt = {
-  port: process.env.MACHINE_LOCAL_MQTT_BROKER_PORT,
-  clientId: version,
-};
+//min to ms
+const checkModuleAliveInterval =
+  process.env.CHECK_MODULE_ALIVE_INTERVAL * 60 * 1000;
 
-const httpsOptions = {
-  key: fs.readFileSync("./ssl_files/server_private_key.pem"),
-  ca: [fs.readFileSync("./ssl_files/cert.pem")],
-  cert: fs.readFileSync("./ssl_files/server_cert.pem"),
-};
+const maxModuleDeadCnt = process.env.MAX_MODULE_DEAD_CNT;
 
-const checkModuleAliveInterval = 10 * 60 * 1000; //ms
-const maxModuleDeadCnt = 0;
-const maxMachTemp = 70; //Celsius
-const bowlCntWarningLevel = 60; //distance, greater means lower
-const bowlCntAlarmLevel = 64; //distance, greater means lower
-const batterVolWarningLevel = 43; //distance, greater means lower
-const batterVolAlarmLevel = 45; //distance, greater means lower
-let maxFridgeTemp = 20; //Celsius
-const checkGateCmdDelay = 10 * 60 * 1000; //ms
-const unitPrice = 50; //NTD
-const coinEnableDelayToResponse = 5000;
+//Celsius
+const maxMachTemp = process.env.MAX_NACH_TEMP;
+
+//distance, greater means lower
+const bowlCntWarningLevel = process.env.BOWL_CNT_WARNING_LEVEL;
+
+//distance, greater means lower
+const bowlCntAlarmLevel = process.env.BOWL_CNT_ALARM_LEVEL;
+
+//distance, greater means lower
+const batterVolWarningLevel = process.env.BATTER_VOL_WARNING_LEVEL;
+
+//distance, greater means lower
+const batterVolAlarmLevel = process.env.BATTER_ALARM_WARNING_LEVEL;
+
+//Celsius
+let maxFridgeTemp = process.env.MAX_FRIDGE_TEMP;
+
+//min to ms
+const checkGateCmdDelay = process.env.CHECK_GATE_CMD_DELAY * 60 * 1000;
+
+//NTD
+const unitPrice = process.env.UNIT_PRICE;
+
+//set to ms
+const coinEnableDelayToResponse =
+  process.env.COIN_ENABLE_DELAY_TO_RESPONSE * 1000;
+
 const dbPath = "mydatebase.db";
 
 let bucketAliveMsg = "bucketAliveMsg";
@@ -88,42 +96,53 @@ let macTempStr = "1";
 let canPost = true;
 let checkGateCmdDelayObj;
 
-const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
-
-// const iNameList = os.networkInterfaces();
-// const tun0IP = iNameList.tun0[0].address;
-const tun0IP = "192.168.1.99";
-// const localIP = "localhost";
-// const localIP = "172.27.240.59";
-
 const machineInfo = {
   name: process.env.LOCALNAME,
-  ver: version,
-  ip: tun0IP,
+  ver: process.env.REACT_APP_VERSION,
+  isDevMode: process.env.DEV_MODE === "true" ? true : false,
+  connect2Bot: process.env.CONNECT_2_BOT === "true" ? true : false,
+  ip: this.connect2Bot ? tun0IP : null,
+};
+
+if (machineInfo.connect2Bot) {
+  const iNameList = os.networkInterfaces();
+  const tun0IP = iNameList.tun0[0].address;
+}
+
+const mqttOpt = {
+  port: process.env.MACHINE_LOCAL_MQTT_BROKER_PORT,
+  clientId: machineInfo.ver,
+};
+
+const httpsOptions = {
+  key: fs.readFileSync("./ssl_files/server_private_key.pem"),
+  ca: [fs.readFileSync("./ssl_files/cert.pem")],
+  cert: fs.readFileSync("./ssl_files/server_cert.pem"),
 };
 
 const postWebAPI = (url, payload) => {
   if (canPost) {
-    // axios({
-    //   method: "post",
-    //   baseURL:
-    //     process.env.TELEGRAM_BOT_IP + ":" + process.env.SERVER_PORT + url,
-    //   // baseURL: "https://localhost:10010" + url,
-    //   headers: {
-    //     Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
-    //     "content-type": "text/plain",
-    //   },
-    //   httpsAgent: new https.Agent({
-    //     rejectUnauthorized: false,
-    //   }),
-    //   data: payload,
-    // })
-    //   .then((res) => {
-    //     logger.trace("POST " + url + " " + payload + " " + res.status);
-    //   })
-    //   .catch((err) => {
-    //     logger.error(err.message);
-    //   });
+    if (machineInfo.connect2Bot) {
+      axios({
+        method: "post",
+        baseURL:
+          process.env.TELEGRAM_BOT_IP + ":" + process.env.SERVER_PORT + url,
+        headers: {
+          Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+          "content-type": "text/plain",
+        },
+        httpsAgent: new https.Agent({
+          rejectUnauthorized: false,
+        }),
+        data: payload,
+      })
+        .then((res) => {
+          logger.trace("POST " + url + " " + payload + " " + res.status);
+        })
+        .catch((err) => {
+          logger.error(err.message);
+        });
+    }
     logger.trace("POST " + url + " " + payload);
   }
 };
@@ -131,9 +150,6 @@ const postWebAPI = (url, payload) => {
 const postWebAPI2 = (url, payload) => {
   return postWebAPI(url, process.env.LOCALNAME + " " + payload);
 };
-
-logger.info(version + " started");
-// postWebAPI("/machine/online", stringify(machineInfo));
 
 const today = new Date();
 const tableName =
@@ -186,13 +202,13 @@ app.use(log4js.connectLogger(logger, { level: "info" }));
 
 app.get(
   "/version",
-  // jwt({
-  //   subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
-  //   name: process.env.CAKE_ACCESS_TOKEN_NAME,
-  //   secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
-  // }),
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
   (req, res) => {
-    res.send(version);
+    res.send(machineInfo.ver);
   }
 );
 
@@ -213,9 +229,7 @@ app.post(
       fridgeTempStr,
       macTempStr
     );
-    // exec("node /home/pi/recipe/original.js", function (err, stdout, stderr) {
     exec("python /home/pi/recipe/dummy.py", function (err, stdout, stderr) {
-      // exec("python ../../recipe/py/test2.py", function (err, stdout, stderr) {
       if (err !== null) {
         res.status(500).send(stderr);
         logger.error(stderr);
@@ -235,11 +249,8 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    // const root = "C:\\codes\\cakeVending\\ui2\\frontend\\public\\video";
     const root = "/home/pi/ui2/frontend/build/video";
     let ret = fs.readdirSync(root).map(function (file, index, array) {
-      // return { src: root + "/" + file, type: "video/mp4" };
-      // return { src: ".\\video\\" + file, type: "video/mp4" };
       return ".\\video\\" + file;
     });
     res.send(ret);
@@ -395,50 +406,52 @@ app.post(
   }
 );
 
-// http.createServer(app).listen(process.env.MACHINE_BACKEND_PORT, () => {
-//   logger.info(
-//     version + " listening on port " + process.env.MACHINE_BACKEND_PORT
-//   );
-// });
+app.get(
+  "/devMode",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    res.status(200).send(process.env.DEV_MODE);
+  }
+);
 
-// for test purpose so listening on all interface
-// for production should change to http <--> localhost, https <--> tun0
+logger.info(stringify(machineInfo) + " started");
+postWebAPI("/machine/online", stringify(machineInfo));
 
-// https
-//   .createServer(httpsOptions, app)
-//   .listen(process.env.MACHINE_BACKEND_PORT, () => {
-//     logger.info(
-//       version + " listening on port " + process.env.MACHINE_BACKEND_PORT
-//     );
-//   });
+const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
 http
   .createServer(app)
   .listen(process.env.MACHINE_BACKEND_PORT, "localhost", () => {
     logger.info(
-      "localhost " +
-        version +
-        " listening on port " +
+      machineInfo.ver +
+        " listening on " +
+        "localhost:" +
         process.env.MACHINE_BACKEND_PORT
     );
   });
 
-// https
-//   .createServer(httpsOptions, app)
-//   .listen(process.env.MACHINE_BACKEND_PORT, tun0IP, () => {
-//     logger.info(
-//       tun0IP +
-//         " " +
-//         version +
-//         " listening on port " +
-//         process.env.MACHINE_BACKEND_PORT
-//     );
-//   });
+if (machineInfo.connect2Bot) {
+  https
+    .createServer(httpsOptions, app)
+    .listen(process.env.MACHINE_BACKEND_PORT, machineInfo.ip, () => {
+      logger.info(
+        stringify(machineInfo) +
+          " listening on port " +
+          process.env.MACHINE_BACKEND_PORT
+      );
+    });
+}
 
 const postAlarm = (payload) => {
   logger.error(payload);
   postWebAPI2("/machine/alarm", payload);
-  //machineDisable();
+  if (machineInfo.isDevMode === false) {
+    machineDisable();
+  }
 };
 
 const postWarning = (payload) => {
@@ -557,7 +570,7 @@ const mqttSubsTopis = [
 ];
 
 mqttClient.on("connect", function () {
-  logger.info(version + " connect to broker OK");
+  logger.info(machineInfo.ver + " connect to broker OK");
   mqttSubsTopis.forEach(function (topic, index, array) {
     mqttClient.subscribe(topic);
   });

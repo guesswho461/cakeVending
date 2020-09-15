@@ -6,6 +6,8 @@ import { Translate } from "react-redux-i18n";
 import { withStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
 
+import "./aboutpage.css";
+
 import {} from "../../store/reducers/pageStatus";
 
 const styles = (theme) => ({
@@ -26,10 +28,12 @@ class AboutPage extends Component {
 
     return (
       <div className={classes.root}>
-        <Typography variant="h2" align="center">
-          {/* <Translate value={"about"} /> */}
-          {process.env.REACT_APP_VERSION}
-        </Typography>
+        <div className="text">
+          <Typography variant="h2" align="center">
+            {/* <Translate value={"about"} /> */}
+            {process.env.REACT_APP_VERSION}
+          </Typography>
+        </div>
       </div>
     );
   }

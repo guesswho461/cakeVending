@@ -18,6 +18,7 @@ const SET_CHECKOUTDLG_TITLE = "set/checkoutDlg/title";
 const SET_RECIPE_PROGRESS_VISABLE = "set/recipe/progress/visable";
 const GET_NEXT_VIDEO_URL = "get/next/video/url";
 const SET_PRESS_TO_BAKE_DLG = "set/pressToBake";
+const GET_DEV_MODE = "get/devMode";
 
 const backend = "http://localhost:8081";
 
@@ -37,11 +38,16 @@ const initState = {
   checkoutDlgTitle: "plsInsertCoin",
   showRecipeProgress: false,
   pressToBakeDlgOpen: false,
+  isDevMode: false,
 };
 
-function checkOvenIsReady(tempature) {
-  const parsed = parseInt(tempature, 10);
-  return parsed >= process.env.REACT_APP_OVEN_GOOD_TEMPERATURE ? true : false;
+function checkOvenIsReady(isDevMode, tempature) {
+  if (isDevMode) {
+    return true;
+  } else {
+    const parsed = parseInt(tempature, 10);
+    return parsed >= process.env.REACT_APP_OVEN_GOOD_TEMPERATURE ? true : false;
+  }
 }
 
 function decTheCoinValue(coinValue, data) {
@@ -136,7 +142,7 @@ export default function reducer(state = initState, action) {
     case "oven/status/temperature":
       return {
         ...state,
-        ovenIsReady: checkOvenIsReady(action.payload),
+        ovenIsReady: checkOvenIsReady(state.isDevMode, action.payload),
       };
     case "oven/cmd/temperature":
       return {
@@ -200,6 +206,11 @@ export default function reducer(state = initState, action) {
       return {
         ...state,
         pressToBakeDlgOpen: action.payload,
+      };
+    case GET_DEV_MODE:
+      return {
+        ...state,
+        isDevMode: action.payload,
       };
   }
 }
@@ -315,5 +326,26 @@ export function setPressToBakeDlgClose() {
   return {
     type: SET_PRESS_TO_BAKE_DLG,
     payload: false,
+  };
+}
+
+export function getDevMode() {
+  return (dispatch) => {
+    axios({
+      method: "get",
+      baseURL: backend + "/devMode",
+      headers: {
+        Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+      },
+    })
+      .then((res) => {
+        dispatch({
+          type: GET_DEV_MODE,
+          payload: res.data,
+        });
+      })
+      .catch((err) => {
+        console.log(err.message);
+      });
   };
 }
