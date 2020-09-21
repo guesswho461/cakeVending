@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ path: "../frontend/.env" });
 
 const version = "cakeVendingBackendGPIO v1.9";
 
@@ -128,54 +128,35 @@ gpio.on("change", function (channel, value) {
   logger.trace("pin " + channel + " is " + value);
   if (coinEnable) {
     if (channel === coinPinIdx) {
-      //if (value === coinLastValue) {
-        /*if (coinValueDebounceCnt < coinValueDebounceLimit) {
-          coinValueDebounceCnt = coinValueDebounceCnt + 1;
-        } else {
-          coinValueDebounceCnt = 0;*/
-          if(sTime==0)
-            sTime=new Date().getTime();
-
-          if (value === true) {
-            logger.info("coinTrue");
-            endtime = new Date().getTime();
-            
-              logger.info((endtime-sTime));
-            if((endtime-sTime) >= 25){
-              sTime=new Date().getTime();
-              coinCnt = coinCnt + 1;
-              logger.debug(coinCnt);
-              mqttClient.publish("coin/status/inc", "1");
-
-              if (coinCnt >= 5) {
-                coinEnable = false;
-                coinCnt = 0;
-                mqttClient.publish("coin/cmd/enable", "false");
-                logger.debug("coin disable");
-              }
-            }
-            coinTrig = false;
-          }
-          else{
-            //if (coinTrig === false)
-              //sTime = new Date().getTime();
-            coinTrig = true;
-            logger.info("coinFalse");
-          }
-
-       /* }
-      } else {
-        coinValueDebounceCnt = 0;
+      if (sTime == 0) {
+        sTime = new Date().getTime();
       }
-      coinValueDebounceCnt = value;*/
+      if (value === true) {
+        logger.info("coinTrue");
+        endtime = new Date().getTime();
+        logger.info(endtime - sTime);
+        if (endtime - sTime >= 25) {
+          sTime = new Date().getTime();
+          coinCnt = coinCnt + 1;
+          logger.debug(coinCnt);
+          mqttClient.publish("coin/status/inc", "1");
+          if (coinCnt >= 5) {
+            coinEnable = false;
+            coinCnt = 0;
+            mqttClient.publish("coin/cmd/enable", "false");
+            logger.debug("coin disable");
+          }
+        }
+        coinTrig = false;
+      } else {
+        //if (coinTrig === false)
+        //sTime = new Date().getTime();
+        coinTrig = true;
+        logger.info("coinFalse");
+      }
     }
   }
   if (channel === gateLimitPinIdx) {
-    // if (value === gateLimitLastValue) {
-    //   if (gateLimitDebounceCnt < gateLimitDebounceLimit) {
-    //     gateLimitDebounceCnt = gateLimitDebounceCnt + 1;
-    //   } else {
-    //     gateLimitDebounceCnt = 0;
     if (value === false) {
       if (gateIsStop === false) {
         gateMotor.stop();
@@ -186,10 +167,6 @@ gpio.on("change", function (channel, value) {
     } else {
       gateIsStop = false;
     }
-    //   }
-    // } else {
-    //   gateLimitDebounceCnt = 0;
-    // }
     gateLimitLastValue = value;
   }
 });

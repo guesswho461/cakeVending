@@ -39,25 +39,17 @@ const initState = {
   showRecipeProgress: false,
   pressToBakeDlgOpen: false,
   isDevMode: false,
+  robotModeChk: false,
+  bucketModeChk: false,
+  ovenModeChk: false,
 };
 
-let robotModeChk = false;
-let bucketModeChk = false;
-let ovenModeChk = false;
 function checkOvenIsReady(isDevMode, tempature) {
   if (isDevMode) {
     return true;
   } else {
     const parsed = parseInt(tempature, 10);
     return parsed >= process.env.REACT_APP_OVEN_GOOD_TEMPERATURE ? true : false;
-  }
-}
-
-function checkRemoteIsReady() {
-  if (robotModeChk == false || bucketModeChk == false || ovenModeChk == false) {
-    return "maintain";
-  } else {
-    return "ad";
   }
 }
 
@@ -88,14 +80,30 @@ function post(url) {
     });
 }
 
-function checkOvenTemperatureCmd(data) {
-  const temperatureCmd = parseInt(data, 10);
-  if (temperatureCmd <= process.env.REACT_APP_OVEN_GOOD_TEMPERATURE) {
-    post("/kanban/disable");
-    return "maintain";
+function checkOvenTemperatureCmd(
+  isDevMode,
+  data,
+  robotModeChk,
+  bucketModeChk,
+  ovenModeChk,
+  lastPage
+) {
+  if (isDevMode) {
+    return lastPage;
   } else {
-    post("/kanban/enable");
-    return "ad";
+    const temperatureCmd = parseInt(data, 10);
+    if (
+      temperatureCmd <= process.env.REACT_APP_OVEN_GOOD_TEMPERATURE ||
+      robotModeChk === false ||
+      bucketModeChk === false ||
+      ovenModeChk === false
+    ) {
+      post("/kanban/disable");
+      return "maintain";
+    } else {
+      post("/kanban/enable");
+      return "ad";
+    }
   }
 }
 
@@ -158,7 +166,14 @@ export default function reducer(state = initState, action) {
     case "oven/cmd/temperature":
       return {
         ...state,
-        selectedPage: checkOvenTemperatureCmd(action.payload.toString()),
+        selectedPage: checkOvenTemperatureCmd(
+          state.isDevMode,
+          action.payload.toString(),
+          state.robotModeChk,
+          state.bucketModeChk,
+          state.ovenModeChk,
+          state.selectedPage
+        ),
       };
     case "coin/status/inc":
       return {
@@ -225,43 +240,40 @@ export default function reducer(state = initState, action) {
       };
     case "robot/status/mode":
       if (action.payload === "MQTT") {
-        robotModeChk = true;
         return {
           ...state,
-          //    selectedPage: checkRemoteIsReady(),
+          robotModeChk: true,
         };
       } else {
-        robotModeChk = false;
         return {
           ...state,
+          robotModeChk: false,
           selectedPage: "maintain",
         };
       }
     case "bucket/status/mode":
       if (action.payload === "MQTT") {
-        bucketModeChk = true;
         return {
           ...state,
-          //    selectedPage: checkRemoteIsReady(),
+          bucketModeChk: true,
         };
       } else {
-        bucketModeChk = false;
         return {
           ...state,
+          bucketModeChk: false,
           selectedPage: "maintain",
         };
       }
     case "oven/status/mode":
       if (action.payload === "MQTT") {
-        ovenModeChk = true;
         return {
           ...state,
-          //    selectedPage: checkRemoteIsReady(),
+          ovenModeChk: true,
         };
       } else {
-        ovenModeChk = false;
         return {
           ...state,
+          ovenModeChk: false,
           selectedPage: "maintain",
         };
       }

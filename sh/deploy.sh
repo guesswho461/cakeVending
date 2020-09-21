@@ -5,13 +5,13 @@ frontend)
   tar zcvf fw.tar.gz $1/frontend/build
   ;;
 backend)
-  tar zcvf fw.tar.gz $1/backend/index.js $1/backend/package.json
+  tar zcvf fw.tar.gz $1/frontend/.env $1/backend/index.js $1/backend/package.json
   ;;
 backendgpio)
-  tar zcvf fw.tar.gz $1/backendgpio/index.js $1/backendgpio/A4988.js $1/backendgpio/package.json
+  tar zcvf fw.tar.gz $1/frontend/.env $1/backendgpio/index.js $1/backendgpio/A4988.js $1/backendgpio/package.json
   ;;
 all)
-  tar zcvf fw.tar.gz $1/frontend/build $1/backend/index.js $1/backend/package.json $1/backendgpio/index.js $1/backendgpio/A4988.js $1/backendgpio/package.json
+  tar zcvf fw.tar.gz $1/frontend/.env $1/frontend/build $1/backend/index.js $1/backend/package.json $1/backendgpio/index.js $1/backendgpio/A4988.js $1/backendgpio/package.json
   ;;
 *)
   echo "unknown command"

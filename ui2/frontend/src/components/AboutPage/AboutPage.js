@@ -31,11 +31,11 @@ class AboutPage extends Component {
         <div className="text">
           <Typography variant="h4" align="left" paragraph="true">
             {
-              <strong>
-                <pre>
-                  <Translate value={"aboutMsg"} />
-                </pre>
-              </strong>
+              // <strong>
+              <pre>
+                <Translate value={"aboutMsg"} />
+              </pre>
+              // </strong>
             }
           </Typography>
 

@@ -118,7 +118,7 @@ class MainPage extends Component {
               </Box>
             )}
             {this.state.tabIdx === 2 && (
-              <Box p={3}>
+              <Box>
                 <AboutPage />
               </Box>
             )}

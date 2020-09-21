@@ -1,5 +1,7 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
+const version = "cakeVendingBackend v1.30";
+
 const log4js = require("log4js");
 log4js.configure({
   appenders: {
@@ -98,7 +100,7 @@ let checkGateCmdDelayObj;
 
 const machineInfo = {
   name: process.env.LOCALNAME,
-  ver: process.env.REACT_APP_VERSION,
+  ver: version,
   isDevMode: process.env.DEV_MODE === "true" ? true : false,
   connect2Bot: process.env.CONNECT_2_BOT === "true" ? true : false,
   ip: this.connect2Bot ? tun0IP : null,
@@ -202,11 +204,11 @@ app.use(log4js.connectLogger(logger, { level: "info" }));
 
 app.get(
   "/version",
-  // jwt({
-  //   subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
-  //   name: process.env.CAKE_ACCESS_TOKEN_NAME,
-  //   secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
-  // }),
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
   (req, res) => {
     res.send(machineInfo.ver);
   }

@@ -1,9 +1,11 @@
 .text {
-  margin: 10px;
-  border-radius: 10px;
+  margin-left: 20px;
+  border-radius: 5px;
   /*   background: #fff; */
   background-color: rgba(125, 125, 125, 0.3);
-  padding: 20px;
+  padding-top: 5px;
+  padding-left: 20px;
+  padding-right: 70px;
   /* display: inline-block; */
   backdrop-filter: blur(10px);
   -moz-backdrop-filter: blur(10px);

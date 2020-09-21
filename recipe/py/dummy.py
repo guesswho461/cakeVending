@@ -7,6 +7,8 @@ import threading
 import logging
 from datetime import datetime
 
+ver = "dummy.pyV1.0"
+
 
 class machineStatus:
     robotMotionDone = True
@@ -31,15 +33,10 @@ class machineStatus:
     strArmPos = "0"
     strCvtPos = "0"
     ovenOpMode = "manual"
-
-
-<< << << < HEAD
-bucketOpMode = "manual"
-robotOpMode = "manual"
-allModuleGood2Go = False
-modeRecheckCnt = 0
-== == == =
->>>>>> > 392290c... 增加操作模式防呆
+    bucketOpMode = "manual"
+    robotOpMode = "manual"
+    allModuleGood2Go = False
+    modeRecheckCnt = 0
 
 
 macst = machineStatus()
