@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.30";
+const version = "cakeVendingBackend v1.32";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -109,17 +109,16 @@ const machineInfo = {
 if (machineInfo.connect2Bot) {
   const iNameList = os.networkInterfaces();
   const tun0IP = iNameList.tun0[0].address;
+  const httpsOptions = {
+    key: fs.readFileSync("./ssl_files/server_private_key.pem"),
+    ca: [fs.readFileSync("./ssl_files/cert.pem")],
+    cert: fs.readFileSync("./ssl_files/server_cert.pem"),
+  };
 }
 
 const mqttOpt = {
   port: process.env.MACHINE_LOCAL_MQTT_BROKER_PORT,
   clientId: machineInfo.ver,
-};
-
-const httpsOptions = {
-  key: fs.readFileSync("./ssl_files/server_private_key.pem"),
-  ca: [fs.readFileSync("./ssl_files/cert.pem")],
-  cert: fs.readFileSync("./ssl_files/server_cert.pem"),
 };
 
 const postWebAPI = (url, payload) => {
@@ -425,16 +424,27 @@ postWebAPI("/machine/online", stringify(machineInfo));
 
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
-http
-  .createServer(app)
-  .listen(process.env.MACHINE_BACKEND_PORT, "localhost", () => {
+if (machineInfo.isDevMode) {
+  http.createServer(app).listen(process.env.MACHINE_BACKEND_PORT, () => {
     logger.info(
       machineInfo.ver +
         " listening on " +
-        "localhost:" +
+        ":" +
         process.env.MACHINE_BACKEND_PORT
     );
   });
+} else {
+  http
+    .createServer(app)
+    .listen(process.env.MACHINE_BACKEND_PORT, "localhost", () => {
+      logger.info(
+        machineInfo.ver +
+          " listening on " +
+          "localhost:" +
+          process.env.MACHINE_BACKEND_PORT
+      );
+    });
+}
 
 if (machineInfo.connect2Bot) {
   https

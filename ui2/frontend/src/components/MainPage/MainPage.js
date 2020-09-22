@@ -41,15 +41,16 @@ const styles = (theme) => ({
     backgroundImage: `url(${logo})`,
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
+    height: "100vh",
   },
   tabs: {
     borderRight: `1px solid ${theme.palette.divider}`,
   },
   content: {
-    paddingTop: "5vh",
-    paddingBottom: "0.5vh",
+    paddingTop: "2vh",
+    // paddingBottom: "0.5vh",
     display: "flex",
-    height: "80vh",
+    // height: "80vh",
   },
 });
 
@@ -103,18 +104,13 @@ class MainPage extends Component {
               {/** 2 */}
             </Tabs>
             {this.state.tabIdx === 0 && (
-              <Box p={3}>
+              <Box paddingLeft="20px">
                 <ItemPage />
               </Box>
             )}
             {this.state.tabIdx === 1 && (
-              <Box position="absolute" top="20vh" left="40vh">
-                <img
-                  src={useTeach}
-                  Position="center"
-                  width="800vh"
-                  height="500vh"
-                />
+              <Box paddingLeft="20px">
+                <img alt="how to operate" src={useTeach} height={480} />
               </Box>
             )}
             {this.state.tabIdx === 2 && (

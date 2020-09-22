@@ -2,16 +2,16 @@
 
 case $2 in
 frontend)
-  tar zcvf fw.tar.gz $1/frontend/build
+  tar zcvf fw.tar.gz ../ui2/frontend/build
   ;;
 backend)
-  tar zcvf fw.tar.gz $1/frontend/.env $1/backend/index.js $1/backend/package.json
+  tar zcvf fw.tar.gz ../ui2/frontend/.env ../ui2/backend/index.js ../ui2/backend/package.json
   ;;
 backendgpio)
-  tar zcvf fw.tar.gz $1/frontend/.env $1/backendgpio/index.js $1/backendgpio/A4988.js $1/backendgpio/package.json
+  tar zcvf fw.tar.gz ../ui2/frontend/.env ../ui2/backendgpio/index.js ../ui2/backendgpio/A4988.js ../ui2/backendgpio/package.json
   ;;
 all)
-  tar zcvf fw.tar.gz $1/frontend/.env $1/frontend/build $1/backend/index.js $1/backend/package.json $1/backendgpio/index.js $1/backendgpio/A4988.js $1/backendgpio/package.json
+  tar zcvf fw.tar.gz ../ui2/frontend/.env ../ui2/frontend/build ../ui2/backend/index.js ../ui2/backend/package.json ../ui2/backendgpio/index.js ../ui2/backendgpio/A4988.js ../ui2/backendgpio/package.json
   ;;
 *)
   echo "unknown command"
@@ -19,10 +19,10 @@ all)
 esac
 
 echo "copy fw to machine"
-scp fw.tar.gz pi@$3:/home/pi
+scp fw.tar.gz pi@$1:/home/pi
 
-if [ "$4" = "update" ]; then
+if [ "$3" = "update" ]; then
   echo "let machine to do fw update"
-  scp update.sh pi@$3:/home/pi
-  ssh pi@$3 <update.sh
+  scp update.sh pi@$1:/home/pi
+  ssh pi@$1 <update.sh
 fi

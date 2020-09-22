@@ -173,7 +173,7 @@ class ADPage extends Component {
               height="100%"
               playing={true}
               volume={1}
-              muted={false}
+              muted={true}
               playsinline={false}
               controls={false}
               // onEnded={this.props.getNextVideoURL}
