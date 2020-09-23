@@ -107,12 +107,33 @@ function checkOvenTemperatureCmd(
   }
 }
 
+function checkMachineAlarm(isDevMode, data, lastPage) {
+  if (isDevMode) {
+    return lastPage;
+  } else {
+    if (data === "true") {
+      post("/kanban/disable");
+      return "maintain";
+    } else {
+      post("/kanban/enable");
+      return "ad";
+    }
+  }
+}
 function getNextVideoURLFromVideoList(list, idx) {
   let newIdx = idx + 1;
   if (newIdx >= list.length) {
     newIdx = 0;
   }
   return { idx: newIdx, url: list[newIdx] };
+}
+
+function checkModuleModeIsReady(mode, lastPage) {
+  if (mode === "MQTT") {
+    return lastPage;
+  } else {
+    return "maintain";
+  }
 }
 
 export default function reducer(state = initState, action) {
@@ -163,15 +184,12 @@ export default function reducer(state = initState, action) {
         ...state,
         ovenIsReady: checkOvenIsReady(state.isDevMode, action.payload),
       };
-    case "oven/cmd/temperature":
+    case "machine/alarm":
       return {
         ...state,
-        selectedPage: checkOvenTemperatureCmd(
+        selectedPage: checkMachineAlarm(
           state.isDevMode,
-          action.payload.toString(),
-          state.robotModeChk,
-          state.bucketModeChk,
-          state.ovenModeChk,
+          action.payload,
           state.selectedPage
         ),
       };
@@ -238,45 +256,6 @@ export default function reducer(state = initState, action) {
         ...state,
         isDevMode: action.payload,
       };
-    case "robot/status/mode":
-      if (action.payload === "MQTT") {
-        return {
-          ...state,
-          robotModeChk: true,
-        };
-      } else {
-        return {
-          ...state,
-          robotModeChk: false,
-          selectedPage: "maintain",
-        };
-      }
-    case "bucket/status/mode":
-      if (action.payload === "MQTT") {
-        return {
-          ...state,
-          bucketModeChk: true,
-        };
-      } else {
-        return {
-          ...state,
-          bucketModeChk: false,
-          selectedPage: "maintain",
-        };
-      }
-    case "oven/status/mode":
-      if (action.payload === "MQTT") {
-        return {
-          ...state,
-          ovenModeChk: true,
-        };
-      } else {
-        return {
-          ...state,
-          ovenModeChk: false,
-          selectedPage: "maintain",
-        };
-      }
   }
 }
 

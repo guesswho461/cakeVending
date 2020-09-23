@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.32";
+const version = "cakeVendingBackend v1.35";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -301,15 +301,22 @@ app.get(
   }
 );
 
-const machineDisable = () => {
-  mqttClient.publish("oven/cmd/temperature", "9");
+const machineDisable = (stopHeating = true) => {
+  if (stopHeating === true) {
+    mqttClient.publish("oven/cmd/temperature", "9");
+  }
+  mqttClient.publish("machine/alarm", "true");
   postWebAPI2("/machine/info", "is disable");
   canPost = false;
   logger.info("machine disable");
 };
 
 const machineEnable = () => {
-  mqttClient.publish("oven/cmd/temperature", "180");
+  mqttClient.publish(
+    "oven/cmd/temperature",
+    process.env.REACT_APP_OVEN_GOOD_TEMPERATURE
+  );
+  mqttClient.publish("machine/alarm", "false");
   canPost = true;
   postWebAPI2("/machine/info", "is enable");
   logger.info("machine enable");
@@ -458,11 +465,11 @@ if (machineInfo.connect2Bot) {
     });
 }
 
-const postAlarm = (payload) => {
+const postAlarm = (payload, stopHeating = true) => {
   logger.error(payload);
   postWebAPI2("/machine/alarm", payload);
   if (machineInfo.isDevMode === false) {
-    machineDisable();
+    machineDisable(stopHeating);
   }
 };
 
@@ -525,6 +532,18 @@ mqttClient.on("message", function (topic, message) {
       }, checkGateCmdDelay);
     } else {
       clearTimeout(checkGateCmdDelayObj);
+    }
+  } else if (topic === "robot/status/mode") {
+    if (message.toString() != "MQTT") {
+      postAlarm("the op mode of robot is wrong", false);
+    }
+  } else if (topic === "bucket/status/mode") {
+    if (message.toString() != "MQTT") {
+      postAlarm("the op mode of bucket is wrong", false);
+    }
+  } else if (topic === "oven/status/mode") {
+    if (message.toString() != "MQTT") {
+      postAlarm("the op mode of oven is wrong", false);
     }
   }
 });

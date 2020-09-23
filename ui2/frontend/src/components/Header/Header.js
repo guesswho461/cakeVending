@@ -41,7 +41,11 @@ class Header extends Component {
                 </Box>
               </Typography>
               <Typography variant="h4">
-                <Localize value={Date()} dateFormat="date" />
+                {this.props.pageStatus.isDevMode ? (
+                  <Translate value="devModeText" />
+                ) : (
+                  <Localize value={Date()} dateFormat="date" />
+                )}
               </Typography>
             </Toolbar>
           </Box>
@@ -52,7 +56,9 @@ class Header extends Component {
 }
 
 const mapStateToProps = (state) => {
-  return {};
+  return {
+    pageStatus: state.pageStatus,
+  };
 };
 
 const mapDispatchToProps = (dispatch) => {
