@@ -39,9 +39,6 @@ const initState = {
   showRecipeProgress: false,
   pressToBakeDlgOpen: false,
   isDevMode: false,
-  robotModeChk: false,
-  bucketModeChk: false,
-  ovenModeChk: false,
 };
 
 function checkOvenIsReady(isDevMode, tempature) {
@@ -80,34 +77,7 @@ function post(url) {
     });
 }
 
-function checkOvenTemperatureCmd(
-  isDevMode,
-  data,
-  robotModeChk,
-  bucketModeChk,
-  ovenModeChk,
-  lastPage
-) {
-  if (isDevMode) {
-    return lastPage;
-  } else {
-    const temperatureCmd = parseInt(data, 10);
-    if (
-      temperatureCmd <= process.env.REACT_APP_OVEN_GOOD_TEMPERATURE ||
-      robotModeChk === false ||
-      bucketModeChk === false ||
-      ovenModeChk === false
-    ) {
-      post("/kanban/disable");
-      return "maintain";
-    } else {
-      post("/kanban/enable");
-      return "ad";
-    }
-  }
-}
-
-function checkMachineAlarm(isDevMode, data, lastPage) {
+function jump2MaintainPage(isDevMode, data, lastPage) {
   if (isDevMode) {
     return lastPage;
   } else {
@@ -128,14 +98,6 @@ function getNextVideoURLFromVideoList(list, idx) {
   return { idx: newIdx, url: list[newIdx] };
 }
 
-function checkModuleModeIsReady(mode, lastPage) {
-  if (mode === "MQTT") {
-    return lastPage;
-  } else {
-    return "maintain";
-  }
-}
-
 export default function reducer(state = initState, action) {
   switch (action.type) {
     default:
@@ -152,14 +114,12 @@ export default function reducer(state = initState, action) {
         selectedPage: action.payload,
       };
     case OPEN_CHECKOUT_DLG:
-      post("/coin/enable");
       return {
         ...state,
         checkoutDlgOpen: true,
         checkoutDone: false,
       };
     case CLOSE_CHECKOUT_DLG:
-      post("/coin/disable");
       return {
         ...state,
         checkoutDlgOpen: false,
@@ -184,10 +144,10 @@ export default function reducer(state = initState, action) {
         ...state,
         ovenIsReady: checkOvenIsReady(state.isDevMode, action.payload),
       };
-    case "machine/alarm":
+    case "frontend/maintain":
       return {
         ...state,
-        selectedPage: checkMachineAlarm(
+        selectedPage: jump2MaintainPage(
           state.isDevMode,
           action.payload,
           state.selectedPage
@@ -274,12 +234,14 @@ export function setPageSelected(data) {
 }
 
 export function setCheckoutDlgOpen() {
+  post("/coin/enable");
   return {
     type: OPEN_CHECKOUT_DLG,
   };
 }
 
 export function setCheckoutDlgClose() {
+  post("/coin/disable");
   return {
     type: CLOSE_CHECKOUT_DLG,
   };

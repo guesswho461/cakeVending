@@ -50,7 +50,7 @@ class CheckoutDlg extends Component {
   }
 
   render() {
-    const { classes, item, confirmAction } = this.props;
+    const { classes, item } = this.props;
 
     return (
       <Dialog

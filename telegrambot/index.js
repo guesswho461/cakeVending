@@ -1,6 +1,6 @@
 //todo: shutdown
 
-const version = "cakeVendingBot v1.13";
+const version = "cakeVendingBot v1.16";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -307,6 +307,9 @@ const cakeBotAction = (chatId, words) => {
       });
       resp += "]";
       return resolve(resp);
+    } else if (words[0] === "clear") {
+      machineMap.clear();
+      return resolve("ok");
     } else if (words[0] === "echo") {
       // postWebAPI(words[1], "/machine/echo", words[2]).then((msg) => {
       //   return resolve(words[1] + ": " + msg);

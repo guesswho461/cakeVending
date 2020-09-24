@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.35";
+const version = "cakeVendingBackend v1.37";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -98,23 +98,20 @@ let macTempStr = "1";
 let canPost = true;
 let checkGateCmdDelayObj;
 
+let lastRobotOpMode = "MQTT";
+let lastBucketOpMode = "MQTT";
+let lastOvenOpMode = "MQTT";
+
 const machineInfo = {
   name: process.env.LOCALNAME,
   ver: version,
   isDevMode: process.env.DEV_MODE === "true" ? true : false,
   connect2Bot: process.env.CONNECT_2_BOT === "true" ? true : false,
-  ip: this.connect2Bot ? tun0IP : null,
+  ip:
+    process.env.CONNECT_2_BOT === "true"
+      ? os.networkInterfaces().tun0[0].address
+      : null,
 };
-
-if (machineInfo.connect2Bot) {
-  const iNameList = os.networkInterfaces();
-  const tun0IP = iNameList.tun0[0].address;
-  const httpsOptions = {
-    key: fs.readFileSync("./ssl_files/server_private_key.pem"),
-    ca: [fs.readFileSync("./ssl_files/cert.pem")],
-    cert: fs.readFileSync("./ssl_files/server_cert.pem"),
-  };
-}
 
 const mqttOpt = {
   port: process.env.MACHINE_LOCAL_MQTT_BROKER_PORT,
@@ -301,11 +298,19 @@ app.get(
   }
 );
 
+logger.info(stringify(machineInfo) + " started");
+postWebAPI("/machine/online", stringify(machineInfo));
+
+const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
+
 const machineDisable = (stopHeating = true) => {
   if (stopHeating === true) {
-    mqttClient.publish("oven/cmd/temperature", "9");
+    mqttClient.publish(
+      "oven/cmd/temperature",
+      process.env.REACT_APP_OVEN_BAD_TEMPERATURE
+    );
   }
-  mqttClient.publish("machine/alarm", "true");
+  mqttClient.publish("frontend/maintain", "true");
   postWebAPI2("/machine/info", "is disable");
   canPost = false;
   logger.info("machine disable");
@@ -316,7 +321,7 @@ const machineEnable = () => {
     "oven/cmd/temperature",
     process.env.REACT_APP_OVEN_GOOD_TEMPERATURE
   );
-  mqttClient.publish("machine/alarm", "false");
+  mqttClient.publish("frontend/maintain", "false");
   canPost = true;
   postWebAPI2("/machine/info", "is enable");
   logger.info("machine enable");
@@ -422,48 +427,9 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    res.status(200).send(process.env.DEV_MODE);
+    res.status(200).send(machineInfo.isDevMode);
   }
 );
-
-logger.info(stringify(machineInfo) + " started");
-postWebAPI("/machine/online", stringify(machineInfo));
-
-const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
-
-if (machineInfo.isDevMode) {
-  http.createServer(app).listen(process.env.MACHINE_BACKEND_PORT, () => {
-    logger.info(
-      machineInfo.ver +
-        " listening on " +
-        ":" +
-        process.env.MACHINE_BACKEND_PORT
-    );
-  });
-} else {
-  http
-    .createServer(app)
-    .listen(process.env.MACHINE_BACKEND_PORT, "localhost", () => {
-      logger.info(
-        machineInfo.ver +
-          " listening on " +
-          "localhost:" +
-          process.env.MACHINE_BACKEND_PORT
-      );
-    });
-}
-
-if (machineInfo.connect2Bot) {
-  https
-    .createServer(httpsOptions, app)
-    .listen(process.env.MACHINE_BACKEND_PORT, machineInfo.ip, () => {
-      logger.info(
-        stringify(machineInfo) +
-          " listening on port " +
-          process.env.MACHINE_BACKEND_PORT
-      );
-    });
-}
 
 const postAlarm = (payload, stopHeating = true) => {
   logger.error(payload);
@@ -476,6 +442,17 @@ const postAlarm = (payload, stopHeating = true) => {
 const postWarning = (payload) => {
   logger.warn(payload);
   postWebAPI2("/machine/warning", payload);
+};
+
+const checkOpMode = (name, last, now, second, third) => {
+  if (last != now) {
+    if (now === "MQTT" && second === "MQTT" && third === "MQTT") {
+      mqttClient.publish("frontend/maintain", "false");
+    } else {
+      postAlarm("the op mode of " + name + " is wrong (" + now + ")", false);
+    }
+  }
+  return now;
 };
 
 mqttClient.on("message", function (topic, message) {
@@ -534,17 +511,29 @@ mqttClient.on("message", function (topic, message) {
       clearTimeout(checkGateCmdDelayObj);
     }
   } else if (topic === "robot/status/mode") {
-    if (message.toString() != "MQTT") {
-      postAlarm("the op mode of robot is wrong", false);
-    }
+    lastRobotOpMode = checkOpMode(
+      "robot",
+      lastRobotOpMode,
+      message.toString(),
+      lastBucketOpMode,
+      lastOvenOpMode
+    );
   } else if (topic === "bucket/status/mode") {
-    if (message.toString() != "MQTT") {
-      postAlarm("the op mode of bucket is wrong", false);
-    }
+    lastBucketOpMode = checkOpMode(
+      "bucket",
+      lastBucketOpMode,
+      message.toString(),
+      lastRobotOpMode,
+      lastOvenOpMode
+    );
   } else if (topic === "oven/status/mode") {
-    if (message.toString() != "MQTT") {
-      postAlarm("the op mode of oven is wrong", false);
-    }
+    lastOvenOpMode = checkOpMode(
+      "oven",
+      lastOvenOpMode,
+      message.toString(),
+      lastRobotOpMode,
+      lastBucketOpMode
+    );
   }
 });
 
@@ -606,3 +595,41 @@ mqttClient.on("connect", function () {
     mqttClient.subscribe(topic);
   });
 });
+
+if (machineInfo.isDevMode) {
+  http.createServer(app).listen(process.env.MACHINE_BACKEND_PORT, () => {
+    logger.info(
+      machineInfo.ver +
+        " listening on " +
+        ":" +
+        process.env.MACHINE_BACKEND_PORT
+    );
+  });
+} else {
+  http
+    .createServer(app)
+    .listen(process.env.MACHINE_BACKEND_PORT, "localhost", () => {
+      logger.info(
+        machineInfo.ver +
+          " listening on " +
+          "localhost:" +
+          process.env.MACHINE_BACKEND_PORT
+      );
+    });
+  if (machineInfo.connect2Bot) {
+    const httpsOptions = {
+      key: fs.readFileSync("./ssl_files/server_private_key.pem"),
+      ca: [fs.readFileSync("./ssl_files/cert.pem")],
+      cert: fs.readFileSync("./ssl_files/server_cert.pem"),
+    };
+    https
+      .createServer(httpsOptions, app)
+      .listen(process.env.MACHINE_BACKEND_PORT, machineInfo.ip, () => {
+        logger.info(
+          stringify(machineInfo) +
+            " listening on port " +
+            process.env.MACHINE_BACKEND_PORT
+        );
+      });
+  }
+}
