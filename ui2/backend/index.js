@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.37";
+const version = "cakeVendingBackend v1.39";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -17,7 +17,7 @@ log4js.configure({
     },
   },
   categories: {
-    default: { appenders: ["file", "out"], level: "trace" },
+    default: { appenders: ["file", "out"], level: "debug" },
   },
 });
 const logger = log4js.getLogger("cake");
@@ -135,13 +135,13 @@ const postWebAPI = (url, payload) => {
         data: payload,
       })
         .then((res) => {
-          logger.trace("POST " + url + " " + payload + " " + res.status);
+          logger.debug("POST " + url + " " + payload + " " + res.status);
         })
         .catch((err) => {
           logger.error(err.message);
         });
     }
-    logger.trace("POST " + url + " " + payload);
+    logger.debug("POST " + url + " " + payload);
   }
 };
 
@@ -317,10 +317,6 @@ const machineDisable = (stopHeating = true) => {
 };
 
 const machineEnable = () => {
-  mqttClient.publish(
-    "oven/cmd/temperature",
-    process.env.REACT_APP_OVEN_GOOD_TEMPERATURE
-  );
   mqttClient.publish("frontend/maintain", "false");
   canPost = true;
   postWebAPI2("/machine/info", "is enable");
@@ -446,9 +442,7 @@ const postWarning = (payload) => {
 
 const checkOpMode = (name, last, now, second, third) => {
   if (last != now) {
-    if (now === "MQTT" && second === "MQTT" && third === "MQTT") {
-      mqttClient.publish("frontend/maintain", "false");
-    } else {
+    if (now != "MQTT" || second != "MQTT" || third != "MQTT") {
       postAlarm("the op mode of " + name + " is wrong (" + now + ")", false);
     }
   }

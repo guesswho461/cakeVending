@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackendGPIO v1.9";
+const version = "cakeVendingBackendGPIO v1.21";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -25,7 +25,8 @@ const logger = log4js.getLogger("cake");
 const mqtt = require("mqtt");
 const gpio = require("rpi-gpio");
 const A4988 = require("./A4988");
-const { time } = require("console");
+const axios = require("axios");
+const Gpio = require("pigpio").Gpio;
 
 //todo: idle的時候每五分鐘回抽
 
@@ -38,6 +39,7 @@ const coinPinIdx = 7; //GPIO 4, pin 7
 const coinEnablePinIdx = 11; //GPIO 17, pin 11
 const kanbanEnablePinIdx = 13; //GPIO 27, pin 13
 const gateLimitPinIdx = 3; //GPIO 2, pin 3
+const alarmResetPinIdx = 22; //GPIO 22, pin 15
 
 const gateMotor = new A4988({
   step: 24, //GPIO 24, pin 18
@@ -73,7 +75,59 @@ let gateLimitLastValue = false;
 let gateIsOpen = false;
 let gateIsStop = false;
 
+const alarmResetBtnPressDownDurationThreshold =
+  process.env.ALARM_RESET_BTN_PRESS_DURATION * 1000 * 1000;
+let lastAlarmResetBtnPressDownTick = 0;
+const alarmResetPin = new Gpio(alarmResetPinIdx, {
+  mode: Gpio.INPUT,
+  pullUpDown: Gpio.PUD_UP,
+  alert: true,
+});
+alarmResetPin.glitchFilter(100000);
+
 logger.info(version + " started");
+
+const postWebAPI = (url, payload) => {
+  axios({
+    method: "post",
+    baseURL: "http://localhost" + ":" + process.env.MACHINE_BACKEND_PORT + url,
+    headers: {
+      Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+      "content-type": "text/plain",
+    },
+    data: payload,
+  })
+    .then((res) => {
+      logger.debug("POST " + url + " " + payload + " " + res.status);
+    })
+    .catch((err) => {
+      logger.error(err.message);
+    });
+  logger.debug("POST " + url + " " + payload);
+};
+
+alarmResetPin.on("alert", (level, tick) => {
+  logger.trace("alarmResetPin alert level: " + level + ", tick: " + tick);
+  if (level === 0) {
+    // btn down
+    lastAlarmResetBtnPressDownTick = tick;
+  } else {
+    // btn up
+    const diff = tick - lastAlarmResetBtnPressDownTick;
+    if (diff >= alarmResetBtnPressDownDurationThreshold) {
+      logger.trace(
+        "alarm press duration: " +
+          tick +
+          ", " +
+          lastAlarmResetBtnPressDownTick +
+          ", " +
+          diff
+      );
+      logger.info("alarm reset");
+      postWebAPI("/machine/enable", "alarm reset");
+    }
+  }
+});
 
 const openTheGate = () => {
   if (gateIsOpen === false) {
@@ -103,7 +157,7 @@ const closeTheGate = () => {
     });
     // );
     mqttClient.publish("latch/cmd/light/open", "false");
-    logger.debug("latch/cmd/light/open false");
+    logger.info("latch/cmd/light/open false");
   }
 };
 
@@ -128,23 +182,20 @@ gpio.on("change", function (channel, value) {
   logger.trace("pin " + channel + " is " + value);
   if (coinEnable) {
     if (channel === coinPinIdx) {
-      if (sTime == 0) {
-        sTime = new Date().getTime();
-      }
       if (value === true) {
-        logger.info("coinTrue");
+        logger.trace("coinTrue");
         endtime = new Date().getTime();
-        logger.info(endtime - sTime);
+        logger.trace(endtime - sTime);
         if (endtime - sTime >= 25) {
           sTime = new Date().getTime();
           coinCnt = coinCnt + 1;
-          logger.debug(coinCnt);
+          logger.info(coinCnt);
           mqttClient.publish("coin/status/inc", "1");
           if (coinCnt >= 5) {
             coinEnable = false;
             coinCnt = 0;
             mqttClient.publish("coin/cmd/enable", "false");
-            logger.debug("coin disable");
+            logger.trace("coin disable");
           }
         }
         coinTrig = false;
@@ -152,7 +203,7 @@ gpio.on("change", function (channel, value) {
         //if (coinTrig === false)
         //sTime = new Date().getTime();
         coinTrig = true;
-        logger.info("coinFalse");
+        logger.trace("coinFalse");
       }
     }
   }
@@ -162,7 +213,7 @@ gpio.on("change", function (channel, value) {
         gateMotor.stop();
         // gateMotor.disable();
         gateIsStop = true;
-        logger.debug("gate stoped");
+        logger.trace("gate stoped");
       }
     } else {
       gateIsStop = false;
@@ -179,6 +230,7 @@ gpio.setup(kanbanEnablePinIdx, gpio.DIR_OUT, function (err) {
 });
 gpio.setup(coinPinIdx, gpio.DIR_IN, gpio.EDGE_RISING);
 gpio.setup(gateLimitPinIdx, gpio.DIR_IN, gpio.EDGE_RISING, checkGateAndClose);
+// gpio.setup(alarmResetPinIdx, gpio.DIR_IN, gpio.EDGE_RISING);
 
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
@@ -189,42 +241,42 @@ mqttClient.on("message", function (topic, message) {
         coinEnable = true;
       }, getCoinDelay);
       gpio.write(coinEnablePinIdx, true);
-      logger.debug("coin/cmd/enable true");
+      logger.info("coin/cmd/enable true");
     } else {
       coinCnt = 0;
       coinEnable = false;
       gpio.write(coinEnablePinIdx, false);
-      logger.debug("coin/cmd/enable false");
+      logger.info("coin/cmd/enable false");
     }
   } else if (topic === "kanban/cmd/enable") {
     if (message.toString() === "true") {
       gpio.write(kanbanEnablePinIdx, true);
-      logger.debug("kanban/cmd/enable true");
+      logger.info("kanban/cmd/enable true");
     } else {
       gpio.write(kanbanEnablePinIdx, false);
-      logger.debug("kanban/cmd/enable false");
+      logger.info("kanban/cmd/enable false");
     }
   } else if (topic === "gate/cmd/open") {
     if (message.toString() === "true") {
       openTheGate();
-      logger.debug("gate/cmd/open true");
+      logger.info("gate/cmd/open true");
     } else {
       closeTheGate();
-      logger.debug("gate/cmd/open false");
+      logger.info("gate/cmd/open false");
     }
   } else if (topic === "gate/cmd/stop") {
     if (message.toString() === "true") {
       gateMotor.stop();
       // gateMotor.disable();
-      logger.debug("gate/cmd/stop true");
+      logger.info("gate/cmd/stop true");
     }
   } else if (topic === "latch/status/bowl/ready") {
     if (message.toString() === "false") {
-      logger.trace("latch/status/bowl/ready false");
+      logger.info("latch/status/bowl/ready false");
       if (gateIsOpen === true) {
         setTimeout(() => {
           mqttClient.publish("gate/cmd/open", "false");
-          logger.debug("gate/cmd/open false");
+          logger.info("gate/cmd/open false");
         }, takeBowlDelay);
       }
     }
