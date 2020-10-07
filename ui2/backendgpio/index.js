@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackendGPIO v1.22";
+const version = "cakeVendingBackendGPIO v1.23";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -77,21 +77,23 @@ let gateIsOpen = false;
 let gateIsStop = false;
 
 const alarmResetBtnPressDownDurationThreshold =
-  process.env.ALARM_RESET_BTN_PRESS_DURATION * 1000 * 1000;
+  process.env.ALARM_RESET_BTN_PRESS_DURATION * 1000 * 1000; //sec to us
 let lastAlarmResetBtnPressDownTick = 0;
 const alarmResetPin = new Gpio(alarmResetPinIdx, {
   mode: Gpio.INPUT,
   pullUpDown: Gpio.PUD_UP,
   alert: true,
 });
-alarmResetPin.glitchFilter(100000); // 100ms
+const alarmDebounceTime = process.env.ALARM_RESET_DEBOUNCE_TIME * 1000; //ms to us
+alarmResetPin.glitchFilter(alarmDebounceTime);
 
 const coinPin = new Gpio(coinPinIdx2, {
   mode: Gpio.INPUT,
   pullUpDown: Gpio.PUD_UP,
   alert: true,
 });
-coinPin.glitchFilter(25000); // 25ms
+const coinDebounceTime = process.env.COIN_DEBOUNCE_TIME * 1000; //ms to us
+coinPin.glitchFilter(coinDebounceTime);
 
 logger.info(version + " started");
 
@@ -294,11 +296,12 @@ mqttClient.on("message", function (topic, message) {
     }
   } else if (topic === "latch/status/bowl/ready") {
     if (message.toString() === "false") {
-      logger.info("latch/status/bowl/ready false");
       if (gateIsOpen === true) {
         setTimeout(() => {
           mqttClient.publish("gate/cmd/open", "false");
-          logger.info("gate/cmd/open false");
+          logger.info(
+            "gate/cmd/open false by latch/status/bowl/ready is false"
+          );
         }, takeBowlDelay);
       }
     }
