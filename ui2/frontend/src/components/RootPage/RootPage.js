@@ -20,6 +20,7 @@ import {
   setCheckoutDlgClose,
   getVideoPlayList,
   getDevMode,
+  isAllOpModesAreCorrect,
 } from "../../store/reducers/pageStatus";
 import store from "../../store";
 
@@ -38,6 +39,7 @@ class RootPage extends Component {
     super(props);
     this.props.getVideoPlayList();
     this.props.getDevMode();
+    this.props.isAllOpModesAreCorrect();
     this.idleTimer = null;
     this.onIdle = this.onIdle.bind(this);
   }
@@ -134,6 +136,7 @@ const mapDispatchToProps = (dispatch) => {
       setCheckoutDlgClose: () => setCheckoutDlgClose(),
       getVideoPlayList: () => getVideoPlayList(),
       getDevMode: () => getDevMode(),
+      isAllOpModesAreCorrect: () => isAllOpModesAreCorrect(),
     },
     dispatch
   );

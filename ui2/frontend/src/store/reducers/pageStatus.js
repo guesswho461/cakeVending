@@ -355,3 +355,24 @@ export function getDevMode() {
       });
   };
 }
+
+export function isAllOpModesAreCorrect() {
+  return (dispatch) => {
+    axios({
+      method: "get",
+      baseURL: backend + "/allOpModesAreCorrect",
+      headers: {
+        Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+      },
+    })
+      .then((res) => {
+        dispatch({
+          type: "frontend/maintain",
+          payload: res.data === true ? "false" : "true",
+        });
+      })
+      .catch((err) => {
+        console.log(err.message);
+      });
+  };
+}

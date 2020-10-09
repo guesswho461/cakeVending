@@ -1,5 +1,6 @@
 [Unit]
 Description=cake vending frontend web browser
+Requires=cakeBackend.service
 After=cakeBackend.service
 
 [Service]

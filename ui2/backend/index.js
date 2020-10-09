@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.39";
+const version = "cakeVendingBackend v1.43";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -336,6 +336,27 @@ app.post(
   }
 );
 
+const opModeRisingEdge = (name, last, now, second, third) => {
+  if (last != now) {
+    if (now != "MQTT" || second != "MQTT" || third != "MQTT") {
+      postAlarm("the op mode of " + name + " is wrong (" + now + ")", false);
+    }
+  }
+  return now;
+};
+
+const isAllOpModesAreCorrect = () => {
+  if (
+    lastRobotOpMode != "MQTT" ||
+    lastBucketOpMode != "MQTT" ||
+    lastOvenOpMode != "MQTT"
+  ) {
+    return false;
+  } else {
+    return true;
+  }
+};
+
 app.post(
   "/machine/enable",
   jwt({
@@ -344,8 +365,12 @@ app.post(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    machineEnable();
-    res.sendStatus(200);
+    if (isAllOpModesAreCorrect() === true) {
+      machineEnable();
+      res.sendStatus(200);
+    } else {
+      res.sendStatus(405);
+    }
   }
 );
 
@@ -427,6 +452,23 @@ app.get(
   }
 );
 
+app.get(
+  "/opModesAreCorrect",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    if (isAllOpModesAreCorrect() === false) {
+      machineDisable();
+      res.status(200).send("false");
+    } else {
+      res.status(200).send("true");
+    }
+  }
+);
+
 const postAlarm = (payload, stopHeating = true) => {
   logger.error(payload);
   postWebAPI2("/machine/alarm", payload);
@@ -438,15 +480,6 @@ const postAlarm = (payload, stopHeating = true) => {
 const postWarning = (payload) => {
   logger.warn(payload);
   postWebAPI2("/machine/warning", payload);
-};
-
-const checkOpMode = (name, last, now, second, third) => {
-  if (last != now) {
-    if (now != "MQTT" || second != "MQTT" || third != "MQTT") {
-      postAlarm("the op mode of " + name + " is wrong (" + now + ")", false);
-    }
-  }
-  return now;
 };
 
 mqttClient.on("message", function (topic, message) {
@@ -505,7 +538,7 @@ mqttClient.on("message", function (topic, message) {
       clearTimeout(checkGateCmdDelayObj);
     }
   } else if (topic === "robot/status/mode") {
-    lastRobotOpMode = checkOpMode(
+    lastRobotOpMode = opModeRisingEdge(
       "robot",
       lastRobotOpMode,
       message.toString(),
@@ -513,7 +546,7 @@ mqttClient.on("message", function (topic, message) {
       lastOvenOpMode
     );
   } else if (topic === "bucket/status/mode") {
-    lastBucketOpMode = checkOpMode(
+    lastBucketOpMode = opModeRisingEdge(
       "bucket",
       lastBucketOpMode,
       message.toString(),
@@ -521,7 +554,7 @@ mqttClient.on("message", function (topic, message) {
       lastOvenOpMode
     );
   } else if (topic === "oven/status/mode") {
-    lastOvenOpMode = checkOpMode(
+    lastOvenOpMode = opModeRisingEdge(
       "oven",
       lastOvenOpMode,
       message.toString(),
