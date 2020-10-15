@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.43";
+const version = "cakeVendingBackend v1.44";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -101,6 +101,8 @@ let checkGateCmdDelayObj;
 let lastRobotOpMode = "MQTT";
 let lastBucketOpMode = "MQTT";
 let lastOvenOpMode = "MQTT";
+
+let ovenIsReady = true;
 
 const machineInfo = {
   name: process.env.LOCALNAME,
@@ -469,6 +471,18 @@ app.get(
   }
 );
 
+app.get(
+  "/oven/status/ready",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    res.status(200).send(ovenIsReady);
+  }
+);
+
 const postAlarm = (payload, stopHeating = true) => {
   logger.error(payload);
   postWebAPI2("/machine/alarm", payload);
@@ -480,6 +494,15 @@ const postAlarm = (payload, stopHeating = true) => {
 const postWarning = (payload) => {
   logger.warn(payload);
   postWebAPI2("/machine/warning", payload);
+};
+
+const checkOvenIsReady = (tempature) => {
+  if (machineInfo.isDevMode === true) {
+    return true;
+  } else {
+    const parsed = parseInt(tempature, 10);
+    return parsed >= process.env.REACT_APP_OVEN_GOOD_TEMPERATURE ? true : false;
+  }
 };
 
 mqttClient.on("message", function (topic, message) {
@@ -561,6 +584,8 @@ mqttClient.on("message", function (topic, message) {
       lastRobotOpMode,
       lastBucketOpMode
     );
+  } else if (topic === "oven/status/temperature") {
+    ovenIsReady = checkOvenIsReady(message.toString());
   }
 });
 

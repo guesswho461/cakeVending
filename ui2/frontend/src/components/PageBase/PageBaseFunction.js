@@ -79,3 +79,24 @@ export const BounceInLeftDoubleArrownIcon = (props) => {
     </FadeInLeftDiv>
   );
 };
+
+const backend = "http://localhost:8081";
+
+export const GetFromBackend = (url, cb) => {
+  return fetch(backend + url, {
+    method: "GET",
+    headers: new Headers({
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+    }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (cb) {
+        cb(data);
+      }
+    })
+    .catch((e) => {
+      console.log(e);
+    });
+};

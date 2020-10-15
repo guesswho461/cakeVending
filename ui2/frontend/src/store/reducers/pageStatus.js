@@ -28,7 +28,6 @@ const initState = {
   checkoutDlgOpen: false,
   coinValue: 0,
   coinProgress: 0,
-  ovenIsReady: true,
   heatingUpWarningDlgOpen: false,
   takeCakeWarningDlgOpen: false,
   checkoutDone: false,
@@ -40,15 +39,6 @@ const initState = {
   pressToBakeDlgOpen: false,
   isDevMode: false,
 };
-
-function checkOvenIsReady(isDevMode, tempature) {
-  if (isDevMode) {
-    return true;
-  } else {
-    const parsed = parseInt(tempature, 10);
-    return parsed >= process.env.REACT_APP_OVEN_GOOD_TEMPERATURE ? true : false;
-  }
-}
 
 function decTheCoinValue(coinValue, data) {
   return coinValue - data;
@@ -138,11 +128,6 @@ export default function reducer(state = initState, action) {
       return {
         ...state,
         heatingUpWarningDlgOpen: false,
-      };
-    case "oven/status/temperature":
-      return {
-        ...state,
-        ovenIsReady: checkOvenIsReady(state.isDevMode, action.payload),
       };
     case "frontend/maintain":
       return {
@@ -360,7 +345,7 @@ export function isAllOpModesAreCorrect() {
   return (dispatch) => {
     axios({
       method: "get",
-      baseURL: backend + "/allOpModesAreCorrect",
+      baseURL: backend + "/opModesAreCorrect",
       headers: {
         Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
       },

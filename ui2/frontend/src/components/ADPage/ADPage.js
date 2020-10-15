@@ -19,7 +19,10 @@ import {
   getNextVideoURL,
   setHeadtingUpWarningDlgClose,
 } from "../../store/reducers/pageStatus";
-import { FlashTouchAppIcon } from "../PageBase/PageBaseFunction";
+import {
+  FlashTouchAppIcon,
+  GetFromBackend,
+} from "../PageBase/PageBaseFunction";
 
 import UIfx from "uifx";
 import pop from "../../sounds/pop.flac";
@@ -141,16 +144,18 @@ class ADPage extends Component {
         disableRipple={true}
         disableTouchRipple={true}
         onClick={() => {
-          if (this.props.pageStatus.ovenIsReady) {
-            popSfx.play();
-            this.props.setPageSelected("main");
-          } else {
-            this.props.setHeadtingUpWarningDlgOpen();
-            setTimeout(
-              this.props.setHeadtingUpWarningDlgClose,
-              process.env.REACT_APP_HEATING_UP_WARNING_DELAY * 1000
-            );
-          }
+          GetFromBackend("/oven/status/ready", (data) => {
+            if (data) {
+              popSfx.play();
+              this.props.setPageSelected("main");
+            } else {
+              this.props.setHeadtingUpWarningDlgOpen();
+              setTimeout(
+                this.props.setHeadtingUpWarningDlgClose,
+                process.env.REACT_APP_HEATING_UP_WARNING_DELAY * 1000
+              );
+            }
+          });
         }}
         disabled={this.props.pageStatus.checkoutDone}
       >

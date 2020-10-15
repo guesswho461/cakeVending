@@ -32,15 +32,6 @@ const styles = (theme) => ({
 });
 
 class AutoCloseBtnDlg extends Component {
-  closeAction = () => {
-    if (this.props.closeSfx) {
-      this.props.closeSfx.play();
-    }
-    if (this.props.closeAction) {
-      this.props.closeAction();
-    }
-  };
-
   render() {
     const {
       classes,
@@ -49,7 +40,6 @@ class AutoCloseBtnDlg extends Component {
       openState,
       closeAction,
       enterSfx,
-      closeSfx,
     } = this.props;
 
     return (
@@ -67,7 +57,7 @@ class AutoCloseBtnDlg extends Component {
             variant="contained"
             color="primary"
             size="large"
-            onClick={this.closeAction}
+            onClick={closeAction}
           >
             <Typography variant="h3">
               <Box display="flex" justifyContent="center" alignItems="center">
@@ -76,7 +66,7 @@ class AutoCloseBtnDlg extends Component {
                 <Countdown
                   date={Date.now() + delay * 1000}
                   renderer={(props) => <div>{props.seconds}</div>}
-                  onComplete={this.closeAction}
+                  onComplete={closeAction}
                 />
                 <FlashTouchAppIcon
                   style={{ fontSize: 64, transform: "rotate(-45deg)" }}

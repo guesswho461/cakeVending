@@ -50,6 +50,11 @@ class RootPage extends Component {
         if (this.props.pageStatus.coinValue <= 0) {
           this.props.setCheckoutDlgClose();
         }
+      } else if (
+        this.props.pageStatus.pressToBakeDlgOpen ||
+        this.props.pageStatus.takeCakeWarningDlgOpen
+      ) {
+        //do nothing
       } else {
         this.props.setPageSelected("ad");
       }
