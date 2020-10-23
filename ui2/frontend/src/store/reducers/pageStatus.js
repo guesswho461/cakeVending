@@ -41,7 +41,11 @@ const initState = {
 };
 
 function decTheCoinValue(coinValue, data) {
-  return coinValue - data;
+  if (coinValue < data) {
+    return 0;
+  } else {
+    return coinValue - data;
+  }
 }
 
 const coinPerValue = parseInt(process.env.REACT_APP_COIN_PER_VALUE, 10);
@@ -80,6 +84,7 @@ function jump2MaintainPage(isDevMode, data, lastPage) {
     }
   }
 }
+
 function getNextVideoURLFromVideoList(list, idx) {
   let newIdx = idx + 1;
   if (newIdx >= list.length) {

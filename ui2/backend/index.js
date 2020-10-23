@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.44";
+const version = "cakeVendingBackend v1.49";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -72,6 +72,10 @@ const unitPrice = process.env.UNIT_PRICE;
 const coinEnableDelayToResponse =
   process.env.COIN_ENABLE_DELAY_TO_RESPONSE * 1000;
 
+//min to ms
+const batterPumpBackRoutineInterval =
+  process.env.BATTER_PUMP_BACK_ROUTINE_INTERVAL * 60 * 1000;
+
 const dbPath = "mydatebase.db";
 
 let bucketAliveMsg = "bucketAliveMsg";
@@ -103,6 +107,7 @@ let lastBucketOpMode = "MQTT";
 let lastOvenOpMode = "MQTT";
 
 let ovenIsReady = true;
+let isMakingACake = true;
 
 const machineInfo = {
   name: process.env.LOCALNAME,
@@ -229,15 +234,30 @@ app.post(
       fridgeTempStr,
       macTempStr
     );
-    exec("python /home/pi/recipe/dummy.py", function (err, stdout, stderr) {
-      if (err !== null) {
-        res.status(500).send(stderr);
-        logger.error(stderr);
-      } else {
-        res.status(200).send(stdout);
-        logger.trace(stdout);
-      }
-    });
+    isMakingACake = true;
+    // exec("python C:\\codes\\cakeVending\\recipe\\py\\test2.py", function (
+    //   err,
+    //   stdout,
+    //   stderr
+    // ) {
+    if (isAllOpModesAreCorrect() === true) {
+      exec("python /home/pi/recipe/dummy.py", function (err, stdout, stderr) {
+        if (err !== null) {
+          res.status(500).send(stderr);
+          logger.error(stderr);
+          postWebAPI2("/machine/info", "bake NG");
+        } else {
+          res.status(200).send(stdout);
+          logger.trace(stdout);
+          postWebAPI2("/machine/info", "bake OK");
+        }
+        isMakingACake = false;
+      });
+    } else {
+      let resp = "cannot bake the cake, the modes of the modules are wrong";
+      logger.error(resp);
+      postWebAPI2("/machine/info", resp);
+    }
   }
 );
 
@@ -518,7 +538,7 @@ mqttClient.on("message", function (topic, message) {
     const macTemp = parseFloat(message.toString());
     macTempStr = macTemp.toString();
     if (macTemp >= maxMachTemp) {
-      postAlarm("machine temperature too high");
+      postAlarm("machine temperature too high (" + macTempStr + ")");
     }
   } else if (topic === "bucket/status/alarm") {
     postAlarm(message.toString());
@@ -526,23 +546,23 @@ mqttClient.on("message", function (topic, message) {
     const bowlCnt = parseInt(message.toString());
     bowlCntStr = bowlCnt.toString();
     if (bowlCnt >= bowlCntAlarmLevel) {
-      postAlarm("out of bowl");
+      postAlarm("out of bowl (" + bowlCntStr + ")");
     } else if (bowlCnt >= bowlCntWarningLevel) {
-      postWarning("bowl cnt too low");
+      postWarning("bowl cnt too low (" + bowlCntStr + ")");
     }
   } else if (topic === "bucket/status/resiVol") {
     const batterVol = parseFloat(message.toString());
     batterVolStr = batterVol.toString();
     if (batterVol >= batterVolAlarmLevel) {
-      postAlarm("out of batter");
+      postAlarm("out of batter (" + batterVolStr + ")");
     } else if (batterVol >= batterVolWarningLevel) {
-      postWarning("batter vol too low");
+      postWarning("batter vol too low (" + batterVolStr + ")");
     }
   } else if (topic === "bucket/status/refrigTemp") {
     const fridgeTemp = parseFloat(message.toString());
     fridgeTempStr = fridgeTemp.toString();
     if (fridgeTemp >= maxFridgeTemp) {
-      postWarning("firdge temperature to high");
+      postWarning("firdge temperature to high (" + fridgeTempStr + ")");
     }
   } else if (topic === "bucket/cmd/refrigTemp") {
     maxFridgeTemp = parseFloat(message.toString());
@@ -641,11 +661,21 @@ const mqttSubsTopis = [
   "gate/cmd/open",
 ];
 
+const batterPumpBackRoutine = () => {
+  if (isMakingACake === false) {
+    mqttClient.publish("bucket/cmd/jog/vol", process.env.BATTER_PUMP_BACK_VOL);
+    logger.info("batter pump back");
+  } else {
+    logger.info("cake is making, batter did not pump back");
+  }
+};
+
 mqttClient.on("connect", function () {
   logger.info(machineInfo.ver + " connect to broker OK");
   mqttSubsTopis.forEach(function (topic, index, array) {
     mqttClient.subscribe(topic);
   });
+  setInterval(batterPumpBackRoutine, batterPumpBackRoutineInterval);
 });
 
 if (machineInfo.isDevMode) {

@@ -1,6 +1,7 @@
 [Unit]
 Description=cake vending backend
-After=openvpn@.service
+Requires=openvpn@client.service
+After=openvpn@client.service
 
 [Service]
 User=pi

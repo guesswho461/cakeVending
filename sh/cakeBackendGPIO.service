@@ -1,6 +1,7 @@
 [Unit]
 Description=cake vending backend gpio
-After=openvpn@.service
+Requires=openvpn@client.service
+After=openvpn@client.service
 
 [Service]
 Environment=NODE_ENV=production

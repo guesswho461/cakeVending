@@ -1,6 +1,6 @@
 //todo: shutdown
 
-const version = "cakeVendingBot v1.16";
+const version = "cakeVendingBot v1.26";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -238,10 +238,55 @@ const getFileWebAPI = (ip, url) => {
   });
 };
 
-const findMachineAndPost = (words, url) => {
+const findMachineAndUpdateIP = (machineName, ip) => {
   return new Promise((resolve, reject) => {
-    if (machineMap.has(words[1])) {
-      const machine = machineMap.get(words[1]);
+    if (machineMap.has(machineName)) {
+      const machine = machineMap.get(machineName);
+      machine.ip = ip;
+      return resolve("update the ip of " + machine.name + " to " + machine.ip);
+    } else {
+      getWebAPI(ip, "/version")
+        .then((msg) => {
+          const machineInfo = { name: machineName, ver: msg, ip: ip };
+          machineMap.set(machineInfo.name, machineInfo);
+          return resolve(
+            "insert a machine: " +
+              machineInfo.name +
+              " " +
+              machineInfo.ver +
+              ": " +
+              machineInfo.ip
+          );
+        })
+        .catch((err) => {
+          return reject(err.message);
+        });
+    }
+  });
+};
+
+const findMachineAndPost2 = (machineName, url) => {
+  return new Promise((resolve, reject) => {
+    if (machineMap.has(machineName)) {
+      const machine = machineMap.get(machineName);
+      postWebAPI(machine.ip, url, "true")
+        .then((msg) => {
+          return resolve(machineName + ": OK");
+        })
+        .catch((err) => {
+          return reject(machineName + ": " + err.message);
+        });
+    } else {
+      resp = "sorry, " + machineName + " is offline";
+      return reject(resp);
+    }
+  });
+};
+
+const findMachineAndPost = (machineName, url, words) => {
+  return new Promise((resolve, reject) => {
+    if (machineMap.has(machineName)) {
+      const machine = machineMap.get(machineName);
       let payload = "";
       if (words.length >= 2) {
         for (let i = 2; i < words.length; i++) {
@@ -256,16 +301,16 @@ const findMachineAndPost = (words, url) => {
           return reject(err.message);
         });
     } else {
-      resp = "sorry, " + words[1] + " is offline";
+      resp = "sorry, " + machineName + " is offline";
       return reject(resp);
     }
   });
 };
 
-const findMachineAndGet = (words, url) => {
+const findMachineAndGet = (machineName, url) => {
   return new Promise((resolve, reject) => {
-    if (machineMap.has(words[1])) {
-      const machine = machineMap.get(words[1]);
+    if (machineMap.has(machineName)) {
+      const machine = machineMap.get(machineName);
       getWebAPI(machine.ip, url)
         .then((msg) => {
           return resolve(machine.name + ": " + msg);
@@ -274,16 +319,16 @@ const findMachineAndGet = (words, url) => {
           return reject(err.message);
         });
     } else {
-      resp = "sorry, " + words[1] + " is offline";
+      resp = "sorry, " + machineName + " is offline";
       return reject(resp);
     }
   });
 };
 
-const findMachineAndDownload = (words, url) => {
+const findMachineAndDownload = (machineName, url) => {
   return new Promise((resolve, reject) => {
-    if (machineMap.has(words[1])) {
-      const machine = machineMap.get(words[1]);
+    if (machineMap.has(machineName)) {
+      const machine = machineMap.get(machineName);
       getFileWebAPI(machine.ip, url)
         .then((data) => {
           return resolve(data);
@@ -292,79 +337,157 @@ const findMachineAndDownload = (words, url) => {
           return reject(err.message);
         });
     } else {
-      resp = "sorry, " + words[1] + " is offline";
+      resp = "sorry, " + machineName + " is offline";
       return reject(resp);
     }
   });
 };
+
+const getCmdHandler = (machineName, words, chatId) => {
+  return new Promise((resolve, reject) => {
+    if (words.length >= 3) {
+      const arg1 = words[2];
+      if (arg1 === "turnover") {
+        findMachineAndGet(machineName, "/turnover/today")
+          .then((msg) => {
+            return resolve(msg);
+          })
+          .catch((err) => {
+            return reject(err);
+          });
+      } else if (arg1 === "db") {
+        findMachineAndDownload(machineName, "/db")
+          .then((data) => {
+            const filePath = "./machine.db";
+            data
+              .pipe(fs.createWriteStream(filePath))
+              .on("finish", () => {
+                bot.sendDocument(chatId, filePath);
+                return resolve("get db from " + machineName + " done");
+              })
+              .on("error", (err) => {
+                return reject(err);
+              });
+          })
+          .catch((err) => {
+            return reject(err);
+          });
+      } else {
+        resp = "sorry, I dont understand";
+        return reject(resp);
+      }
+    } else {
+      resp = "missing arguments";
+      return reject(resp);
+    }
+  });
+};
+
+const setCmdHandler = (machineName, words) => {
+  return new Promise((resolve, reject) => {
+    if (words.length >= 3) {
+      const arg1 = words[2];
+      if (arg1 === "ip") {
+        if (words.length >= 4) {
+          const arg2 = words[3];
+          findMachineAndUpdateIP(machineName, arg2)
+            .then((msg) => {
+              return resolve(msg);
+            })
+            .catch((err) => {
+              return reject(err);
+            });
+        } else {
+          resp = "missing arguments";
+          return reject(resp);
+        }
+      } else {
+        resp = "sorry, I dont understand";
+        return reject(resp);
+      }
+    } else {
+      resp = "missing arguments";
+      return reject(resp);
+    }
+  });
+};
+
 const cakeBotAction = (chatId, words) => {
   return new Promise((resolve, reject) => {
     let resp;
-    if (words[0] === "list") {
-      resp = "machine list: [\n";
-      machineMap.forEach(function (value, key) {
-        resp += value.name + "(" + value.ver + "): " + value.ip + "\n";
-      });
-      resp += "]";
-      return resolve(resp);
-    } else if (words[0] === "clear") {
-      machineMap.clear();
-      return resolve("ok");
-    } else if (words[0] === "echo") {
-      // postWebAPI(words[1], "/machine/echo", words[2]).then((msg) => {
-      //   return resolve(words[1] + ": " + msg);
-      // });
-      findMachineAndPost(words, "/machine/echo")
-        .then((msg) => {
-          return resolve(msg);
-        })
-        .catch((err) => {
-          return reject(err);
-        });
-    } else if (words[0] === "disable") {
-      findMachineAndPost(words, "/machine/disable")
-        .then((msg) => {
-          return resolve(msg);
-        })
-        .catch((err) => {
-          return reject(err);
-        });
-    } else if (words[0] === "enable") {
-      findMachineAndPost(words, "/machine/enable")
-        .then((msg) => {
-          return resolve(msg);
-        })
-        .catch((err) => {
-          return reject(err);
-        });
-    } else if (words[0] === "turnover" && words[2] === "today") {
-      findMachineAndGet(words, "/turnover/today")
-        .then((msg) => {
-          return resolve(msg);
-        })
-        .catch((err) => {
-          return reject(err);
-        });
-    } else if (words[0] === "get" && words[2] === "db") {
-      findMachineAndDownload(words, "/db")
-        .then((data) => {
-          const filePath = "./machine.db";
-          data
-            .pipe(fs.createWriteStream(filePath))
-            .on("finish", () => {
-              bot.sendDocument(chatId, filePath);
-              return resolve("get db from " + words[1] + " done");
-            })
-            .on("error", (err) => {
-              return reject(err);
-            });
-        })
-        .catch((err) => {
-          return reject(err);
-        });
+    if (words.length >= 2) {
+      const machineName = words[0];
+      const cmd = words[1];
+      if (cmd === "echo") {
+        findMachineAndPost(machineName, "/machine/echo", words)
+          .then((msg) => {
+            return resolve(msg);
+          })
+          .catch((err) => {
+            return reject(err);
+          });
+      } else if (cmd === "disable") {
+        findMachineAndPost(machineName, "/machine/disable", words)
+          .then((msg) => {
+            return resolve(msg);
+          })
+          .catch((err) => {
+            return reject(err);
+          });
+      } else if (cmd === "enable") {
+        findMachineAndPost(machineName, "/machine/enable", words)
+          .then((msg) => {
+            return resolve(msg);
+          })
+          .catch((err) => {
+            return reject(err);
+          });
+      } else if (cmd === "get") {
+        getCmdHandler(machineName, words, chatId)
+          .then((msg) => {
+            return resolve(msg);
+          })
+          .catch((err) => {
+            return reject(err);
+          });
+      } else if (cmd === "set") {
+        setCmdHandler(machineName, words)
+          .then((msg) => {
+            return resolve(msg);
+          })
+          .catch((err) => {
+            return reject(err);
+          });
+      } else if (cmd === "bake") {
+        findMachineAndPost2(machineName, "/recipe/start/original")
+          .then((msg) => {
+            return resolve(msg);
+          })
+          .catch((err) => {
+            return reject(err);
+          });
+      } else {
+        resp = "sorry, I dont understand";
+        return reject(resp);
+      }
     } else {
-      resp = "sorry, I dont understand";
-      return reject(resp);
+      if (words.length == 1) {
+        const cmd = words[0];
+        if (cmd === "list") {
+          resp = "machine list: [\n";
+          machineMap.forEach(function (value, key) {
+            resp += value.name + "(" + value.ver + "): " + value.ip + "\n";
+          });
+          resp += "]";
+          return resolve(resp);
+        } else if (cmd === "clear") {
+          machineMap.clear();
+          return resolve("ok");
+        }
+      } else {
+        resp = "missing arguments";
+        return reject(resp);
+      }
     }
   });
 };

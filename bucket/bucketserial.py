@@ -1,13 +1,11 @@
+import serial
 import logging
-from datetime import datetime
 import sys
-import time
 
-
-logger = logging.getLogger('recipe')
+logger = logging.getLogger('bucketserial')
 logger.setLevel(logging.DEBUG)
 # create file handler which logs even debug messages
-log_filename = str(datetime.now().strftime('recipe_%Y%m%d%H%M%S'))
+log_filename = "bucketserial"
 fh = logging.FileHandler(
     'log/{0}.log'.format(log_filename))
 fh.setLevel(logging.INFO)
@@ -23,8 +21,10 @@ fh.setFormatter(formatter)
 logger.addHandler(ch)
 logger.addHandler(fh)
 
-logger.warning('recipe start')
+logger.info('bucket serial started')
 
-time.sleep(30)
-
-logger.warning("recipe done")
+ser = serial.Serial('/dev/ttyUSB4', 9600)
+while 1:
+    if(ser.in_waiting > 0):
+        line = ser.readline()
+        logger.info(line)
