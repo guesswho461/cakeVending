@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.49";
+const version = "cakeVendingBackend v1.53";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -126,30 +126,35 @@ const mqttOpt = {
 };
 
 const postWebAPI = (url, payload) => {
-  if (canPost) {
-    if (machineInfo.connect2Bot) {
-      axios({
-        method: "post",
-        baseURL:
-          process.env.TELEGRAM_BOT_IP + ":" + process.env.SERVER_PORT + url,
-        headers: {
-          Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
-          "content-type": "text/plain",
-        },
-        httpsAgent: new https.Agent({
-          rejectUnauthorized: false,
-        }),
-        data: payload,
-      })
-        .then((res) => {
-          logger.debug("POST " + url + " " + payload + " " + res.status);
+  return new Promise((resolve, reject) => {
+    if (canPost) {
+      if (machineInfo.connect2Bot) {
+        axios({
+          method: "post",
+          baseURL:
+            process.env.TELEGRAM_BOT_IP + ":" + process.env.SERVER_PORT + url,
+          headers: {
+            Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+            "content-type": "text/plain",
+          },
+          httpsAgent: new https.Agent({
+            rejectUnauthorized: false,
+          }),
+          data: payload,
         })
-        .catch((err) => {
-          logger.error(err.message);
-        });
+          .then((res) => {
+            let msg = "POST " + url + " " + payload + " " + res.status;
+            logger.debug(msg);
+            return resolve(msg);
+          })
+          .catch((err) => {
+            logger.error(err.message);
+            return reject(err.message);
+          });
+      }
+      logger.debug("POST " + url + " " + payload);
     }
-    logger.debug("POST " + url + " " + payload);
-  }
+  });
 };
 
 const postWebAPI2 = (url, payload) => {
@@ -235,17 +240,24 @@ app.post(
       macTempStr
     );
     isMakingACake = true;
-    // exec("python C:\\codes\\cakeVending\\recipe\\py\\test2.py", function (
-    //   err,
-    //   stdout,
-    //   stderr
-    // ) {
     if (isAllOpModesAreCorrect() === true) {
+      // exec("python C:\\codes\\cakeVending\\recipe\\py\\test2.py", function (
+      //   err,
+      //   stdout,
+      //   stderr
+      // ) {
+      postWebAPI2("/machine/info", "bake start");
       exec("python /home/pi/recipe/dummy.py", function (err, stdout, stderr) {
         if (err !== null) {
           res.status(500).send(stderr);
           logger.error(stderr);
-          postWebAPI2("/machine/info", "bake NG");
+          postWebAPI2("/machine/info", "bake NG")
+            .then((msg) => {
+              machineDisable();
+            })
+            .catch((err) => {
+              machineDisable();
+            });
         } else {
           res.status(200).send(stdout);
           logger.trace(stdout);
@@ -325,25 +337,45 @@ postWebAPI("/machine/online", stringify(machineInfo));
 
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
-const machineDisable = (stopHeating = true) => {
+const machineDisable = (stopHeating = true, isSoldout = false) => {
   if (stopHeating === true) {
     mqttClient.publish(
       "oven/cmd/temperature",
       process.env.REACT_APP_OVEN_BAD_TEMPERATURE
     );
   }
-  mqttClient.publish("frontend/maintain", "true");
-  postWebAPI2("/machine/info", "is disable");
+  if (isSoldout === true) {
+    mqttClient.publish("frontend/soldout", "true");
+    postWebAPI2("/machine/info", "is sold out");
+    logger.info("machine sold out");
+  } else {
+    mqttClient.publish("frontend/maintain", "true");
+    postWebAPI2("/machine/info", "is disable");
+    logger.info("machine disable");
+  }
   canPost = false;
-  logger.info("machine disable");
 };
 
 const machineEnable = () => {
+  mqttClient.publish("frontend/soldout", "false");
   mqttClient.publish("frontend/maintain", "false");
   canPost = true;
   postWebAPI2("/machine/info", "is enable");
   logger.info("machine enable");
 };
+
+app.post(
+  "/machine/soldout",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    machineDisable(true, true);
+    res.sendStatus(200);
+  }
+);
 
 app.post(
   "/machine/disable",
@@ -503,11 +535,11 @@ app.get(
   }
 );
 
-const postAlarm = (payload, stopHeating = true) => {
+const postAlarm = (payload, stopHeating = true, isSoldout = false) => {
   logger.error(payload);
   postWebAPI2("/machine/alarm", payload);
   if (machineInfo.isDevMode === false) {
-    machineDisable(stopHeating);
+    machineDisable(stopHeating, isSoldout);
   }
 };
 
@@ -546,7 +578,7 @@ mqttClient.on("message", function (topic, message) {
     const bowlCnt = parseInt(message.toString());
     bowlCntStr = bowlCnt.toString();
     if (bowlCnt >= bowlCntAlarmLevel) {
-      postAlarm("out of bowl (" + bowlCntStr + ")");
+      postAlarm("out of bowl (" + bowlCntStr + ")", true, true);
     } else if (bowlCnt >= bowlCntWarningLevel) {
       postWarning("bowl cnt too low (" + bowlCntStr + ")");
     }
@@ -554,7 +586,7 @@ mqttClient.on("message", function (topic, message) {
     const batterVol = parseFloat(message.toString());
     batterVolStr = batterVol.toString();
     if (batterVol >= batterVolAlarmLevel) {
-      postAlarm("out of batter (" + batterVolStr + ")");
+      postAlarm("out of batter (" + batterVolStr + ")", true, true);
     } else if (batterVol >= batterVolWarningLevel) {
       postWarning("batter vol too low (" + batterVolStr + ")");
     }

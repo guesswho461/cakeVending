@@ -1,6 +1,6 @@
 //todo: shutdown
 
-const version = "cakeVendingBot v1.26";
+const version = "cakeVendingBot v1.27";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -420,6 +420,14 @@ const cakeBotAction = (chatId, words) => {
       const cmd = words[1];
       if (cmd === "echo") {
         findMachineAndPost(machineName, "/machine/echo", words)
+          .then((msg) => {
+            return resolve(msg);
+          })
+          .catch((err) => {
+            return reject(err);
+          });
+      } else if (cmd === "soldout") {
+        findMachineAndPost(machineName, "/machine/soldout", words)
           .then((msg) => {
             return resolve(msg);
           })

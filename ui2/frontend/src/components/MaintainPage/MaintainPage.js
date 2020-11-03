@@ -42,7 +42,7 @@ class MaintainPage extends Component {
         <Box className={classes.box}>
           <Typography variant="h2">
             <Box fontWeight="fontWeightBold">
-              <Translate value="maintainMsg" />
+              <Translate value={this.props.pageStatus.maintainPageTitle} />
             </Box>
           </Typography>
         </Box>
@@ -52,7 +52,9 @@ class MaintainPage extends Component {
 }
 
 const mapStateToProps = (state) => {
-  return {};
+  return {
+    pageStatus: state.pageStatus,
+  };
 };
 
 const mapDispatchToProps = (dispatch) => {

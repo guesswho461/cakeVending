@@ -1,4 +1,12 @@
+# For 00-machine ONLY
 # change from testRun0701
+# change date 0925 add shake_oven func()
+# 1007 add commu_delay parameter
+# 1013 add & test open_oven func()
+# 1024 change batter volume from 28 to 29
+# 1026 change mqtt keep alive from 60 to 30
+# 1102 connect twice will force to exit, post alarm as well
+# 1103 use the disconnect callback, add check oven isHome2 status, true means oven did not open
 
 import paho.mqtt.client as mqtt
 import signal
@@ -6,8 +14,8 @@ import time
 import threading
 import logging
 from datetime import datetime
-
-ver = "dummy.pyV1.0"
+import os
+import requests
 
 
 class machineStatus:
@@ -37,12 +45,25 @@ class machineStatus:
     robotOpMode = "manual"
     allModuleGood2Go = False
     modeRecheckCnt = 0
+    isConnected = False
+    ovenIsHome1 = False
+    ovenIsHome2 = False
 
 
 macst = machineStatus()
 looping = False
 mqttc = None
 latchTakeBowl_Start = False
+commu_delay = 0.05
+
+
+def post2backend(url):
+    myToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjYWtlVmVuZGluZyIsIm5hbWUiOiJKYXNoIEhzdSJ9.DSYy7W5a6iLSre1cmRaWBEdxYGu81jzdwdWnbnqRr4c'
+    myUrl = 'http://localhost:8081' + url
+    head = {'Authorization': 'Bearer {}'.format(myToken)}
+    response = requests.post(myUrl, headers=head)
+    logger.debug("post2backend: " + url + " => " + response)
+
 
 # def on_publish(mqttc, obj, mid):
 #     logger.debug("mid: " + str(mid))
@@ -61,24 +82,45 @@ def stop_all(*args):
     looping = False
 
 
+def on_disconnect(client, userdata, rc):
+    client.loop_stop()
+    logger.info("on_disconnect, rc: " + str(rc))
+    os._exit(rc)
+
+
 def on_connect(mqttc, obj, flags, rc):
-    logger.warning('broker connected')
-    mqttc.subscribe('robot/status/stop')
-    mqttc.subscribe('oven/status/flip')
-    mqttc.subscribe('oven/status/open')
-    mqttc.subscribe('bucket/status/stop')
-    mqttc.subscribe('latch/status/arm/stop')
-    mqttc.subscribe('latch/status/cvt/stop')
-    mqttc.subscribe('latch/status/bowl/cnt')
-    mqttc.subscribe('latch/status/bowl/ready')
-    mqttc.subscribe('latch/status/arm/suck')
-    mqttc.subscribe('latch/status/arm/release')
-    mqttc.subscribe('latch/status/gate/open')
-    mqttc.subscribe('latch/status/fan/open')
-    mqttc.subscribe('latch/status/vibration')
-    mqttc.subscribe('latch/status/arm/pos')
-    mqttc.subscribe('latch/status/cvt/pos')
-    mqttc.subscribe('oven/status/mode')
+    global macst
+    if macst.isConnected == False:
+        macst.isConnected = True
+        logger.warning('broker connected')
+        mqttc.subscribe('robot/status/stop')
+        mqttc.subscribe('oven/status/flip')
+        mqttc.subscribe('oven/status/open')
+        mqttc.subscribe('bucket/status/stop')
+        mqttc.subscribe('latch/status/arm/stop')
+        mqttc.subscribe('latch/status/cvt/stop')
+        mqttc.subscribe('latch/status/bowl/cnt')
+        mqttc.subscribe('latch/status/bowl/ready')
+        mqttc.subscribe('latch/status/arm/suck')
+        mqttc.subscribe('latch/status/arm/release')
+        mqttc.subscribe('latch/status/gate/open')
+        mqttc.subscribe('latch/status/fan/open')
+        mqttc.subscribe('latch/status/vibration')
+        mqttc.subscribe('latch/status/arm/pos')
+        mqttc.subscribe('latch/status/cvt/pos')
+        mqttc.subscribe('oven/status/mode')
+        mqttc.subscribe('bucket/status/mode')
+        mqttc.subscribe('robot/status/mode')
+        mqttc.subscribe('oven/status/mode')
+        mqttc.subscribe('oven/status/isHome1')
+        mqttc.subscribe('oven/status/isHome2')
+    else:
+        mqttc.loop_stop()
+        msg = ("recipe: connect to broker twice")
+        logger.fatal(msg)
+        post2backend("/machine/disable")
+        mqttc.publish("bucket/status/alarm", msg)
+        os._exit(1)
 
 
 def on_message(mqttc, obj, msg):
@@ -89,6 +131,16 @@ def on_message(mqttc, obj, msg):
             macst.robotMotionDone = True
         else:
             macst.robotMotionDone = False
+    elif msg.topic == "oven/status/isHome1":  # <------------
+        if str(msg.payload) == "true":
+            macst.ovenIsHome1 = True
+        else:
+            macst.ovenIsHome1 = False
+    elif msg.topic == "oven/status/isHome2":  # <------------
+        if str(msg.payload) == "true":
+            macst.ovenIsHome2 = True
+        else:
+            macst.ovenIsHome2 = False
     elif msg.topic == "oven/status/flip":
         if str(msg.payload) == "true":
             macst.ovenFlipTrue = True
@@ -184,6 +236,10 @@ def on_message(mqttc, obj, msg):
             macst.latchArmReleaseFalse = True
     elif msg.topic == "oven/status/mode":
         macst.ovenOpMode = str(msg.payload)
+    elif msg.topic == "bucket/status/mode":
+        macst.bucketOpMode = str(msg.payload)
+    elif msg.topic == "robot/status/mode":
+        macst.robotOpMode = str(msg.payload)
 
 
 def move_robot(target, pos, isPass="WAIT"):
@@ -193,7 +249,7 @@ def move_robot(target, pos, isPass="WAIT"):
     if isPass != "PASS":
         while macst.robotMotionDone == False:
             logger.debug("robotMotionDone: " + str(macst.robotMotionDone))
-            time.sleep(0.1)
+            time.sleep(commu_delay)
 
 
 def spit_cake(vol):
@@ -202,7 +258,7 @@ def spit_cake(vol):
     mqttc.publish("bucket/cmd/jog/vol", vol)
     while macst.bucketStopTrue == False:
         logger.debug("bucketStopTrue: " + str(macst.bucketStopTrue))
-        time.sleep(0.1)
+        time.sleep(commu_delay)
 
 
 def spit_stop():
@@ -210,7 +266,7 @@ def spit_stop():
     macst.bucketStopTrue = False
     while macst.bucketStopTrue == False:
         logger.debug("bucketStopTrue: " + str(macst.bucketStopTrue))
-        time.sleep(0.1)
+        time.sleep(commu_delay)
 
 
 def close_oven():
@@ -219,7 +275,27 @@ def close_oven():
     mqttc.publish("oven/cmd/open", "false")
     while macst.ovenOpenFalse == False:
         logger.debug("ovenOpenFalse: " + str(macst.ovenOpenFalse))
-        time.sleep(0.1)
+        time.sleep(commu_delay)
+
+
+def shake_oven(deg):
+    global mqttc, macst
+    macst.ovenOpenFalse = False
+    mqttc.publish("oven/cmd/shake", deg)
+    time.sleep(0.01)
+    while macst.ovenOpenFalse == False:
+        logger.debug("ovenOpenFalse: " + str(macst.ovenOpenFalse))
+        time.sleep(commu_delay)
+
+
+def open_oven(deg):
+    global mqttc, macst
+    macst.ovenOpenFalse = False
+    mqttc.publish("oven/cmd/openABSDeg", deg)
+    time.sleep(0.01)
+    while macst.ovenOpenFalse == False:
+        logger.debug("ovenOpenFalse: " + str(macst.ovenOpenFalse))
+        time.sleep(commu_delay)
 
 
 def move_robot_and_spit(pnt_name, pos, vol):
@@ -236,13 +312,13 @@ def flip_oven(cmd):
         mqttc.publish("oven/cmd/flip", "true")
         while macst.ovenFlipTrue == False:
             logger.debug("ovenFlipTrue: " + str(macst.ovenFlipTrue))
-            time.sleep(0.1)
+            time.sleep(commu_delay)
     else:
         macst.ovenFlipFalse = False
         mqttc.publish("oven/cmd/flip", "false")
         while macst.ovenFlipFalse == False:
             logger.debug("ovenFlipFalse: " + str(macst.ovenFlipFalse))
-            time.sleep(0.1)
+            time.sleep(commu_delay)
 
 
 def robot_go_home():
@@ -253,25 +329,27 @@ def robot_go_home():
     mqttc.publish("robot/cmd/home/x", "true")
     while macst.robotMotionDone == False:
         logger.debug("robotMotionDone: " + str(macst.robotMotionDone))
-        time.sleep(0.1)
+        time.sleep(commu_delay)
 
 
-def pick_cake_and_drop(pnt_name, pos_y):
+def pick_cake_and_drop(pnt_name, pos_y, close_deg):
     global mqttc, macst
     move_robot("x", "200", "PASS")
     move_robot("y", pos_y, "PASS")
     mqttc.publish("robot/cmd/jog/fork", "50")  # gripper OPEN
     move_robot("z", "-104")
     logger.info("robot to upper " + pnt_name)
-    mqttc.publish("robot/cmd/jog/fork", "0")  # gripper CLOSE
+    mqttc.publish("robot/cmd/jog/fork", close_deg)  # gripper CLOSE
     logger.info("robot grip at " + pnt_name)
     move_robot("z", "-70")
     logger.info("robot move up to " + pnt_name)
     move_robot("x", "160")
     move_robot("x", "3", "PASS")
-    move_robot("y", "-130", "PASS")
+    move_robot("y", "-180", "PASS")
     move_robot("z", "-70")
-    mqttc.publish("robot/cmd/jog/fork", "60")  # gripper OPEN
+    time.sleep(0.2)
+    mqttc.publish("robot/cmd/jog/fork", "60")  # gripper ALL OPEN
+    time.sleep(0.2)
     logger.info("robot drop cake")
 
 
@@ -282,7 +360,7 @@ def openFan():
     logger.info("10")
     while macst.latchFanOpenTrue == False:
         logger.debug("latchFanOpenTrue: " + str(macst.latchFanOpenTrue))
-        time.sleep(0.1)
+        time.sleep(commu_delay)
 
 
 def unloading():
@@ -354,50 +432,65 @@ def latchGateOpenNClose():
 
 
 def ctrl_oven_and_robot():
-    global mqttc, latchTakeBowl_Start
+    global mqttc, latchTakeBowl_Start, macst
     logger.warning('control oven and robot thread start')
 
     latchTakeBowl_Start = True
     logger.info("main script start!")
 
     mqttc.publish("robot/cmd/jog/vel", "300")
-    mqttc.publish("bucket/cmd/jog/vel", "270")
+    mqttc.publish("bucket/cmd/jog/vel", "300")
 
     mqttc.publish("oven/cmd/open", "true")
-    logger.info("oven first open")
-    time.sleep(1)  # sec
+    time.sleep(3)  # sec
+    if (macst.ovenIsHome2 == False):
+        mqttc.loop_stop()
+        msg = ("oven isHome2 is False")
+        logger.fatal(msg)
+        post2backend("/machine/disable")
+        mqttc.publish("bucket/status/alarm", msg)
+        os._exit(1)
 
-    #mqttc.publish("bucket/cmd/jog/vol", 99)
+    logger.info("oven first open")
+    time.sleep(2)  # sec
+
+    mqttc.publish("bucket/cmd/jog/vol", 99)
     logger.info("Suck until to the top")
 
-    move_robot("x", "240", "PASS")
+    move_robot("x", "220", "PASS")
     move_robot("z", "-105", "PASS")
     move_robot("y", "-15")
-    move_robot("y", "-197")
+    move_robot("y", "-240")
 
-    # spit_stop()
-    spit_cake(99)
+    spit_stop()
+    # spit_cake(99)
 
-    vol = 28
+    # vol=28   #sensor1
+    vol = 30  # sensor2
 
-    move_robot_and_spit("P6", "-243", vol)
-    move_robot_and_spit("P5", "-197", vol)
-    move_robot_and_spit("P4", "-151", vol)
-    move_robot_and_spit("P3", "-105", vol)
-    move_robot_and_spit("P2", "-60", vol)
-    move_robot_and_spit("P1", "-14", vol)
-
-    spit_cake("-10")
-    logger.info("pump suck back")
+    move_robot_and_spit("P6", "-240", vol)
+    spit_cake("-1")
+    move_robot_and_spit("P5", "-194", vol)
+    spit_cake("-1")
+    move_robot_and_spit("P4", "-148", vol)
+    spit_cake("-1")
+    move_robot_and_spit("P3", "-102", vol)
+    spit_cake("-1")
+    move_robot_and_spit("P2", "-57", vol)
+    spit_cake("-1")
+    move_robot_and_spit("P1", "-11", (vol+1))
+    spit_cake("-3")
 
     move_robot("x", "0", "PASS")
     move_robot("y", "0", "PASS")
     move_robot("z", "0", "PASS")
     logger.info("robot move to P0")
 
-    T_all = 210  # Bake total time(sec)
-    T1 = T_all*0.2
-    T2 = T_all*0.8
+    mqttc.publish("bucket/cmd/jog/vol", -20)  # suck all back
+
+    T_all = 210  # at Oven 190 degree, Bake total time(sec)
+    T1 = T_all*0.4
+    T2 = T_all*0.6
 
     close_oven()
     logger.info("close oven")
@@ -405,48 +498,55 @@ def ctrl_oven_and_robot():
     flip_oven(True)
     logger.info("oven flip true")
 
-    mqttc.publish("bucket/cmd/jog/vol", -50)  # suck all back
-
-    flip_oven(False)
-    logger.info("oven flip true")
-
-    flip_oven(True)
-    logger.info("oven flip true")
-
     time.sleep(T1)  # bake T1
 
     flip_oven(False)
-    logger.info("oven flip false")
+    logger.info("oven flip False")
+
+    mqttc.publish("bucket/cmd/jog/vol", -20)  # suck all back
 
     time.sleep(T2)  # bake T2
+
+    # flip_oven(False)
+    # logger.info("oven flip false")
+
+    mqttc.publish("bucket/cmd/jog/vol", -20)  # suck all back
 
     robot_go_home()
     logger.info("robot go home")
 
-    mqttc.publish("oven/cmd/open", "true")
-    logger.info("oven open")
-    time.sleep(1)
+    # open process
+    open_oven(5)
+    move_robot("z", "-196")
+    move_robot("x", "55")
+    open_oven(100)
+    move_robot("x", "40")
+    move_robot("z", "-100")
 
     openFan()
 
     thread11 = threading.Thread(target=latchGateOpenNClose)
     thread22 = threading.Thread(target=latchGateOpenNClose)
 
-    pick_cake_and_drop("P1", "-19")
-    pick_cake_and_drop("P2", "-65")
+    close_deg = 3
+
+    pick_cake_and_drop("P1", "-19", 0)
+    pick_cake_and_drop("P2", "-65", 0)
     thread11.start()
-    pick_cake_and_drop("P3", "-110")
-    pick_cake_and_drop("P4", "-156")
+    pick_cake_and_drop("P3", "-110", close_deg)
+    pick_cake_and_drop("P4", "-156", close_deg)
     thread22.start()
-    pick_cake_and_drop("P5", "-202")
-    pick_cake_and_drop("P6", "-248")
+    pick_cake_and_drop("P5", "-202", close_deg)
+    pick_cake_and_drop("P6", "-248", close_deg)
+
+    mqttc.publish("bucket/cmd/jog/vol", -20)  # suck all back
 
     move_robot("x", "0", "PASS")
     move_robot("y", "0", "PASS")
     move_robot("z", "0", "PASS")
     logger.info("robot move to P0")
 
-    close_oven()
+    open_oven(0)  # oven cose
     logger.info("close oven")
 
     unloading()
@@ -499,6 +599,9 @@ def arm_suck(cmd, delay):
 
 
 def ctrl_latch():
+
+    time.sleep(60)  # wait 90 sec
+
     global macst, latchTakeBowl_Start
     waitTime = 0.1
     global mqttc
@@ -524,7 +627,7 @@ def ctrl_latch():
     while True:
         # move cvt to bowl
         logger.info('01')
-        move_cvt("-202", 2)
+        move_cvt("-206", 2)
 
         # move arm up to bowl
         logger.info('02')
@@ -580,7 +683,7 @@ def ctrl_latch():
 
 
 logger = logging.getLogger('recipe')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 # create file handler which logs even debug messages
 log_filename = str(datetime.now().strftime('recipe_%Y%m%d%H%M%S'))
 fh = logging.FileHandler(
@@ -605,11 +708,17 @@ mqttc = mqtt.Client(client_id="recipe")
 # mqttc.on_log = on_log
 mqttc.on_message = on_message
 mqttc.on_connect = on_connect
-mqttc.connect("localhost", 1883, 60)
+mqttc.on_disconnect = on_disconnect
+mqttc.connect("localhost", 1883, 30)
 mqttc.loop_start()
 
+while macst.isConnected == False:
+    time.sleep(1)
+
+time.sleep(3)
+
 while True:
-    if macst.ovenOpMode == "remote" and macst.bucketOpMode == "remote" and macst.robotOpMode == "remote":
+    if macst.ovenOpMode == "MQTT" and macst.bucketOpMode == "MQTT" and macst.robotOpMode == "MQTT":
         macst.allModuleGood2Go = True
         break
     else:
@@ -632,14 +741,18 @@ if macst.allModuleGood2Go == True:
 
     mqttc.publish("gate/cmd/open", "true")
 else:
+    mqttc.loop_stop()
     msg = ("recipe: the modules are not all in the remote mode" +
            ", modeRecheckCnt: " + str(macst.modeRecheckCnt) +
            ", ovenOpMode: " + str(macst.ovenOpMode) +
            ", bucketOpMode: " + str(macst.bucketOpMode) +
            ", robotOpMode: " + str(macst.robotOpMode))
     logger.fatal(msg)
+    post2backend("/machine/disable")
     mqttc.publish("bucket/status/alarm", msg)
+    os._exit(1)
 
-mqttc.disconnect()
+
 mqttc.loop_stop()
 logger.warning("recipe done")
+mqttc.disconnect()

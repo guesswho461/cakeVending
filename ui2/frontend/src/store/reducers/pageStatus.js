@@ -38,6 +38,7 @@ const initState = {
   showRecipeProgress: false,
   pressToBakeDlgOpen: false,
   isDevMode: false,
+  maintainPageTitle: "maintainMsg",
 };
 
 function decTheCoinValue(coinValue, data) {
@@ -56,19 +57,37 @@ function incTheCoinValue(coinValue) {
 }
 
 function post(url) {
-  axios({
-    method: "post",
-    baseURL: backend + url,
-    headers: {
-      Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
-    },
-  })
-    .then((res) => {
-      console.log(res);
+  return new Promise((resolve, reject) => {
+    axios({
+      method: "post",
+      baseURL: backend + url,
+      headers: {
+        Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+      },
     })
-    .catch((err) => {
-      console.log(err);
-    });
+      .then((res) => {
+        console.log(res);
+        return resolve(res);
+      })
+      .catch((err) => {
+        console.log(err);
+        return reject(err);
+      });
+  });
+}
+
+function jump2SoldoutPage(isDevMode, data, lastPage) {
+  if (isDevMode) {
+    return lastPage;
+  } else {
+    if (data === "true") {
+      post("/kanban/disable");
+      return "soldout";
+    } else {
+      post("/kanban/enable");
+      return "ad";
+    }
+  }
 }
 
 function jump2MaintainPage(isDevMode, data, lastPage) {
@@ -134,6 +153,16 @@ export default function reducer(state = initState, action) {
         ...state,
         heatingUpWarningDlgOpen: false,
       };
+    case "frontend/soldout":
+      return {
+        ...state,
+        selectedPage: jump2MaintainPage(
+          state.isDevMode,
+          action.payload,
+          state.selectedPage
+        ),
+        maintainPageTitle: "soldooutMsg",
+      };
     case "frontend/maintain":
       return {
         ...state,
@@ -142,6 +171,7 @@ export default function reducer(state = initState, action) {
           action.payload,
           state.selectedPage
         ),
+        maintainPageTitle: "maintainMsg",
       };
     case "coin/status/inc":
       return {
@@ -224,9 +254,16 @@ export function setPageSelected(data) {
 }
 
 export function setCheckoutDlgOpen() {
-  post("/coin/enable");
-  return {
-    type: OPEN_CHECKOUT_DLG,
+  return (dispatch) => {
+    post("/coin/enable")
+      .then((res) => {
+        dispatch({
+          type: OPEN_CHECKOUT_DLG,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 }
 
