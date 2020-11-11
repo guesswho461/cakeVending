@@ -8,7 +8,6 @@
 # 1102 connect twice will force to exit, post alarm as well
 # 1103 use the disconnect callback, add check oven isHome2 status, true means oven did not open
 # 1109 set the nice value, add check robot isHomeX/Y/Z status, false means robot did not move
-# 1111 fixed the robot home status check bugs
 
 import paho.mqtt.client as mqtt
 import signal
@@ -66,7 +65,7 @@ looping = False
 mqttc = None
 latchTakeBowl_Start = False
 commu_delay = 0.05
-robot_moving_check_timeout = 41
+robot_moving_check_timeout = 201
 logLevel = logging.INFO
 
 
@@ -141,7 +140,7 @@ def on_connect(mqttc, obj, flags, rc):
 
 def on_message(mqttc, obj, msg):
     global macst
-    logger.debug(msg.topic + " " + str(msg.payload))
+    logger.debug(msg.topic + ": " + str(msg.payload))
     if msg.topic == "robot/status/stop":
         if str(msg.payload) == "true":
             macst.robotMotionDone = True
@@ -205,34 +204,44 @@ def on_message(mqttc, obj, msg):
         if str(msg.payload) == "true":
             macst.latchBowlReadyTrue = True
             macst.latchBowlReadyFalse = False
+            # logger.trace('Ready:True');
         else:
             macst.latchBowlReadyTrue = False
             macst.latchBowlReadyFalse = True
+            # logger.trace('Ready:False'); }
     elif msg.topic == "latch/status/gate/open":
         if str(msg.payload) == "true":
             macst.latchGateOpenTrue = True
             macst.latchGateOpenFalse = False
+            # logger.trace('gateCmd:True');
         else:
             macst.latchGateOpenTrue = False
             macst.latchGateOpenFalse = True
+            # logger.trace('gateCmd:False');}
     elif msg.topic == "latch/status/fan/open":
         if str(msg.payload) == "true":
             macst.latchFanOpenTrue = True
             macst.latchFanOpenFalse = False
+            # logger.trace('fanCmd:True');
         else:
             macst.latchFanOpenTrue = False
             macst.latchFanOpenFalse = True
+            # logger.trace('fanCmd:False');}
     elif msg.topic == "latch/status/vibration":
         if str(msg.payload) == "true":
             macst.latchVibrationTrue = True
             macst.latchVibrationFalse = False
+            # logger.trace('vCmd:True');
         else:
             macst.latchVibrationTrue = False
             macst.latchVibrationFalse = True
+            # logger.trace('vCmd:False');}
     elif msg.topic == "latch/status/arm/pos":
         macst.strArmPos = str(msg.payload)
+        # logger.trace(strArmPos);
     elif msg.topic == "latch/status/cvt/pos":
         macst.strCvtPos = str(msg.payload)
+        # logger.trace(strCvtPos);
     elif msg.topic == "latch/status/arm/release":
         if str(msg.payload) == "true":
             macst.latchArmReleaseTrue = True
@@ -494,7 +503,7 @@ def ctrl_oven_and_robot():
     logger.info("oven first open")
     time.sleep(2)  # sec
 
-    mqttc.publish("bucket/cmd/jog/vol", 99)
+    # mqttc.publish("bucket/cmd/jog/vol", 99)
     logger.info("Suck until to the top")
 
     move_robot("x", "220", "PASS")
@@ -508,8 +517,9 @@ def ctrl_oven_and_robot():
     spit_stop()
     # spit_cake(99)
 
+    vol = 5
     # vol = 27  # sensor1
-    vol = 30  # sensor2
+    # vol = 30  # sensor2
 
     move_robot_and_spit("P6", "-240", vol)
     spit_cake("-1")
@@ -531,10 +541,11 @@ def ctrl_oven_and_robot():
 
     mqttc.publish("bucket/cmd/jog/vol", -20)  # suck all back
 
-    T_all = 210  # at Oven 190 degree, Bake total time(sec)
+    T_all = 5  # at Oven 190 degree, Bake total time(sec)
     T1 = T_all*0.4
     T2 = T_all*0.6
 
+    time.sleep(1)  # sec
     close_oven()
     logger.info("close oven")
 
@@ -566,7 +577,6 @@ def ctrl_oven_and_robot():
     check_robot_is_not_at_home(macst.robotX, "robot x")
     open_oven(100)
     move_robot("x", "40")
-    move_robot("z", "-100")
     move_robot("z", "-100")
 
     openFan()

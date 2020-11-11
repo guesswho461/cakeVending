@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "dailydisable v1.00";
+const version = "dailydisable v1.01";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -46,4 +46,4 @@ const postWebAPI = (ip, url, payload) => {
   });
 };
 
-postWebAPI("localhost", "/machine/disable", "true");
+postWebAPI("localhost", "/machine/soldout", "true");

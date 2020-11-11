@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.53";
+const version = "cakeVendingBackend v1.56";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -107,7 +107,12 @@ let lastBucketOpMode = "MQTT";
 let lastOvenOpMode = "MQTT";
 
 let ovenIsReady = true;
-let isMakingACake = true;
+let isMakingACake = false;
+
+let lastMacTemp = 0;
+let lastBowlCnt = 0;
+let lastBatterVol = 0;
+let lastFridgeTemp = 0;
 
 const machineInfo = {
   name: process.env.LOCALNAME,
@@ -230,45 +235,52 @@ app.post(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    setToDB(
-      tableName,
-      Date.now(),
-      1,
-      batterVolStr,
-      bowlCntStr,
-      fridgeTempStr,
-      macTempStr
-    );
-    isMakingACake = true;
-    if (isAllOpModesAreCorrect() === true) {
-      // exec("python C:\\codes\\cakeVending\\recipe\\py\\test2.py", function (
-      //   err,
-      //   stdout,
-      //   stderr
-      // ) {
-      postWebAPI2("/machine/info", "bake start");
-      exec("python /home/pi/recipe/dummy.py", function (err, stdout, stderr) {
-        if (err !== null) {
-          res.status(500).send(stderr);
-          logger.error(stderr);
-          postWebAPI2("/machine/info", "bake NG")
-            .then((msg) => {
-              machineDisable();
-            })
-            .catch((err) => {
-              machineDisable();
-            });
-        } else {
-          res.status(200).send(stdout);
-          logger.trace(stdout);
-          postWebAPI2("/machine/info", "bake OK");
-        }
-        isMakingACake = false;
-      });
+    if (isMakingACake === false) {
+      if (isAllOpModesAreCorrect() === true) {
+        isMakingACake = true;
+        setToDB(
+          tableName,
+          Date.now(),
+          1,
+          batterVolStr,
+          bowlCntStr,
+          fridgeTempStr,
+          macTempStr
+        );
+        postWebAPI2("/machine/info", "bake start");
+        // exec("python C:\\codes\\cakeVending\\recipe\\py\\test2.py", function (
+        //   err,
+        //   stdout,
+        //   stderr
+        // ) {
+        exec("python /home/pi/recipe/dummy.py", function (err, stdout, stderr) {
+          if (err !== null) {
+            res.status(500).send(stderr);
+            logger.error(stderr);
+            postWebAPI2("/machine/info", "bake NG")
+              .then((msg) => {
+                machineDisable();
+              })
+              .catch((err) => {
+                machineDisable();
+              });
+          } else {
+            res.status(200).send(stdout);
+            logger.trace(stdout);
+            postWebAPI2("/machine/info", "bake OK");
+          }
+          isMakingACake = false;
+        });
+      } else {
+        let resp = "cannot bake the cake, the modes of the modules are wrong";
+        logger.error(resp);
+        postWebAPI2("/machine/info", resp);
+        res.status(403).send(resp);
+      }
     } else {
-      let resp = "cannot bake the cake, the modes of the modules are wrong";
-      logger.error(resp);
-      postWebAPI2("/machine/info", resp);
+      let resp = "a cake is making, skip this request";
+      logger.warn(resp);
+      res.status(409).send(resp);
     }
   }
 );
@@ -558,6 +570,7 @@ const checkOvenIsReady = (tempature) => {
 };
 
 mqttClient.on("message", function (topic, message) {
+  logger.trace("topic: " + topic + " " + message);
   if (topic === "bucket/status/alive") {
     bucketAliveMsg = message.toString();
   } else if (topic === "oven/status/alive") {
@@ -568,34 +581,46 @@ mqttClient.on("message", function (topic, message) {
     latchAliveMsg = message.toString();
   } else if (topic === "bucket/status/machTemp") {
     const macTemp = parseFloat(message.toString());
-    macTempStr = macTemp.toString();
-    if (macTemp >= maxMachTemp) {
-      postAlarm("machine temperature too high (" + macTempStr + ")");
+    if (lastMacTemp !== macTemp) {
+      macTempStr = macTemp.toString();
+      if (macTemp >= maxMachTemp) {
+        postAlarm("machine temperature too high (" + macTempStr + ")");
+      }
     }
+    lastMacTemp = macTemp;
   } else if (topic === "bucket/status/alarm") {
     postAlarm(message.toString());
   } else if (topic === "latch/status/bowl/cnt") {
     const bowlCnt = parseInt(message.toString());
-    bowlCntStr = bowlCnt.toString();
-    if (bowlCnt >= bowlCntAlarmLevel) {
-      postAlarm("out of bowl (" + bowlCntStr + ")", true, true);
-    } else if (bowlCnt >= bowlCntWarningLevel) {
-      postWarning("bowl cnt too low (" + bowlCntStr + ")");
+    if (lastBowlCnt !== bowlCnt) {
+      bowlCntStr = bowlCnt.toString();
+      if (bowlCnt >= bowlCntAlarmLevel) {
+        postAlarm("out of bowl (" + bowlCntStr + ")", true, true);
+      } else if (bowlCnt >= bowlCntWarningLevel) {
+        postWarning("bowl cnt too low (" + bowlCntStr + ")");
+      }
     }
+    lastBowlCnt = bowlCnt;
   } else if (topic === "bucket/status/resiVol") {
     const batterVol = parseFloat(message.toString());
-    batterVolStr = batterVol.toString();
-    if (batterVol >= batterVolAlarmLevel) {
-      postAlarm("out of batter (" + batterVolStr + ")", true, true);
-    } else if (batterVol >= batterVolWarningLevel) {
-      postWarning("batter vol too low (" + batterVolStr + ")");
+    if (lastBatterVol !== batterVol) {
+      batterVolStr = batterVol.toString();
+      if (batterVol >= batterVolAlarmLevel) {
+        postAlarm("out of batter (" + batterVolStr + ")", true, true);
+      } else if (batterVol >= batterVolWarningLevel) {
+        postWarning("batter vol too low (" + batterVolStr + ")");
+      }
     }
+    lastBatterVol = batterVol;
   } else if (topic === "bucket/status/refrigTemp") {
     const fridgeTemp = parseFloat(message.toString());
-    fridgeTempStr = fridgeTemp.toString();
-    if (fridgeTemp >= maxFridgeTemp) {
-      postWarning("firdge temperature to high (" + fridgeTempStr + ")");
+    if (lastFridgeTemp !== fridgeTemp) {
+      fridgeTempStr = fridgeTemp.toString();
+      if (fridgeTemp >= maxFridgeTemp) {
+        postWarning("fridge temperature to high (" + fridgeTempStr + ")");
+      }
     }
+    lastFridgeTemp = fridgeTemp;
   } else if (topic === "bucket/cmd/refrigTemp") {
     maxFridgeTemp = parseFloat(message.toString());
   } else if (topic === "gate/cmd/open") {

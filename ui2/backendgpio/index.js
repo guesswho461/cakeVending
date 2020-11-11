@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackendGPIO v1.23";
+const version = "cakeVendingBackendGPIO v1.26";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -28,8 +28,6 @@ const A4988 = require("./A4988");
 const axios = require("axios");
 const Gpio = require("pigpio").Gpio;
 
-//todo: idle的時候每五分鐘回抽
-
 const mqttOpt = {
   port: process.env.MACHINE_LOCAL_MQTT_BROKER_PORT,
   clientId: version,
@@ -55,8 +53,8 @@ gateMotor.step_size = "sixteenth";
 const gateOpen = -4000;
 const gateClose = 4000;
 
-const takeBowlDelay = 1000;
-const getCoinDelay = 100;
+const bowlTakeDelay = process.env.BOWL_TAKE_DELAY_TIME * 1000; //sec to ms
+const coinPowerOnDelay = process.env.COIN_POWER_ON_DELAY_TIME; //ms
 
 let coinCnt = 0;
 let coinEnable = false;
@@ -90,10 +88,11 @@ alarmResetPin.glitchFilter(alarmDebounceTime);
 const coinPin = new Gpio(coinPinIdx2, {
   mode: Gpio.INPUT,
   pullUpDown: Gpio.PUD_UP,
-  alert: true,
+  //alert: true,
+  edge: Gpio.EITHER_EDGE,
 });
-const coinDebounceTime = process.env.COIN_DEBOUNCE_TIME * 1000; //ms to us
-coinPin.glitchFilter(coinDebounceTime);
+const coinDebounceTime = process.env.COIN_DEBOUNCE_TIME; //100 ms
+//coinPin.glitchFilter(0);
 
 logger.info(version + " started");
 
@@ -139,16 +138,24 @@ alarmResetPin.on("alert", (level, tick) => {
   }
 });
 
-coinPin.on("alert", (level, tick) => {
-  if (level === 0) {
-    mqttClient.publish("coin/status/inc", "1");
-    coinCnt = coinCnt + 1;
-    logger.info(coinCnt);
-    if (coinCnt >= 5) {
-      coinEnable = false;
-      coinCnt = 0;
-      mqttClient.publish("coin/cmd/enable", "false");
-      logger.trace("coin disable");
+//'interrupt'   alert
+coinPin.on("interrupt", (level, tick) => {
+  logger.trace("coinPin interrupt level: " + level + ", tick: " + tick);
+  if (coinEnable === true) {
+    if (level === 0) {
+      endtime = new Date().getTime();
+      if (endtime - sTime >= coinDebounceTime) {
+        sTime = new Date().getTime();
+        mqttClient.publish("coin/status/inc", "1");
+        coinCnt = coinCnt + 1;
+        logger.info(coinCnt);
+        if (coinCnt >= 5) {
+          coinEnable = false;
+          coinCnt = 0;
+          mqttClient.publish("coin/cmd/enable", "false");
+          logger.trace("coin disable");
+        }
+      }
     }
   }
 });
@@ -181,7 +188,7 @@ const closeTheGate = () => {
     });
     // );
     mqttClient.publish("latch/cmd/light/open", "false");
-    logger.info("latch/cmd/light/open false");
+    logger.debug("latch/cmd/light/open false");
   }
 };
 
@@ -192,11 +199,11 @@ const checkGateAndClose = () => {
     } else {
       if (value === true) {
         gateIsOpen = true;
-        logger.info("gate is open, close the gate");
+        logger.debug("gate is open, close the gate");
         closeTheGate();
       } else {
         gateIsOpen = false;
-        logger.info("gate is close");
+        logger.debug("gate is close");
       }
     }
   });
@@ -259,50 +266,51 @@ gpio.setup(gateLimitPinIdx, gpio.DIR_IN, gpio.EDGE_RISING, checkGateAndClose);
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
 mqttClient.on("message", function (topic, message) {
+  logger.trace("topic: " + topic + " " + msg);
   if (topic === "coin/cmd/enable") {
     if (message.toString() === "true") {
       setTimeout(() => {
         coinEnable = true;
-      }, getCoinDelay);
+      }, coinPowerOnDelay);
       gpio.write(coinEnablePinIdx, true);
-      logger.info("coin/cmd/enable true");
+      logger.debug("coin/cmd/enable true");
     } else {
       coinCnt = 0;
       coinEnable = false;
       gpio.write(coinEnablePinIdx, false);
-      logger.info("coin/cmd/enable false");
+      logger.debug("coin/cmd/enable false");
     }
   } else if (topic === "kanban/cmd/enable") {
     if (message.toString() === "true") {
       gpio.write(kanbanEnablePinIdx, true);
-      logger.info("kanban/cmd/enable true");
+      logger.debug("kanban/cmd/enable true");
     } else {
       gpio.write(kanbanEnablePinIdx, false);
-      logger.info("kanban/cmd/enable false");
+      logger.debug("kanban/cmd/enable false");
     }
   } else if (topic === "gate/cmd/open") {
     if (message.toString() === "true") {
       openTheGate();
-      logger.info("gate/cmd/open true");
+      logger.debug("gate/cmd/open true");
     } else {
       closeTheGate();
-      logger.info("gate/cmd/open false");
+      logger.debug("gate/cmd/open false");
     }
   } else if (topic === "gate/cmd/stop") {
     if (message.toString() === "true") {
       gateMotor.stop();
       // gateMotor.disable();
-      logger.info("gate/cmd/stop true");
+      logger.debug("gate/cmd/stop true");
     }
   } else if (topic === "latch/status/bowl/ready") {
     if (message.toString() === "false") {
       if (gateIsOpen === true) {
         setTimeout(() => {
           mqttClient.publish("gate/cmd/open", "false");
-          logger.info(
+          logger.debug(
             "gate/cmd/open false by latch/status/bowl/ready is false"
           );
-        }, takeBowlDelay);
+        }, bowlTakeDelay);
       }
     }
   }
