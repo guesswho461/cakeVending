@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.56";
+const version = "cakeVendingBackend v1.59";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -114,6 +114,8 @@ let lastBowlCnt = 0;
 let lastBatterVol = 0;
 let lastFridgeTemp = 0;
 
+let scriptFile = "dummy.py";
+
 const machineInfo = {
   name: process.env.LOCALNAME,
   ver: version,
@@ -180,6 +182,26 @@ let db = new sqlite3.Database(dbPath, function (err) {
   if (err) throw err;
 });
 
+const setParToDB = (table, name, value) => {
+  const statement = util.format('UPDATE %s SET %s="%s"', table, name, value);
+  db.run(statement, function (err) {
+    if (err) throw err;
+  });
+};
+
+const getParFromDB = (table, name) => {
+  return new Promise((resolve, reject) => {
+    const statement = util.format("SELECT DISTINCT %s FROM %s", name, table);
+    db.get(statement, [], (err, value) => {
+      if (err) {
+        return reject(err.message);
+      } else {
+        return resolve(value);
+      }
+    });
+  });
+};
+
 db.serialize(function () {
   const statement = util.format(
     "CREATE TABLE IF NOT EXISTS %s (time TEXT PRIMARY KEY, sellCnt TEXT, batterVol TEXT, bowlCnt TEXT, fridgeTemp TEXT, macTemp TEXT)",
@@ -227,6 +249,58 @@ app.get(
   }
 );
 
+app.get(
+  "/recipe/argu",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    getParFromDB("PAR", "scriptArgu").then((value) => {
+      res.send(value.scriptArgu);
+    });
+  }
+);
+
+app.post(
+  "/recipe/argu",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    if (isMakingACake === false) {
+      setParToDB("PAR", "scriptArgu", req.body);
+      res.sendStatus(200);
+    } else {
+      let resp = "a cake is making, skip this request";
+      logger.warn(resp);
+      res.status(409).send(resp);
+    }
+  }
+);
+
+app.post(
+  "/recipe/file",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    if (isMakingACake === false) {
+      scriptFile = req.body;
+      res.sendStatus(200);
+    } else {
+      let resp = "a cake is making, skip this request";
+      logger.warn(resp);
+      res.status(409).send(resp);
+    }
+  }
+);
+
 app.post(
   "/recipe/start/original",
   jwt({
@@ -238,38 +312,42 @@ app.post(
     if (isMakingACake === false) {
       if (isAllOpModesAreCorrect() === true) {
         isMakingACake = true;
-        setToDB(
-          tableName,
-          Date.now(),
-          1,
-          batterVolStr,
-          bowlCntStr,
-          fridgeTempStr,
-          macTempStr
-        );
-        postWebAPI2("/machine/info", "bake start");
-        // exec("python C:\\codes\\cakeVending\\recipe\\py\\test2.py", function (
-        //   err,
-        //   stdout,
-        //   stderr
-        // ) {
-        exec("python /home/pi/recipe/dummy.py", function (err, stdout, stderr) {
-          if (err !== null) {
-            res.status(500).send(stderr);
-            logger.error(stderr);
-            postWebAPI2("/machine/info", "bake NG")
-              .then((msg) => {
-                machineDisable();
-              })
-              .catch((err) => {
-                machineDisable();
-              });
-          } else {
-            res.status(200).send(stdout);
-            logger.trace(stdout);
-            postWebAPI2("/machine/info", "bake OK");
-          }
-          isMakingACake = false;
+        getParFromDB("PAR", "scriptArgu").then((value) => {
+          const dateObj = new Date();
+          setToDB(
+            tableName,
+            dateObj.toLocaleString(),
+            1,
+            batterVolStr,
+            bowlCntStr,
+            fridgeTempStr,
+            macTempStr
+          );
+          postWebAPI2("/machine/info", "bake start");
+          let cmd = util.format(
+            "sudo python /home/pi/recipe/%s %s",
+            // "python C:\\codes\\cakeVending\\recipe\\py\\%s %s",
+            scriptFile,
+            value.scriptArgu
+          );
+          exec(cmd, function (err, stdout, stderr) {
+            if (err !== null) {
+              res.status(500).send(stderr);
+              logger.error(stderr);
+              postWebAPI2("/machine/info", "bake NG")
+                .then((msg) => {
+                  machineDisable();
+                })
+                .catch((err) => {
+                  machineDisable();
+                });
+            } else {
+              res.status(200).send(stdout);
+              logger.trace(stdout);
+              postWebAPI2("/machine/info", "bake OK");
+            }
+            isMakingACake = false;
+          });
         });
       } else {
         let resp = "cannot bake the cake, the modes of the modules are wrong";

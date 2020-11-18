@@ -1,6 +1,4 @@
-//todo: shutdown
-
-const version = "cakeVendingBot v1.27";
+const version = "cakeVendingBot v1.30";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -150,9 +148,6 @@ app.post(
   }
 );
 const PORT = process.env.PORT || process.env.SERVER_PORT;
-// http.createServer(app).listen(PORT, () => {
-//   console.log(version + " listening on port " + PORT);
-// });
 
 https.createServer(httpsOptions, app).listen(PORT, () => {
   console.log(version + " listening on port " + PORT);
@@ -283,17 +278,17 @@ const findMachineAndPost2 = (machineName, url) => {
   });
 };
 
-const findMachineAndPost = (machineName, url, words) => {
+const findMachineAndPost = (machineName, url, words, startIdx = 2) => {
   return new Promise((resolve, reject) => {
     if (machineMap.has(machineName)) {
       const machine = machineMap.get(machineName);
       let payload = "";
-      if (words.length >= 2) {
-        for (let i = 2; i < words.length; i++) {
-          payload = payload + " " + words[i];
+      if (words.length >= startIdx) {
+        for (let i = startIdx; i < words.length; i++) {
+          payload = payload + words[i] + " ";
         }
       }
-      postWebAPI(machine.ip, url, payload)
+      postWebAPI(machine.ip, url, payload.trim())
         .then((msg) => {
           return resolve(machine.name + ": " + msg);
         })
@@ -345,7 +340,7 @@ const findMachineAndDownload = (machineName, url) => {
 
 const getCmdHandler = (machineName, words, chatId) => {
   return new Promise((resolve, reject) => {
-    if (words.length >= 3) {
+    if (words.length == 3) {
       const arg1 = words[2];
       if (arg1 === "turnover") {
         findMachineAndGet(machineName, "/turnover/today")
@@ -376,6 +371,22 @@ const getCmdHandler = (machineName, words, chatId) => {
         resp = "sorry, I dont understand";
         return reject(resp);
       }
+    } else if (words.length == 4) {
+      // get recipe argu
+      const arg1 = words[2];
+      const arg2 = words[3];
+      if (arg1 === "recipe" && arg2 === "argu") {
+        findMachineAndGet(machineName, "/recipe/argu")
+          .then((msg) => {
+            return resolve(msg);
+          })
+          .catch((err) => {
+            return reject(err);
+          });
+      } else {
+        resp = "sorry, I dont understand";
+        return reject(resp);
+      }
     } else {
       resp = "missing arguments";
       return reject(resp);
@@ -389,6 +400,7 @@ const setCmdHandler = (machineName, words) => {
       const arg1 = words[2];
       if (arg1 === "ip") {
         if (words.length >= 4) {
+          // set ip arg2
           const arg2 = words[3];
           findMachineAndUpdateIP(machineName, arg2)
             .then((msg) => {
@@ -399,6 +411,36 @@ const setCmdHandler = (machineName, words) => {
             });
         } else {
           resp = "missing arguments";
+          return reject(resp);
+        }
+      } else if (arg1 === "recipe") {
+        if (words.length == 4) {
+          // set recipe arg2
+          // const arg2 = words[3];
+          findMachineAndPost(machineName, "/recipe/file", words, 3)
+            .then((msg) => {
+              return resolve(msg);
+            })
+            .catch((err) => {
+              return reject(err);
+            });
+        } else if (words.length >= 5) {
+          const arg2 = words[3];
+          if (arg2 === "argu") {
+            //set recipe argu arg3
+            findMachineAndPost(machineName, "/recipe/argu", words, 4)
+              .then((msg) => {
+                return resolve(msg);
+              })
+              .catch((err) => {
+                return reject(err);
+              });
+          } else {
+            resp = "sorry, I dont understand";
+            return reject(resp);
+          }
+        } else {
+          resp = "sorry, I dont understand";
           return reject(resp);
         }
       } else {

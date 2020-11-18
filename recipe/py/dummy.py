@@ -9,6 +9,7 @@
 # 1103 use the disconnect callback, add check oven isHome2 status, true means oven did not open
 # 1109 set the nice value, add check robot isHomeX/Y/Z status, false means robot did not move
 # 1111 fixed the robot home status check bugs
+# 1117 add argus for the dispensing vol
 
 import paho.mqtt.client as mqtt
 import signal
@@ -19,6 +20,14 @@ from datetime import datetime
 import os
 import requests
 import psutil
+
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument("--vol", help="optional argument",
+                    dest="vol", default="30", type=float)
+
+args = parser.parse_args()
 
 
 class robotAxis:
@@ -509,7 +518,8 @@ def ctrl_oven_and_robot():
     # spit_cake(99)
 
     # vol = 27  # sensor1
-    vol = 30  # sensor2
+    # vol = 30  # sensor2
+    vol = args.vol
 
     move_robot_and_spit("P6", "-240", vol)
     spit_cake("-1")
@@ -535,6 +545,7 @@ def ctrl_oven_and_robot():
     T1 = T_all*0.4
     T2 = T_all*0.6
 
+    time.sleep(1)  # sec
     close_oven()
     logger.info("close oven")
 
