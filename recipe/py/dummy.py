@@ -10,6 +10,7 @@
 # 1109 set the nice value, add check robot isHomeX/Y/Z status, false means robot did not move
 # 1111 fixed the robot home status check bugs
 # 1117 add argus for the dispensing vol
+# 1119 get token from env
 
 import paho.mqtt.client as mqtt
 import signal
@@ -20,8 +21,10 @@ from datetime import datetime
 import os
 import requests
 import psutil
-
 from argparse import ArgumentParser
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path="../ui2/frontend/.env")
 
 parser = ArgumentParser()
 parser.add_argument("--vol", help="optional argument",
@@ -80,9 +83,9 @@ logLevel = logging.INFO
 
 
 def post2backend(url):
-    myToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjYWtlVmVuZGluZyIsIm5hbWUiOiJKYXNoIEhzdSJ9.DSYy7W5a6iLSre1cmRaWBEdxYGu81jzdwdWnbnqRr4c'
     myUrl = 'http://localhost:8081' + url
-    head = {'Authorization': 'Bearer {}'.format(myToken)}
+    head = {'Authorization': 'Bearer {}'.format(
+        os.getenv("REACT_APP_CAKE_ACCESS_TOKEN"))}
     response = requests.post(myUrl, headers=head)
     logger.debug("post2backend: " + url + " => " + str(response))
 

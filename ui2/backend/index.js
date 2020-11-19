@@ -313,10 +313,9 @@ app.post(
       if (isAllOpModesAreCorrect() === true) {
         isMakingACake = true;
         getParFromDB("PAR", "scriptArgu").then((value) => {
-          const dateObj = new Date();
           setToDB(
             tableName,
-            dateObj.toLocaleString(),
+            Date.now(),
             1,
             batterVolStr,
             bowlCntStr,
