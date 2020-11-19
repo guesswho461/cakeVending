@@ -8,7 +8,6 @@ User=pi
 ExecStart=python /home/pi/ui2/bucket/bucketserial.py
 WorkingDirectory=/home/pi/ui2/bucket
 Restart=on-failure
-Nice=20
 
 [Install]
 WantedBy=multi-user.target
