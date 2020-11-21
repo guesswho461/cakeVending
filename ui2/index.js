@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.61";
+const version = "cakeVendingBackend v1.59";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -77,8 +77,6 @@ const batterPumpBackRoutineInterval =
   process.env.BATTER_PUMP_BACK_ROUTINE_INTERVAL * 60 * 1000;
 
 const dbPath = "mydatebase.db";
-const recipePath = "/home/pi/recipe";
-// const recipePath = "C:\\codes\\cakeVending\\recipe";
 
 let bucketAliveMsg = "bucketAliveMsg";
 let lastBucketAliveMsg = "lastBucketAliveMsg";
@@ -180,11 +178,6 @@ const tableName =
   today.getDate() +
   "]";
 
-const getTime = () => {
-  const now = new Date();
-  return now.toLocaleDateString() + " " + now.toLocaleTimeString();
-};
-
 let db = new sqlite3.Database(dbPath, function (err) {
   if (err) throw err;
 });
@@ -211,7 +204,7 @@ const getParFromDB = (table, name) => {
 
 db.serialize(function () {
   const statement = util.format(
-    "CREATE TABLE IF NOT EXISTS %s (time TEXT PRIMARY KEY, subTotal TEXT, batterVol TEXT, bowlCnt TEXT, fridgeTemp TEXT, macTemp TEXT)",
+    "CREATE TABLE IF NOT EXISTS %s (time TEXT PRIMARY KEY, sellCnt TEXT, batterVol TEXT, bowlCnt TEXT, fridgeTemp TEXT, macTemp TEXT)",
     tableName
   );
   db.run(statement);
@@ -220,17 +213,17 @@ db.serialize(function () {
 const setToDB = (
   tableName,
   date,
-  subTotal,
+  sellCnt,
   batterVol,
   bowlCnt,
   fridgeTemp,
   macTemp
 ) => {
   const statement = util.format(
-    "INSERT INTO %s VALUES ('%s', %s, %s, %s, %s, %s)",
+    "INSERT INTO %s VALUES (%d, %d, %s, %s, %s, %s)",
     tableName,
     date,
-    subTotal,
+    sellCnt,
     batterVol,
     bowlCnt,
     fridgeTemp,
@@ -279,14 +272,8 @@ app.post(
   }),
   (req, res) => {
     if (isMakingACake === false) {
-      if (Object.keys(req.body).length === 0) {
-        let resp = "illegal recipe argu";
-        logger.warn(resp);
-        res.status(400).send(resp);
-      } else {
-        setParToDB("PAR", "scriptArgu", req.body);
-        res.sendStatus(200);
-      }
+      setParToDB("PAR", "scriptArgu", req.body);
+      res.sendStatus(200);
     } else {
       let resp = "a cake is making, skip this request";
       logger.warn(resp);
@@ -294,34 +281,6 @@ app.post(
     }
   }
 );
-
-const isRecipeIsPy = (fileName) => {
-  const fileNames = fileName.split(".");
-  if (fileNames[fileNames.length - 1] === "py") {
-    return true;
-  } else {
-    return false;
-  }
-};
-
-const isRecipeExist = (fileName) => {
-  return new Promise((resolve, reject) => {
-    fs.readdir(recipePath, (err, files) => {
-      if (err) {
-        return reject(err.message);
-      } else {
-        let isExist = false;
-        for (i = 0; i < files.length; ++i) {
-          if (files[i] === fileName) {
-            isExist = true;
-            break;
-          }
-        }
-        return resolve(isExist);
-      }
-    });
-  });
-};
 
 app.post(
   "/recipe/file",
@@ -332,25 +291,8 @@ app.post(
   }),
   (req, res) => {
     if (isMakingACake === false) {
-      if (
-        Object.keys(req.body).length === 0 ||
-        isRecipeIsPy(req.body) === false
-      ) {
-        let resp = "illegal recipe file name";
-        logger.warn(resp);
-        res.status(400).send(resp);
-      } else {
-        isRecipeExist(req.body).then((isExist) => {
-          if (isExist === true) {
-            scriptFile = req.body;
-            res.sendStatus(200);
-          } else {
-            let resp = "unable to find this recipe";
-            logger.warn(resp);
-            res.status(400).send(resp);
-          }
-        });
-      }
+      scriptFile = req.body;
+      res.sendStatus(200);
     } else {
       let resp = "a cake is making, skip this request";
       logger.warn(resp);
@@ -369,57 +311,43 @@ app.post(
   (req, res) => {
     if (isMakingACake === false) {
       if (isAllOpModesAreCorrect() === true) {
-        if (
-          Object.keys(req.body).length === 0 ||
-          isNaN(parseInt(req.body)) ||
-          parseInt(req.body) <= 0
-        ) {
-          let resp = "illegal recipe cnt";
-          logger.warn(resp);
-          res.status(400).send(resp);
-        } else {
-          isMakingACake = true;
-          sellTime = getTime();
-          cnt = parseInt(req.body);
-          getParFromDB("PAR", "scriptArgu").then((value) => {
-            setToDB(
-              tableName,
-              getTime(),
-              cnt * process.env.REACT_APP_COIN_PER_VALUE,
-              batterVolStr,
-              bowlCntStr,
-              fridgeTempStr,
-              macTempStr
-            );
-            postWebAPI2("/machine/info", "bake start");
-            let cmd = util.format(
-              "sudo python %s/%s --cnt %d %s",
-              // "python %s\\%s --cnt %d %s",
-              recipePath,
-              scriptFile,
-              cnt,
-              value.scriptArgu
-            );
-            exec(cmd, function (err, stdout, stderr) {
-              if (err !== null) {
-                res.status(500).send(stderr);
-                logger.error(stderr);
-                postWebAPI2("/machine/info", "bake NG: " + stderr)
-                  .then((msg) => {
-                    machineDisable();
-                  })
-                  .catch((err) => {
-                    machineDisable();
-                  });
-              } else {
-                res.status(200).send(stdout);
-                logger.trace(stdout);
-                postWebAPI2("/machine/info", "bake OK");
-              }
-              isMakingACake = false;
-            });
+        isMakingACake = true;
+        getParFromDB("PAR", "scriptArgu").then((value) => {
+          setToDB(
+            tableName,
+            Date.now(),
+            1,
+            batterVolStr,
+            bowlCntStr,
+            fridgeTempStr,
+            macTempStr
+          );
+          postWebAPI2("/machine/info", "bake start");
+          let cmd = util.format(
+            "sudo python /home/pi/recipe/%s %s",
+            // "python C:\\codes\\cakeVending\\recipe\\py\\%s %s",
+            scriptFile,
+            value.scriptArgu
+          );
+          exec(cmd, function (err, stdout, stderr) {
+            if (err !== null) {
+              res.status(500).send(stderr);
+              logger.error(stderr);
+              postWebAPI2("/machine/info", "bake NG")
+                .then((msg) => {
+                  machineDisable();
+                })
+                .catch((err) => {
+                  machineDisable();
+                });
+            } else {
+              res.status(200).send(stdout);
+              logger.trace(stdout);
+              postWebAPI2("/machine/info", "bake OK");
+            }
+            isMakingACake = false;
           });
-        }
+        });
       } else {
         let resp = "cannot bake the cake, the modes of the modules are wrong";
         logger.error(resp);
@@ -450,15 +378,14 @@ app.get(
   }
 );
 
-const getTurnover = (table) => {
+const getTurnover = (tableName) => {
   return new Promise((resolve, reject) => {
-    const filed = "SUM(subTotal)";
-    const statement = util.format("SELECT %s FROM %s", filed, table);
-    db.get(statement, [], (err, value) => {
+    const statement = util.format("SELECT COUNT(*) FROM %s", tableName);
+    db.get(statement, [], (err, row) => {
       if (err) {
         return reject(err.message);
       } else {
-        return resolve(value[filed]);
+        return resolve((row["COUNT(*)"] * unitPrice).toString());
       }
     });
   });

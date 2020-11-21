@@ -19,7 +19,7 @@ import UIfx from "uifx";
 import pop from "../../sounds/pop.flac";
 const popSfx = new UIfx(pop);
 
-const girdCellHeight = 320;
+const girdCellWidth = 480;
 
 const styles = (theme) => ({
   root: {
@@ -28,13 +28,15 @@ const styles = (theme) => ({
     justifyContent: "center",
   },
   item: {
-    height: girdCellHeight,
-  },
-  gridList: {
-    width: "100vh",
+    width: girdCellWidth,
+    height: girdCellWidth,
   },
   gridTitle: {
-    height: 128,
+    height: 200,
+  },
+  itemImg: {
+    width: "100%",
+    objectFit: "contain",
   },
 });
 
@@ -43,24 +45,30 @@ class ItemPage extends Component {
     const { classes } = this.props;
     return (
       <div className={classes.root}>
-        <GridList cellHeight={girdCellHeight} className={classes.gridList}>
+        <GridList cellHeight={girdCellWidth} cellWidth={girdCellWidth}>
           {items.map((item) => (
             <GridListTile key={item.img}>
               <CardActionArea
                 className={classes.item}
                 onClick={() => {
                   popSfx.play();
-                  this.props.setCheckoutDlgOpen();
+                  this.props.setCheckoutDlgOpen(item);
                 }}
                 disableRipple={true}
                 disableTouchRipple={true}
               >
-                <img src={item.img} alt={<Translate value={item.title} />} />
+                <img
+                  src={item.img}
+                  alt={<Translate value={item.title} />}
+                  className={classes.itemImg}
+                />
                 <GridListTileBar
                   className={classes.gridTitle}
                   title={
-                    <Typography variant="h3">
-                      <Translate value={item.title} />
+                    <Typography variant="h1">
+                      <Box fontWeight="fontWeightBold">
+                        <Translate value={item.title} />
+                      </Box>
                     </Typography>
                   }
                   subtitle={
@@ -105,7 +113,7 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
-      setCheckoutDlgOpen: () => setCheckoutDlgOpen(),
+      setCheckoutDlgOpen: (data) => setCheckoutDlgOpen(data),
     },
     dispatch
   );

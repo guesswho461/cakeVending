@@ -158,6 +158,8 @@ class ADPage extends Component {
           });
         }}
         disabled={this.props.pageStatus.checkoutDone}
+        disableRipple={true}
+        disableTouchRipple={true}
       >
         <div className={classes.root}>
           <BorderLinearProgress

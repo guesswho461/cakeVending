@@ -27,6 +27,14 @@ const translationsObject = {
     aboutMsg:
       "From love to eat to knowing how to eat, we create our exclusive flavors.\n\nReduced sugar, Less oil, and Freshness control\nPay attention to the ingredients~ We will give you the most care~ Bake it right now~ \n\n ~\nYou are on a diet.  Want to eat a little bit\nYou're hungry in the middle of the night.  Don’t want to fry.\nA small national delicacy that you can meet around the corner~ 24 hours a day without closing\n\ncake vending, the delicious food is always with you",
     devModeText: "DEV MODE",
+    largeCakeTitle: "large",
+    largeCakeContent: "good to eat",
+    largeCakeSubTitle: "6 cakes only $1.99",
+    largeCakePriceStr: "$1.99",
+    smallCakeTitle: "原味小份",
+    smallCakeContent: "原味小份, 大約需要4分半的製作時間",
+    smallCakeSubTitle: "每份3顆$30",
+    smallCakePriceStr: "$30",
   },
   tw: {
     brandName: "老闆不在雞蛋糕",
@@ -56,6 +64,14 @@ const translationsObject = {
     aboutMsg:
       "從愛吃到懂吃，創造屬於我們的獨家口味\n\n減糖、少油、鮮度控制\n食材不馬虎~ 給您最呵護~ 現點立刻烤~ 出爐剛剛好~\n\n當您~\n減肥不想吃多\n半夜小餓又不想油炸\n轉角就能遇到的小巧國民美食~24小時不打烊\n\n老闆不在，但美味一直與您同在",
     devModeText: "DEV MODE",
+    largeCakeTitle: "原味大份",
+    largeCakeContent: "大約需要4分半的製作時間",
+    largeCakeSubTitle: "每份6顆$50",
+    largeCakePriceStr: "$50",
+    smallCakeTitle: "原味小份",
+    smallCakeContent: "大約需要4分半的製作時間",
+    smallCakeSubTitle: "每份3顆$30",
+    smallCakePriceStr: "$30",
   },
 };
 

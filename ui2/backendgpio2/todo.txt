@@ -1,0 +1,9 @@
+I2C x 3 (batter vol, bowl cnt, oven tp lcd)
+one wire x 2 (frig temp, machine temp)
+SPI x 1 (oven temp MAX6675)
+ADC x 3 (oven tp, robot tp, bucket tp) (要找板子)
+
+UI 加小份 
+腳本加小份 用引數傳入
+bot回傳製作訊息加大小份
+腳本送mqtt delay

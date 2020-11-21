@@ -120,7 +120,7 @@ class MainPage extends Component {
             )}
           </main>
 
-          <CheckoutDlg item={items[0]} />
+          <CheckoutDlg item={this.props.pageStatus.item} />
           <AutoCloseBtnDlg
             title="pressToBake"
             delay={3}
@@ -128,8 +128,8 @@ class MainPage extends Component {
             closeAction={() => {
               popSfx.play();
               this.props.setPressToBakeDlgClose();
-              this.props.setOriginalRecipeStart();
-              this.props.coinValueDec(items[0].priceNum);
+              this.props.setOriginalRecipeStart(this.props.pageStatus.item.cnt);
+              this.props.coinValueDec(this.props.pageStatus.item.priceNum);
               this.props.setADPageTitle("makingText");
               this.props.setMakingProgress(0);
               this.props.setPageSelected("ad");
@@ -150,7 +150,7 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
-      setOriginalRecipeStart: () => setOriginalRecipeStart(),
+      setOriginalRecipeStart: (data) => setOriginalRecipeStart(data),
       setADPageTitle: (data) => setADPageTitle(data),
       setPageSelected: (data) => setPageSelected(data),
       coinValueDec: (data) => coinValueDec(data),

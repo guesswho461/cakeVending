@@ -1,5 +1,7 @@
 import axios from "axios";
 
+import items from "../../items";
+
 import UIfx from "uifx";
 // import coin from "../../sounds/coin.ogg";
 import coin from "../../sounds/beep2.wav";
@@ -39,6 +41,7 @@ const initState = {
   pressToBakeDlgOpen: false,
   isDevMode: false,
   maintainPageTitle: "maintainMsg",
+  item: items[0],
 };
 
 function decTheCoinValue(coinValue, data) {
@@ -56,14 +59,16 @@ function incTheCoinValue(coinValue) {
   return coinValue + coinPerValue;
 }
 
-function post(url) {
+function post(url, payload = null) {
   return new Promise((resolve, reject) => {
     axios({
       method: "post",
       baseURL: backend + url,
       headers: {
         Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+        "content-type": "text/plain",
       },
+      data: payload,
     })
       .then((res) => {
         console.log(res);
@@ -132,6 +137,7 @@ export default function reducer(state = initState, action) {
         ...state,
         checkoutDlgOpen: true,
         checkoutDone: false,
+        item: action.payload,
       };
     case CLOSE_CHECKOUT_DLG:
       return {
@@ -253,12 +259,13 @@ export function setPageSelected(data) {
   };
 }
 
-export function setCheckoutDlgOpen() {
+export function setCheckoutDlgOpen(data) {
   return (dispatch) => {
     post("/coin/enable")
       .then((res) => {
         dispatch({
           type: OPEN_CHECKOUT_DLG,
+          payload: data,
         });
       })
       .catch((err) => {
@@ -307,8 +314,8 @@ export function setMakingProgress(data) {
   };
 }
 
-export function setOriginalRecipeStart() {
-  post("/recipe/start/original");
+export function setOriginalRecipeStart(data) {
+  post("/recipe/start/original", data);
   return {
     type: SET_RECIPE_PROGRESS_VISABLE,
   };
