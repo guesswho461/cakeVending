@@ -1,7 +1,0 @@
-{
-    "board": "arduino:avr:mega",
-    "configuration": "cpu=atmega2560",
-    "sketch": "robot/robot.ino",
-    "port": "/dev/ttyUSB2",
-    "programmer": "AVRISP mkII"
-}

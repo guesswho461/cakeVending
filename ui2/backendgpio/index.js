@@ -266,7 +266,7 @@ gpio.setup(gateLimitPinIdx, gpio.DIR_IN, gpio.EDGE_RISING, checkGateAndClose);
 const mqttClient = mqtt.connect("mqtt://localhost", mqttOpt);
 
 mqttClient.on("message", function (topic, message) {
-  logger.trace("topic: " + topic + " " + msg);
+  logger.trace("topic: " + topic + " " + message);
   if (topic === "coin/cmd/enable") {
     if (message.toString() === "true") {
       setTimeout(() => {

@@ -14,3 +14,6 @@ yarn.lock*
 *.mp4
 *.db
 *.7z
+
+.vscode/
+others/

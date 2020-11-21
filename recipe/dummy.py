@@ -10,7 +10,6 @@
 # 1109 set the nice value, add check robot isHomeX/Y/Z status, false means robot did not move
 # 1111 fixed the robot home status check bugs
 # 1117 add argus for the dispensing vol
-# 1119 get token from env
 
 import paho.mqtt.client as mqtt
 import signal
@@ -21,10 +20,8 @@ from datetime import datetime
 import os
 import requests
 import psutil
-from argparse import ArgumentParser
-from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="../ui2/frontend/.env")
+from argparse import ArgumentParser
 
 parser = ArgumentParser()
 parser.add_argument("--vol", help="optional argument",
@@ -83,9 +80,9 @@ logLevel = logging.INFO
 
 
 def post2backend(url):
+    myToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjYWtlVmVuZGluZyIsIm5hbWUiOiJKYXNoIEhzdSJ9.DSYy7W5a6iLSre1cmRaWBEdxYGu81jzdwdWnbnqRr4c'
     myUrl = 'http://localhost:8081' + url
-    head = {'Authorization': 'Bearer {}'.format(
-        os.getenv("REACT_APP_CAKE_ACCESS_TOKEN"))}
+    head = {'Authorization': 'Bearer {}'.format(myToken)}
     response = requests.post(myUrl, headers=head)
     logger.debug("post2backend: " + url + " => " + str(response))
 
@@ -390,6 +387,7 @@ def pick_cake_and_drop(pnt_name, pos_y, close_deg):
     mqttc.publish("robot/cmd/jog/fork", "50")  # gripper OPEN
     move_robot("z", "-104")
     move_robot("x", "205")
+    move_robot("x", "205")  # insurence
     logger.info("robot to upper " + pnt_name)
     mqttc.publish("robot/cmd/jog/fork", close_deg)  # gripper CLOSE
     logger.info("robot grip at " + pnt_name)
@@ -574,6 +572,15 @@ def ctrl_oven_and_robot():
 
     # open process
     open_oven(5)
+    time.sleep(2)  # sec
+    if (macst.ovenIsHome2 == False):
+        mqttc.loop_stop()
+        msg = ("open_oven(5) failed")
+        logger.fatal(msg)
+        post2backend("/machine/disable")
+        mqttc.publish("bucket/status/alarm", msg)
+        os._exit(1)
+
     move_robot("z", "-196")
     check_robot_is_not_at_home(macst.robotZ, "robot z")
     move_robot("x", "55")
@@ -588,11 +595,11 @@ def ctrl_oven_and_robot():
     thread11 = threading.Thread(target=latchGateOpenNClose)
     thread22 = threading.Thread(target=latchGateOpenNClose)
 
-    close_deg = 3
+    close_deg = 0
 
-    pick_cake_and_drop("P1", "-14", 0)
+    pick_cake_and_drop("P1", "-14", close_deg)
     check_robot_is_not_at_home(macst.robotY, "robot y")
-    pick_cake_and_drop("P2", "-60", 0)
+    pick_cake_and_drop("P2", "-60", close_deg)
     thread11.start()
     pick_cake_and_drop("P3", "-107", close_deg)
     pick_cake_and_drop("P4", "-150", close_deg)
