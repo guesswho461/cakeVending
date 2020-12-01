@@ -1,2 +1,2 @@
-import CheckoutDlg from "./CheckoutDlg4";
+import CheckoutDlg from "./CheckoutDlg";
 export default CheckoutDlg;
