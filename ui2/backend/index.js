@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.61";
+const version = "cakeVendingBackend v1.62";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -65,9 +65,6 @@ let maxFridgeTemp = process.env.MAX_FRIDGE_TEMP;
 //min to ms
 const checkGateCmdDelay = process.env.CHECK_GATE_CMD_DELAY * 60 * 1000;
 
-//NTD
-const unitPrice = process.env.UNIT_PRICE;
-
 //set to ms
 const coinEnableDelayToResponse =
   process.env.COIN_ENABLE_DELAY_TO_RESPONSE * 1000;
@@ -77,8 +74,8 @@ const batterPumpBackRoutineInterval =
   process.env.BATTER_PUMP_BACK_ROUTINE_INTERVAL * 60 * 1000;
 
 const dbPath = "mydatebase.db";
-const recipePath = "/home/pi/recipe";
-// const recipePath = "C:\\codes\\cakeVending\\recipe";
+// const recipePath = "/home/pi/recipe";
+const recipePath = "C:\\codes\\cakeVending\\recipe";
 
 let bucketAliveMsg = "bucketAliveMsg";
 let lastBucketAliveMsg = "lastBucketAliveMsg";
@@ -116,7 +113,8 @@ let lastBowlCnt = 0;
 let lastBatterVol = 0;
 let lastFridgeTemp = 0;
 
-let scriptFile = "dummy.py";
+// let scriptFile = "dummy.py";
+let scriptFile = "test.py";
 
 const machineInfo = {
   name: process.env.LOCALNAME,
@@ -143,7 +141,7 @@ const postWebAPI = (url, payload) => {
           baseURL:
             process.env.TELEGRAM_BOT_IP + ":" + process.env.SERVER_PORT + url,
           headers: {
-            Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+            Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
             "content-type": "text/plain",
           },
           httpsAgent: new https.Agent({
@@ -182,7 +180,17 @@ const tableName =
 
 const getTime = () => {
   const now = new Date();
-  return now.toLocaleDateString() + " " + now.toLocaleTimeString();
+  return (
+    now.toLocaleDateString() +
+    " " +
+    now.getHours() +
+    ":" +
+    now.getMinutes() +
+    ":" +
+    now.getSeconds() +
+    "." +
+    now.getMilliseconds()
+  );
 };
 
 let db = new sqlite3.Database(dbPath, function (err) {
@@ -211,7 +219,7 @@ const getParFromDB = (table, name) => {
 
 db.serialize(function () {
   const statement = util.format(
-    "CREATE TABLE IF NOT EXISTS %s (time TEXT PRIMARY KEY, subTotal TEXT, batterVol TEXT, bowlCnt TEXT, fridgeTemp TEXT, macTemp TEXT)",
+    "CREATE TABLE IF NOT EXISTS %s (time TEXT PRIMARY KEY, price TEXT, batterVol TEXT, bowlCnt TEXT, fridgeTemp TEXT, macTemp TEXT)",
     tableName
   );
   db.run(statement);
@@ -220,7 +228,7 @@ db.serialize(function () {
 const setToDB = (
   tableName,
   date,
-  subTotal,
+  price,
   batterVol,
   bowlCnt,
   fridgeTemp,
@@ -230,7 +238,7 @@ const setToDB = (
     "INSERT INTO %s VALUES ('%s', %s, %s, %s, %s, %s)",
     tableName,
     date,
-    subTotal,
+    price,
     batterVol,
     bowlCnt,
     fridgeTemp,
@@ -371,8 +379,10 @@ app.post(
       if (isAllOpModesAreCorrect() === true) {
         if (
           Object.keys(req.body).length === 0 ||
-          isNaN(parseInt(req.body)) ||
-          parseInt(req.body) <= 0
+          Object.keys(req.body).includes("cnt") === false ||
+          Object.keys(req.body).includes("price") === false ||
+          isNaN(parseInt(req.body.cnt)) ||
+          parseInt(req.body.cnt) <= 0
         ) {
           let resp = "illegal recipe cnt";
           logger.warn(resp);
@@ -380,21 +390,22 @@ app.post(
         } else {
           isMakingACake = true;
           sellTime = getTime();
-          cnt = parseInt(req.body);
+          cnt = parseInt(req.body.cnt);
+          price = parseInt(req.body.price);
           getParFromDB("PAR", "scriptArgu").then((value) => {
             setToDB(
               tableName,
               getTime(),
-              cnt * process.env.REACT_APP_COIN_PER_VALUE,
+              price,
               batterVolStr,
               bowlCntStr,
               fridgeTempStr,
               macTempStr
             );
-            postWebAPI2("/machine/info", "bake start");
+            postWebAPI2("/machine/info", "bake start: " + cnt);
             let cmd = util.format(
-              "sudo python %s/%s --cnt %d %s",
-              // "python %s\\%s --cnt %d %s",
+              // "sudo python %s/%s --cnt %d %s",
+              "python %s\\%s --cnt %d %s",
               recipePath,
               scriptFile,
               cnt,
@@ -412,9 +423,9 @@ app.post(
                     machineDisable();
                   });
               } else {
-                res.status(200).send(stdout);
-                logger.trace(stdout);
-                postWebAPI2("/machine/info", "bake OK");
+                res.status(200).send(stderr);
+                logger.trace(stderr);
+                postWebAPI2("/machine/info", "bake OK: " + cnt);
               }
               isMakingACake = false;
             });
@@ -442,7 +453,8 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    const root = "/home/pi/ui2/frontend/build/video";
+    // const root = "/home/pi/ui2/frontend/build/video";
+    const root = "../frontend/build/video";
     let ret = fs.readdirSync(root).map(function (file, index, array) {
       return ".\\video\\" + file;
     });
@@ -452,7 +464,7 @@ app.get(
 
 const getTurnover = (table) => {
   return new Promise((resolve, reject) => {
-    const filed = "SUM(subTotal)";
+    const filed = "SUM(price)";
     const statement = util.format("SELECT %s FROM %s", filed, table);
     db.get(statement, [], (err, value) => {
       if (err) {

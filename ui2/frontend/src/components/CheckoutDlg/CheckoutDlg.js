@@ -4,7 +4,6 @@ import { bindActionCreators } from "redux";
 import { Translate } from "react-redux-i18n";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
-import Countdown from "react-countdown";
 
 import { withStyles } from "@material-ui/core/styles";
 import Dialog from "@material-ui/core/Dialog";
@@ -14,10 +13,17 @@ import DialogTitle from "@material-ui/core/DialogTitle";
 import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import Grid from "@material-ui/core/Grid";
+import Box from "@material-ui/core/Box";
 
-import { setCheckoutDlgClose } from "../../store/reducers/pageStatus";
-import demoCake from "../../imgs/demoCake.jpg";
-import { TransitionGrow } from "../PageBase/PageBaseFunction";
+import {
+  setCheckoutDlgClose,
+  setPressToBakeDlgOpen,
+} from "../../store/reducers/pageStatus";
+import {
+  TransitionGrow,
+  FlashMonetizationOnIcon,
+  BounceInLeftDoubleArrownIcon,
+} from "../PageBase/PageBaseFunction";
 
 const styles = (theme) => ({
   image: {
@@ -25,6 +31,7 @@ const styles = (theme) => ({
   },
   dlg: {
     backgroundColor: process.env.REACT_APP_LIGHT_YELLOW,
+    width: 480,
   },
 });
 
@@ -33,13 +40,17 @@ class CheckoutDlg extends Component {
     super(props);
   }
 
-  startTheRecipe = () => {
-    this.props.setCheckoutDlgClose();
-    this.props.confirmAction();
-  };
+  componentDidUpdate() {
+    if (this.props.pageStatus.pressToBakeDlgOpen === false) {
+      if (this.props.pageStatus.coinValue >= this.props.item.price) {
+        this.props.setCheckoutDlgClose();
+        this.props.setPressToBakeDlgOpen();
+      }
+    }
+  }
 
   render() {
-    const { classes, item, confirmAction } = this.props;
+    const { classes, item } = this.props;
 
     return (
       <Dialog
@@ -56,8 +67,20 @@ class CheckoutDlg extends Component {
         <div className={classes.dlg}>
           <DialogTitle>
             <Typography variant="h3" align="center">
-              {this.props.pageStatus.coinValue < item.priceNum ? (
-                <Translate value="plsInsertCoin" />
+              {this.props.pageStatus.coinValue < item.price ? (
+                <Box display="flex" justifyContent="center" alignItems="center">
+                  <Translate value="plsInsertCoin" />
+                  <FlashMonetizationOnIcon
+                    style={{
+                      fontSize: 48,
+                    }}
+                  />
+                  <BounceInLeftDoubleArrownIcon
+                    style={{
+                      fontSize: 48,
+                    }}
+                  />
+                </Box>
               ) : (
                 <Translate value="plsPressSart" />
               )}
@@ -66,33 +89,14 @@ class CheckoutDlg extends Component {
           <DialogContent dividers>
             <Grid
               container
-              spacing={2}
               direction="row"
-              justify="space-between"
-              alignItems="flex-start"
+              justify="center"
+              alignItems="center"
             >
-              <Grid item xs={12} align="center">
-                <img src={item.img} alt={demoCake} className={classes.image} />
-              </Grid>
-              <Grid item xs={10}>
-                <Typography variant="h4">
-                  <Translate value={item.title} />
-                </Typography>
-              </Grid>
-              <Grid item xs>
-                <Typography variant="h5">
-                  <Translate value={item.priceStr} />
-                </Typography>
-              </Grid>
-              <Grid item xs={10}>
-                <Typography variant="h6">
-                  <Translate value={item.content} />
-                </Typography>
-              </Grid>
-              <Grid item xs>
+              <Grid item xs={6} align="center">
                 <CircularProgressbar
                   value={this.props.pageStatus.coinValue}
-                  maxValue={process.env.REACT_APP_PIECE_PER_PRICE}
+                  maxValue={item.price}
                   text={"$" + `${this.props.pageStatus.coinValue}`}
                   // strokeWidth={50}
                   styles={buildStyles({
@@ -104,6 +108,36 @@ class CheckoutDlg extends Component {
                     trailColor: process.env.REACT_APP_LIGHT_YELLOW,
                   })}
                 />
+              </Grid>
+            </Grid>
+            <Grid
+              container
+              spacing={1}
+              direction="row"
+              justify="space-between"
+              alignItems="center"
+            >
+              <Grid item xs>
+                <Typography variant="h4">
+                  <Translate value={item.title} />
+                </Typography>
+              </Grid>
+              <Grid item xs={3}>
+                <Typography variant="h4">
+                  <Translate value={item.priceStr} />
+                </Typography>
+              </Grid>
+            </Grid>
+            <Grid
+              container
+              direction="row"
+              justify="center"
+              alignItems="center"
+            >
+              <Grid item xs>
+                <Typography variant="h6">
+                  <Translate value={item.content} />
+                </Typography>
               </Grid>
             </Grid>
           </DialogContent>
@@ -118,26 +152,6 @@ class CheckoutDlg extends Component {
               <Typography variant="h5">
                 <Translate value="cancel" />
               </Typography>
-            </Button>
-            <Button
-              // variant="contained"
-              color="primary"
-              size="large"
-              disabled={this.props.pageStatus.coinValue < item.priceNum}
-              onClick={this.startTheRecipe}
-            >
-              <Typography variant="h5">
-                <Translate value="startBake" />
-              </Typography>
-              {this.props.pageStatus.coinValue < item.priceNum ? (
-                ""
-              ) : (
-                <Countdown
-                  date={Date.now() + 10000}
-                  renderer={(props) => <div>({props.seconds})</div>}
-                  onComplete={this.startTheRecipe}
-                />
-              )}
             </Button>
           </DialogActions>
         </div>
@@ -156,6 +170,7 @@ const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       setCheckoutDlgClose: () => setCheckoutDlgClose(),
+      setPressToBakeDlgOpen: () => setPressToBakeDlgOpen(),
     },
     dispatch
   );

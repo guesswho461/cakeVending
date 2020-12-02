@@ -1,4 +1,5 @@
 import axios from "axios";
+import qs from "qs";
 
 import items from "../../items";
 
@@ -66,7 +67,7 @@ function post(url, payload = null) {
       baseURL: backend + url,
       headers: {
         Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
-        "content-type": "text/plain",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       data: payload,
     })
@@ -314,8 +315,12 @@ export function setMakingProgress(data) {
   };
 }
 
-export function setOriginalRecipeStart(data) {
-  post("/recipe/start/original", data);
+export function setOriginalRecipeStart(item) {
+  const payload = qs.stringify({
+    cnt: item.cnt,
+    price: item.price,
+  });
+  post("/recipe/start/original", payload);
   return {
     type: SET_RECIPE_PROGRESS_VISABLE,
   };

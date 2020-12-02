@@ -128,8 +128,8 @@ class MainPage extends Component {
             closeAction={() => {
               popSfx.play();
               this.props.setPressToBakeDlgClose();
-              this.props.setOriginalRecipeStart(this.props.pageStatus.item.cnt);
-              this.props.coinValueDec(this.props.pageStatus.item.priceNum);
+              this.props.setOriginalRecipeStart(this.props.pageStatus.item);
+              this.props.coinValueDec(this.props.pageStatus.item.price);
               this.props.setADPageTitle("makingText");
               this.props.setMakingProgress(0);
               this.props.setPageSelected("ad");

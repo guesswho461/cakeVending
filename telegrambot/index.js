@@ -166,7 +166,7 @@ const postWebAPI = (ip, url, payload) => {
       method: "post",
       baseURL: "https://" + ip + ":" + process.env.MACHINE_BACKEND_PORT + url,
       headers: {
-        Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+        Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
         "content-type": "text/plain",
       },
       httpsAgent: new https.Agent({
@@ -191,7 +191,7 @@ const getWebAPI = (ip, url) => {
       method: "get",
       baseURL: "https://" + ip + ":" + process.env.MACHINE_BACKEND_PORT + url,
       headers: {
-        Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+        Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
         "content-type": "text/plain",
       },
       httpsAgent: new https.Agent({
@@ -215,7 +215,7 @@ const getFileWebAPI = (ip, url) => {
       method: "get",
       baseURL: "https://" + ip + ":" + process.env.MACHINE_BACKEND_PORT + url,
       headers: {
-        Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+        Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
       },
       httpsAgent: new https.Agent({
         rejectUnauthorized: false,

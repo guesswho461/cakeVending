@@ -30,7 +30,7 @@ const postWebAPI = (ip, url, payload) => {
       method: "post",
       baseURL: "http://" + ip + ":" + process.env.MACHINE_BACKEND_PORT + url,
       headers: {
-        Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+        Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
         "content-type": "text/plain",
       },
       data: payload,

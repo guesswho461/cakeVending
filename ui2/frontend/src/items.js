@@ -8,7 +8,7 @@ const items = [
     subtitle: "smallCakeSubTitle",
     priceStr: "smallCakePriceStr",
     content: "smallCakeContent",
-    priceNum: 30,
+    price: 30,
     cnt: 3,
   },
   {

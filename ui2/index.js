@@ -141,7 +141,7 @@ const postWebAPI = (url, payload) => {
           baseURL:
             process.env.TELEGRAM_BOT_IP + ":" + process.env.SERVER_PORT + url,
           headers: {
-            Authorization: "Bearer " + process.env.CAKE_ACCESS_TOKEN,
+            Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
             "content-type": "text/plain",
           },
           httpsAgent: new https.Agent({
