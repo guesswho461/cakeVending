@@ -19,7 +19,7 @@ import UIfx from "uifx";
 import pop from "../../sounds/pop.flac";
 const popSfx = new UIfx(pop);
 
-const girdCellWidth = 480;
+const girdCellWidth = 360;
 
 const styles = (theme) => ({
   root: {
@@ -32,7 +32,7 @@ const styles = (theme) => ({
     height: girdCellWidth,
   },
   gridTitle: {
-    height: 200,
+    height: 130,
   },
   itemImg: {
     width: "100%",
@@ -45,7 +45,8 @@ class ItemPage extends Component {
     const { classes } = this.props;
     return (
       <div className={classes.root}>
-        <GridList cellHeight={girdCellWidth} cellWidth={girdCellWidth}>
+        <GridList cellHeight={girdCellWidth} cellWidth={girdCellWidth} spacing={25}>
+        
           {items.map((item) => (
             <GridListTile key={item.img}>
               <CardActionArea
@@ -65,14 +66,14 @@ class ItemPage extends Component {
                 <GridListTileBar
                   className={classes.gridTitle}
                   title={
-                    <Typography variant="h1">
+                    <Typography variant="h2">
                       <Box fontWeight="fontWeightBold">
                         <Translate value={item.title} />
                       </Box>
                     </Typography>
                   }
                   subtitle={
-                    <Typography variant="h5">
+                    <Typography variant="h4">
                       <Box
                         display="flex"
                         // justifyContent="flex-start"
