@@ -17,7 +17,7 @@ const items = [
     subtitle: "largeCakeSubTitle",
     priceStr: "largeCakePriceStr",
     content: "largeCakeContent",
-    priceNum: 40,
+    price: 40,
     cnt: 5,
   },
 ];

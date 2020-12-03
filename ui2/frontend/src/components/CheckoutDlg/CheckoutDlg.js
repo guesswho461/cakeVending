@@ -66,25 +66,21 @@ class CheckoutDlg extends Component {
       >
         <div className={classes.dlg}>
           <DialogTitle>
-            <Typography variant="h3" align="center">
-              {this.props.pageStatus.coinValue < item.price ? (
-                <Box display="flex" justifyContent="center" alignItems="center">
-                  <Translate value="plsInsertCoin" />
-                  <FlashMonetizationOnIcon
-                    style={{
-                      fontSize: 48,
-                    }}
-                  />
-                  <BounceInLeftDoubleArrownIcon
-                    style={{
-                      fontSize: 48,
-                    }}
-                  />
-                </Box>
-              ) : (
-                <Translate value="plsPressSart" />
-              )}
-            </Typography>
+            <Box display="flex" justifyContent="center" alignItems="center">
+              <Typography variant="h3" align="center">
+                <Translate value="plsInsertCoin" />
+              </Typography>
+              <FlashMonetizationOnIcon
+                style={{
+                  fontSize: 48,
+                }}
+              />
+              <BounceInLeftDoubleArrownIcon
+                style={{
+                  fontSize: 48,
+                }}
+              />
+            </Box>
           </DialogTitle>
           <DialogContent dividers>
             <Grid

@@ -23,7 +23,7 @@ const styles = (theme) => ({
   },
 });
 
-class AutoCloseDlg extends Component {
+class MsgBox extends Component {
   render() {
     const { classes, title, openState, sfx } = this.props;
 
@@ -63,4 +63,4 @@ const mapDispatchToProps = (dispatch) => {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(withStyles(styles)(AutoCloseDlg));
+)(withStyles(styles)(MsgBox));

@@ -22,6 +22,10 @@ const SET_RECIPE_PROGRESS_VISABLE = "set/recipe/progress/visable";
 const GET_NEXT_VIDEO_URL = "get/next/video/url";
 const SET_PRESS_TO_BAKE_DLG = "set/pressToBake";
 const GET_DEV_MODE = "get/devMode";
+const SET_FIRST_TIME_BUY_DLG = "set/firstTimeBuyDlg";
+const SET_STAR_RATING_DLG = "set/starRatingDlg";
+const DUMMY = "dummy";
+const SET_THANK_YOU_DLG = "set/thankYouDlg";
 
 const backend = "http://localhost:8081";
 
@@ -43,6 +47,9 @@ const initState = {
   isDevMode: false,
   maintainPageTitle: "maintainMsg",
   item: items[0],
+  firstTimeBuyDlgOpen: false,
+  starRatingDlgOpen: false,
+  thankYouDlgOpen: false,
 };
 
 function decTheCoinValue(coinValue, data) {
@@ -55,9 +62,13 @@ function decTheCoinValue(coinValue, data) {
 
 const coinPerValue = parseInt(process.env.REACT_APP_COIN_PER_VALUE, 10);
 
-function incTheCoinValue(coinValue) {
-  coinSfx.play();
-  return coinValue + coinPerValue;
+function incTheCoinValue(coinValue, checkoutDlgOpen) {
+  if (checkoutDlgOpen === true) {
+    coinSfx.play();
+    return coinValue + coinPerValue;
+  } else {
+    return coinValue;
+  }
 }
 
 function post(url, payload = null) {
@@ -67,7 +78,6 @@ function post(url, payload = null) {
       baseURL: backend + url,
       headers: {
         Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
-        "Content-Type": "application/x-www-form-urlencoded",
       },
       data: payload,
     })
@@ -80,20 +90,6 @@ function post(url, payload = null) {
         return reject(err);
       });
   });
-}
-
-function jump2SoldoutPage(isDevMode, data, lastPage) {
-  if (isDevMode) {
-    return lastPage;
-  } else {
-    if (data === "true") {
-      post("/kanban/disable");
-      return "soldout";
-    } else {
-      post("/kanban/enable");
-      return "ad";
-    }
-  }
 }
 
 function jump2MaintainPage(isDevMode, data, lastPage) {
@@ -183,7 +179,7 @@ export default function reducer(state = initState, action) {
     case "coin/status/inc":
       return {
         ...state,
-        coinValue: incTheCoinValue(state.coinValue),
+        coinValue: incTheCoinValue(state.coinValue, state.checkoutDlgOpen),
       };
     case "gate/cmd/open":
       if (action.payload === "true") {
@@ -242,6 +238,21 @@ export default function reducer(state = initState, action) {
       return {
         ...state,
         isDevMode: action.payload,
+      };
+    case SET_FIRST_TIME_BUY_DLG:
+      return {
+        ...state,
+        firstTimeBuyDlgOpen: action.payload,
+      };
+    case SET_STAR_RATING_DLG:
+      return {
+        ...state,
+        starRatingDlgOpen: action.payload,
+      };
+    case SET_THANK_YOU_DLG:
+      return {
+        ...state,
+        thankYouDlgOpen: action.payload,
       };
   }
 }
@@ -413,5 +424,61 @@ export function isAllOpModesAreCorrect() {
       .catch((err) => {
         console.log(err.message);
       });
+  };
+}
+
+export function setFirstTimeBuyDlgOpen() {
+  return {
+    type: SET_FIRST_TIME_BUY_DLG,
+    payload: true,
+  };
+}
+
+export function setFirstTimeBuyDlgClose() {
+  return {
+    type: SET_FIRST_TIME_BUY_DLG,
+    payload: false,
+  };
+}
+
+export function setFirstTimeMarkToThisOrder(data) {
+  post("/thisOrder/firstTimeBuy", data);
+  return {
+    type: DUMMY,
+  };
+}
+
+export function setStarToThisOrder(data) {
+  post("/thisOrder/star", data);
+  return {
+    type: DUMMY,
+  };
+}
+
+export function setStarRatingDlgOpen() {
+  return {
+    type: SET_STAR_RATING_DLG,
+    payload: true,
+  };
+}
+
+export function setStarRatingDlgClose() {
+  return {
+    type: SET_STAR_RATING_DLG,
+    payload: false,
+  };
+}
+
+export function setThankYouDlgOpen() {
+  return {
+    type: SET_THANK_YOU_DLG,
+    payload: true,
+  };
+}
+
+export function setThankYouDlgClose() {
+  return {
+    type: SET_THANK_YOU_DLG,
+    payload: false,
   };
 }

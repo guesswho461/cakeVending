@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.62";
+const version = "cakeVendingBackend v1.63";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -168,15 +168,18 @@ const postWebAPI2 = (url, payload) => {
   return postWebAPI(url, process.env.LOCALNAME + " " + payload);
 };
 
-const today = new Date();
-const tableName =
-  "[" +
-  today.getFullYear() +
-  "-" +
-  (today.getMonth() + 1) +
-  "-" +
-  today.getDate() +
-  "]";
+const getDate = () => {
+  const now = new Date();
+  return (
+    "[" +
+    now.getFullYear() +
+    "-" +
+    (now.getMonth() + 1) +
+    "-" +
+    now.getDate() +
+    "]"
+  );
+};
 
 const getTime = () => {
   const now = new Date();
@@ -193,15 +196,15 @@ const getTime = () => {
   );
 };
 
+let tableName = getDate();
+
 let db = new sqlite3.Database(dbPath, function (err) {
   if (err) throw err;
 });
 
 const setParToDB = (table, name, value) => {
   const statement = util.format('UPDATE %s SET %s="%s"', table, name, value);
-  db.run(statement, function (err) {
-    if (err) throw err;
-  });
+  db.run(statement);
 };
 
 const getParFromDB = (table, name) => {
@@ -217,35 +220,53 @@ const getParFromDB = (table, name) => {
   });
 };
 
-db.serialize(function () {
+const createTableToDB = () => {
+  tableName = getDate();
   const statement = util.format(
-    "CREATE TABLE IF NOT EXISTS %s (time TEXT PRIMARY KEY, price TEXT, batterVol TEXT, bowlCnt TEXT, fridgeTemp TEXT, macTemp TEXT)",
+    "CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, price INTEGER, firstTime TEXT, star INTEGER)",
     tableName
   );
   db.run(statement);
-});
+};
 
-const setToDB = (
-  tableName,
-  date,
-  price,
-  batterVol,
-  bowlCnt,
-  fridgeTemp,
-  macTemp
-) => {
+const setToDB = (table, price) => {
   const statement = util.format(
-    "INSERT INTO %s VALUES ('%s', %s, %s, %s, %s, %s)",
-    tableName,
-    date,
-    price,
-    batterVol,
-    bowlCnt,
-    fridgeTemp,
-    macTemp
+    "INSERT INTO %s VALUES (NULL, '%s', %s, NULL, NULL)",
+    table,
+    getTime(),
+    price
   );
   db.run(statement);
 };
+
+const updateToLastRowOfDB = (table, columnName, data) => {
+  const statement = util.format(
+    "UPDATE %s set %s = '%s' WHERE _rowid_ = (SELECT MAX(_rowid_) FROM %s)",
+    table,
+    columnName,
+    data,
+    table
+  );
+  db.run(statement);
+};
+
+const getTurnover = (table) => {
+  return new Promise((resolve, reject) => {
+    const filed = "SUM(price)";
+    const statement = util.format("SELECT %s FROM %s", filed, table);
+    db.get(statement, [], (err, value) => {
+      if (err) {
+        return reject(err.message);
+      } else {
+        return resolve(value[filed]);
+      }
+    });
+  });
+};
+
+db.serialize(function () {
+  createTableToDB();
+});
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -393,15 +414,7 @@ app.post(
           cnt = parseInt(req.body.cnt);
           price = parseInt(req.body.price);
           getParFromDB("PAR", "scriptArgu").then((value) => {
-            setToDB(
-              tableName,
-              getTime(),
-              price,
-              batterVolStr,
-              bowlCntStr,
-              fridgeTempStr,
-              macTempStr
-            );
+            setToDB(tableName, price);
             postWebAPI2("/machine/info", "bake start: " + cnt);
             let cmd = util.format(
               // "sudo python %s/%s --cnt %d %s",
@@ -462,20 +475,6 @@ app.get(
   }
 );
 
-const getTurnover = (table) => {
-  return new Promise((resolve, reject) => {
-    const filed = "SUM(price)";
-    const statement = util.format("SELECT %s FROM %s", filed, table);
-    db.get(statement, [], (err, value) => {
-      if (err) {
-        return reject(err.message);
-      } else {
-        return resolve(value[filed]);
-      }
-    });
-  });
-};
-
 app.get(
   "/turnover/today",
   jwt({
@@ -491,6 +490,19 @@ app.get(
       .catch((err) => {
         res.status(500).send(err);
       });
+  }
+);
+
+app.post(
+  "/turnover/today",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    createTableToDB();
+    res.sendStatus(200);
   }
 );
 
@@ -706,6 +718,32 @@ app.get(
   }),
   (req, res) => {
     res.status(200).send(ovenIsReady);
+  }
+);
+
+app.post(
+  "/thisOrder/firstTimeBuy",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    updateToLastRowOfDB(tableName, "firstTime", req.body);
+    res.sendStatus(200);
+  }
+);
+
+app.post(
+  "/thisOrder/star",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    updateToLastRowOfDB(tableName, "star", req.body);
+    res.sendStatus(200);
   }
 );
 

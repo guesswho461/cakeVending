@@ -45,8 +45,11 @@ class ItemPage extends Component {
     const { classes } = this.props;
     return (
       <div className={classes.root}>
-        <GridList cellHeight={girdCellWidth} cellWidth={girdCellWidth} spacing={25}>
-        
+        <GridList
+          cellHeight={girdCellWidth}
+          cellWidth={girdCellWidth}
+          spacing={25}
+        >
           {items.map((item) => (
             <GridListTile key={item.img}>
               <CardActionArea

@@ -17,7 +17,6 @@ import {
   setHeadtingUpWarningDlgOpen,
   setMakingProgress,
   getNextVideoURL,
-  setHeadtingUpWarningDlgClose,
 } from "../../store/reducers/pageStatus";
 import {
   FlashTouchAppIcon,
@@ -150,16 +149,10 @@ class ADPage extends Component {
               this.props.setPageSelected("main");
             } else {
               this.props.setHeadtingUpWarningDlgOpen();
-              setTimeout(
-                this.props.setHeadtingUpWarningDlgClose,
-                process.env.REACT_APP_HEATING_UP_WARNING_DELAY * 1000
-              );
             }
           });
         }}
         disabled={this.props.pageStatus.checkoutDone}
-        disableRipple={true}
-        disableTouchRipple={true}
       >
         <div className={classes.root}>
           <BorderLinearProgress
@@ -206,7 +199,6 @@ const mapDispatchToProps = (dispatch) => {
       setHeadtingUpWarningDlgOpen: () => setHeadtingUpWarningDlgOpen(),
       setMakingProgress: (data) => setMakingProgress(data),
       getNextVideoURL: () => getNextVideoURL(),
-      setHeadtingUpWarningDlgClose: () => setHeadtingUpWarningDlgClose(),
     },
     dispatch
   );

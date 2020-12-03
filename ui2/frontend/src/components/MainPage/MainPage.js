@@ -12,7 +12,6 @@ import Box from "@material-ui/core/Box";
 import Header from "../Header";
 import ItemPage from "../ItemPage";
 import CheckoutDlg from "../CheckoutDlg";
-import items from "../../items";
 import {
   setOriginalRecipeStart,
   setADPageTitle,
@@ -20,6 +19,7 @@ import {
   setPageSelected,
   setMakingProgress,
   setPressToBakeDlgClose,
+  setFirstTimeBuyDlgOpen,
 } from "../../store/reducers/pageStatus";
 import AboutPage from "../AboutPage";
 import AutoCloseBtnDlg from "../AutoCloseBtnDlg";
@@ -133,6 +133,7 @@ class MainPage extends Component {
               this.props.setADPageTitle("makingText");
               this.props.setMakingProgress(0);
               this.props.setPageSelected("ad");
+              this.props.setFirstTimeBuyDlgOpen();
             }}
           />
         </div>
@@ -156,6 +157,7 @@ const mapDispatchToProps = (dispatch) => {
       coinValueDec: (data) => coinValueDec(data),
       setMakingProgress: (data) => setMakingProgress(data),
       setPressToBakeDlgClose: () => setPressToBakeDlgClose(),
+      setFirstTimeBuyDlgOpen: () => setFirstTimeBuyDlgOpen(),
     },
     dispatch
   );

@@ -1,4 +1,4 @@
-const version = "cakeVendingBot v1.30";
+const version = "cakeVendingBot v1.31";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -35,6 +35,7 @@ require("dotenv").config();
 const { parse } = require("comment-json");
 const HashMap = require("hashmap");
 const util = require("util");
+const qs = require("qs");
 
 const httpsOptions = {
   key: fs.readFileSync("./ssl_files/server_private_key.pem"),
@@ -185,6 +186,31 @@ const postWebAPI = (ip, url, payload) => {
   });
 };
 
+const postWebAPI3 = (ip, url, payload) => {
+  return new Promise((resolve, reject) => {
+    axios({
+      method: "post",
+      baseURL: "http://" + ip + ":" + process.env.MACHINE_BACKEND_PORT + url,
+      headers: {
+        Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false,
+      }),
+      data: payload,
+    })
+      .then((res) => {
+        logger.trace("POST " + url + " " + payload + " " + res.status);
+        return resolve(res.data);
+      })
+      .catch((err) => {
+        logger.error(err.message);
+        return reject(err.message);
+      });
+  });
+};
+
 const getWebAPI = (ip, url) => {
   return new Promise((resolve, reject) => {
     axios({
@@ -265,6 +291,24 @@ const findMachineAndPost2 = (machineName, url) => {
     if (machineMap.has(machineName)) {
       const machine = machineMap.get(machineName);
       postWebAPI(machine.ip, url, "true")
+        .then((msg) => {
+          return resolve(machineName + ": OK");
+        })
+        .catch((err) => {
+          return reject(machineName + ": " + err.message);
+        });
+    } else {
+      resp = "sorry, " + machineName + " is offline";
+      return reject(resp);
+    }
+  });
+};
+
+const findMachineAndPost3 = (machineName, url, payload) => {
+  return new Promise((resolve, reject) => {
+    if (machineMap.has(machineName)) {
+      const machine = machineMap.get(machineName);
+      postWebAPI3(machine.ip, url, payload)
         .then((msg) => {
           return resolve(machineName + ": OK");
         })
@@ -509,13 +553,19 @@ const cakeBotAction = (chatId, words) => {
             return reject(err);
           });
       } else if (cmd === "bake") {
-        findMachineAndPost2(machineName, "/recipe/start/original")
-          .then((msg) => {
-            return resolve(msg);
-          })
-          .catch((err) => {
-            return reject(err);
+        if (words.length == 4) {
+          const payload = qs.stringify({
+            cnt: words[2],
+            price: words[3],
           });
+          findMachineAndPost3(machineName, "/recipe/start/original", payload)
+            .then((msg) => {
+              return resolve(msg);
+            })
+            .catch((err) => {
+              return reject(err);
+            });
+        }
       } else {
         resp = "sorry, I dont understand";
         return reject(resp);
