@@ -143,6 +143,7 @@ coinPin.on("interrupt", (level, tick) => {
   logger.trace("coinPin interrupt level: " + level + ", tick: " + tick);
   if (coinEnable === true) {
     if (level === 0) {
+      logger.debug("coinPin True, tick: " + tick);
       endtime = new Date().getTime();
       if (endtime - sTime >= coinDebounceTime) {
         sTime = new Date().getTime();
