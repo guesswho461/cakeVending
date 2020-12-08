@@ -15,7 +15,6 @@
 # 1129 change delay position after robot/cmd/jog if isPass != "PASS"
 # 1201 add cnt argu to support the small cake
 
-#No.2 Use
 import paho.mqtt.client as mqtt
 import signal
 import time
@@ -35,7 +34,7 @@ parser.add_argument("--vol", help="optional argument",
                     dest="vol", default="30", type=float)
 parser.add_argument("--cnt", help="optional argument",
                     dest="cnt", default="3", type=int)
-
+ 
 args = parser.parse_args()
 
 
@@ -78,7 +77,6 @@ class machineStatus:
     robotY = robotAxis()
     robotZ = robotAxis()
 
-
 class cakeObj:
     name = "pnt"
     spitY = 0
@@ -92,8 +90,8 @@ class cakeObj:
         self.spitOffset = spitOffset
         self.spitPumpbackVol = spitPumpbackVol
         self.pickY = pickY
-
-
+        
+        
 macst = machineStatus()
 looping = False
 mqttc = None
@@ -105,14 +103,13 @@ publish_delay = 0.5
 num = 0;
 
 cakeList = [
-    cakeObj("P6", "-225", 0, "-1", "-226"),
-    cakeObj("P5", "-185", 0, "-1", "-185"),
-    cakeObj("P4", "-143", 0, "-1", "-144"),
-    cakeObj("P3", "-102", 0, "-1", "-103"),
-    cakeObj("P2", "-61", 0, "-1", "-62"),
-    cakeObj("P1", "-18", 1, "-3", "-21"),
+    cakeObj("P6", "-240", 0, "-1", "-244"),
+    cakeObj("P5", "-194", 0, "-1", "-198"),
+    cakeObj("P4", "-148", 0, "-1", "-150"),
+    cakeObj("P3", "-102", 0, "-1", "-107"),
+    cakeObj("P2", "-57", 0, "-1", "-60"),
+    cakeObj("P1", "-11", 0, "-3", "-14"),
 ]
-
 
 def post2backend(url):
     myUrl = 'http://localhost:8081' + url
@@ -329,7 +326,6 @@ def move_robot(target, pos, isPass="WAIT"):
     global mqttc, macst
     macst.robotMotionDone = False
     mqttc.publish("robot/cmd/jog/" + target, pos)
-    logger.info("jog")
     if isPass != "PASS":
         time.sleep(publish_delay)
         while macst.robotMotionDone == False:
@@ -341,7 +337,6 @@ def spit_cake(vol):
     global mqttc, macst
     macst.bucketStopTrue = False
     mqttc.publish("bucket/cmd/jog/vol", vol)
-    logger.info("vol")
     time.sleep(publish_delay)
     while macst.bucketStopTrue == False:
         logger.debug("bucketStopTrue: " + str(macst.bucketStopTrue))
@@ -427,23 +422,23 @@ def robot_go_home():
 
 def pick_cake_and_drop(pnt_name, pos_y, close_deg):
     global mqttc, macst
-    move_robot("x", "150", "PASS")
+    move_robot("x", "180", "PASS")
     move_robot("y", pos_y, "PASS")
     mqttc.publish("robot/cmd/jog/fork", "50")  # gripper OPEN
     time.sleep(publish_delay)
-    move_robot("z", "-107")
-    move_robot("x", "195")
-    move_robot("x", "195")  # insurence
+    move_robot("z", "-104")
+    move_robot("x", "205")
+    move_robot("x", "205")  # insurence
     logger.info("robot to upper " + pnt_name)
     mqttc.publish("robot/cmd/jog/fork", close_deg)  # gripper CLOSE
     time.sleep(publish_delay)
     logger.info("robot grip at " + pnt_name)
-    move_robot("z", "-90")
+    move_robot("z", "-70")
     logger.info("robot move up to " + pnt_name)
     move_robot("x", "160")
     move_robot("x", "3", "PASS")
     move_robot("y", "-180", "PASS")
-    move_robot("z", "-90")
+    move_robot("z", "-70")
     time.sleep(0.2)
     mqttc.publish("robot/cmd/jog/fork", "60")  # gripper ALL OPEN
     time.sleep(publish_delay)
@@ -557,20 +552,20 @@ def ctrl_oven_and_robot():
         mqttc.publish("bucket/status/alarm", msg)
         os._exit(1)
 
-#logger.info("oven first open")
-#time.sleep(2)  # sec
+    logger.info("oven first open")
+#    time.sleep(2)  # sec
 
-    mqttc.publish("bucket/cmd/jog/vol", -50)
+    mqttc.publish("bucket/cmd/jog/vol", 99)
     time.sleep(publish_delay)
     logger.info("Suck until to the top")
 
-    move_robot("x", "215", "PASS")
-    move_robot("z", "-115", "PASS")
+    move_robot("x", "220", "PASS")
+    move_robot("z", "-105", "PASS")
     move_robot("y", "-15")
     check_robot_is_not_at_home(macst.robotX, "robot x")
     check_robot_is_not_at_home(macst.robotY, "robot y")
     check_robot_is_not_at_home(macst.robotZ, "robot z")
-    move_robot("y", "-225")
+    move_robot("y", "-240")
 
     spit_stop()
     num = 0;
@@ -578,10 +573,9 @@ def ctrl_oven_and_robot():
 
     # vol = 27  # sensor1
     # vol = 30  # sensor2
-#    vol = args.vol
-    vol = -30
-#    if (vol < 1):
-#        vol = 1
+    vol = args.vol
+    if (vol < 1):
+            vol = 1
 
     cnt = args.cnt
     if (cnt > 6):
@@ -594,7 +588,6 @@ def ctrl_oven_and_robot():
             cakeList[i].name, cakeList[i].spitY, vol + cakeList[i].spitOffset)
         spit_cake(cakeList[i].spitPumpbackVol)
 
-
     move_robot("x", "0", "PASS")
     move_robot("y", "0", "PASS")
     move_robot("z", "0", "PASS")
@@ -602,17 +595,18 @@ def ctrl_oven_and_robot():
 
     mqttc.publish("bucket/cmd/jog/vol", -20)  # suck all back
 
-    T_all = 15  # at Oven 190 degree, Bake total time(sec)
-    T1 = T_all*0.3
-    T2 = T_all*0.3
+    T_all = 210  # at Oven 190 degree, Bake total time(sec)
+    T1 = T_all*0.4
+    T2 = T_all*0.6
+    
 
+    
     time.sleep(1)  # sec
     close_oven()
     logger.info("close oven")
 
     thread2 = threading.Thread(target=ctrl_latch)
-    thread2.start()
-        
+    thread2.start()                                                 
     flip_oven(True)
     logger.info("oven flip true")
 
@@ -634,7 +628,7 @@ def ctrl_oven_and_robot():
     logger.info("robot go home")
 
     # open process
-    open_oven(9)
+    open_oven(5)
     time.sleep(2)  # sec
     if (macst.ovenIsHome2 == False):
         mqttc.loop_stop()
@@ -644,13 +638,13 @@ def ctrl_oven_and_robot():
         mqttc.publish("bucket/status/alarm", msg)
         os._exit(1)
 
-    move_robot("z", "-194")
+    move_robot("z", "-196")
     check_robot_is_not_at_home(macst.robotZ, "robot z")
-    move_robot("z", "-194")
-    move_robot("x", "65")
+    move_robot("z", "-196")
+    move_robot("x", "55")
     check_robot_is_not_at_home(macst.robotX, "robot x")
     open_oven(100)
-    move_robot("x", "30")
+    move_robot("x", "40")
     move_robot("z", "-100")
     move_robot("z", "-100")
 
@@ -658,7 +652,7 @@ def ctrl_oven_and_robot():
 
     threads = []
     t = 0
-    
+
     close_deg = 0
 
     for i in range((cnt - 1), -1, -1):
@@ -671,10 +665,6 @@ def ctrl_oven_and_robot():
             threads[t].start()
             t=t+1
 
-
-    for i in range(t):
-        threads[i].join()
-  
     mqttc.publish("bucket/cmd/jog/vol", -20)  # suck all back
 
     move_robot("x", "0", "PASS")
@@ -692,7 +682,6 @@ def ctrl_oven_and_robot():
     logger.info("robot go home")
 
     thread2.join()
-    
     logger.info("Process finish!!!!!!!!!!!!!")
     logger.info('control oven and robot thread end')
 
@@ -738,7 +727,7 @@ def arm_suck(cmd, delay):
 
 def ctrl_latch():
 
-#    time.sleep(20)  # wait 90 sec
+#    time.sleep(60)  # wait 90 sec
 
     global macst, latchTakeBowl_Start
     waitTime = 0.1
@@ -765,27 +754,18 @@ def ctrl_latch():
     while True:
         # move cvt to bowl
         logger.info('01')
-        move_cvt("-209", 2)
+        move_cvt("-210", 2)
 
         # move arm up to bowl
         logger.info('02')
         # offset the arm
-        offset = retry_take_bowl % 5
+        offset = retry_take_bowl % 3
         if offset == 0:
-            move_arm("130", 3)
-            logger.info("move arm to bowl P1")
+            move_arm("110", 3)
         elif offset == 1:
-            move_arm("133", 3)
-            logger.info("move arm to bowl P2")
+            move_arm("112", 3)
         elif offset == 2:
-            move_arm("136", 3)
-            logger.info("move arm to bowl P3")
-        elif offset == 3:
-            move_arm("139", 3)
-            logger.info("move arm to bowl P4")
-        elif offset == 4:
-            move_arm("142", 3)
-            logger.info("move arm to bowl P5")                                                           
+            move_arm("115", 3)
 
         # suck the bowl
         logger.info('03')
@@ -793,7 +773,7 @@ def ctrl_latch():
 
         # move arm down
         logger.info('04')
-        move_arm("28", 2)
+        move_arm("22", 2)
 
         # release the bowl
         logger.info('05')
