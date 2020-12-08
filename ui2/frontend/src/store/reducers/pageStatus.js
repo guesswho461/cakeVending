@@ -71,13 +71,14 @@ function incTheCoinValue(coinValue, checkoutDlgOpen) {
   }
 }
 
-function post(url, payload = null) {
+function post(url, payload = null, type = "text/plain") {
   return new Promise((resolve, reject) => {
     axios({
       method: "post",
       baseURL: backend + url,
       headers: {
         Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
+        "content-type": type,
       },
       data: payload,
     })
@@ -331,7 +332,7 @@ export function setOriginalRecipeStart(item) {
     cnt: item.cnt,
     price: item.price,
   });
-  post("/recipe/start/original", payload);
+  post("/recipe/start/original", payload, "application/x-www-form-urlencoded");
   return {
     type: SET_RECIPE_PROGRESS_VISABLE,
   };

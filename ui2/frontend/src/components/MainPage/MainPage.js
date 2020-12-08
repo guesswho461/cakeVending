@@ -120,8 +120,20 @@ class MainPage extends Component {
             )}
           </main>
 
-          <CheckoutDlg item={this.props.pageStatus.item} />
-          <AutoCloseBtnDlg
+          <CheckoutDlg
+            item={this.props.pageStatus.item}
+            bakeAction={() => {
+              popSfx.play();
+              // this.props.setPressToBakeDlgClose();
+              this.props.setOriginalRecipeStart(this.props.pageStatus.item);
+              this.props.coinValueDec(this.props.pageStatus.item.price);
+              this.props.setADPageTitle("makingText");
+              this.props.setMakingProgress(0);
+              this.props.setPageSelected("ad");
+              this.props.setFirstTimeBuyDlgOpen();
+            }}
+          />
+          {/* <AutoCloseBtnDlg
             title="pressToBake"
             delay={3}
             openState={this.props.pageStatus.pressToBakeDlgOpen}
@@ -135,7 +147,7 @@ class MainPage extends Component {
               this.props.setPageSelected("ad");
               this.props.setFirstTimeBuyDlgOpen();
             }}
-          />
+          /> */}
         </div>
       </Fragment>
     );

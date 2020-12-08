@@ -44,13 +44,16 @@ class CheckoutDlg extends Component {
     if (this.props.pageStatus.pressToBakeDlgOpen === false) {
       if (this.props.pageStatus.coinValue >= this.props.item.price) {
         this.props.setCheckoutDlgClose();
-        this.props.setPressToBakeDlgOpen();
+        // this.props.setPressToBakeDlgOpen();
+        if (this.props.bakeAction) {
+          this.props.bakeAction();
+        }
       }
     }
   }
 
   render() {
-    const { classes, item } = this.props;
+    const { classes, item, bakeAction } = this.props;
 
     return (
       <Dialog

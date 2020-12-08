@@ -30,11 +30,6 @@ class AutoCloseDlg extends Component {
 
     return (
       <div>
-        <Countdown
-          date={Date.now() + delay * 1000}
-          onComplete={closeAction}
-          renderer={(props) => <div></div>}
-        />
         <Dialog
           maxWidth={dlgWidth}
           TransitionComponent={TransitionSlideDown}
@@ -55,6 +50,11 @@ class AutoCloseDlg extends Component {
             }
           }}
         >
+          <Countdown
+            date={Date.now() + delay * 1000}
+            onComplete={closeAction}
+            renderer={(props) => <div></div>}
+          />
           <div className={classes.dlg}>{children}</div>
         </Dialog>
       </div>
