@@ -63,7 +63,7 @@ class FirstTimeBuyPage extends Component {
                   this.props.setThankYouDlgOpen();
                 }}
               >
-                <Typography variant="h4">
+                <Typography variant="h3">
                   <Translate value={"firstTimeBuyYes"} />
                 </Typography>
               </Button>
@@ -83,7 +83,7 @@ class FirstTimeBuyPage extends Component {
                   this.props.setStarRatingDlgOpen();
                 }}
               >
-                <Typography variant="h4">
+                <Typography variant="h3">
                   <Translate value={"firstTimeBuyNo"} />
                 </Typography>
               </Button>

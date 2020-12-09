@@ -74,8 +74,8 @@ const batterPumpBackRoutineInterval =
   process.env.BATTER_PUMP_BACK_ROUTINE_INTERVAL * 60 * 1000;
 
 const dbPath = "mydatebase.db";
-// const recipePath = "/home/pi/recipe";
-const recipePath = "C:\\codes\\cakeVending\\recipe";
+const recipePath = "/home/pi/recipe";
+//const recipePath = "C:\\codes\\cakeVending\\recipe";
 
 let bucketAliveMsg = "bucketAliveMsg";
 let lastBucketAliveMsg = "lastBucketAliveMsg";
@@ -113,8 +113,8 @@ let lastBowlCnt = 0;
 let lastBatterVol = 0;
 let lastFridgeTemp = 0;
 
-// let scriptFile = "dummy.py";
-let scriptFile = "test.py";
+let scriptFile = "dummy.py";
+//let scriptFile = "test.py";
 
 const machineInfo = {
   name: process.env.LOCALNAME,

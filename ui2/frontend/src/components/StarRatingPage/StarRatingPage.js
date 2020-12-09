@@ -160,7 +160,7 @@ class StarRatingPage extends Component {
                   this.props.setThankYouDlgOpen();
                 }}
               >
-                <Typography variant="h4">
+                <Typography variant="h3">
                   <Translate value={"submit"} />
                 </Typography>
               </Button>
@@ -178,7 +178,7 @@ class StarRatingPage extends Component {
                   this.props.setStarRatingDlgClose();
                 }}
               >
-                <Typography variant="h4">
+                <Typography variant="h3">
                   <Translate value={"cancel"} />
                 </Typography>
               </Button>
