@@ -1,4 +1,4 @@
-const version = "cakeVendingBot v1.31";
+const version = "cakeVendingBot v1.32";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -190,7 +190,7 @@ const postWebAPI3 = (ip, url, payload) => {
   return new Promise((resolve, reject) => {
     axios({
       method: "post",
-      baseURL: "http://" + ip + ":" + process.env.MACHINE_BACKEND_PORT + url,
+      baseURL: "https://" + ip + ":" + process.env.MACHINE_BACKEND_PORT + url,
       headers: {
         Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
         "Content-Type": "application/x-www-form-urlencoded",
@@ -211,7 +211,7 @@ const postWebAPI3 = (ip, url, payload) => {
   });
 };
 
-const getWebAPI = (ip, url) => {
+const getWebAPI = (ip, url, payload) => {
   return new Promise((resolve, reject) => {
     axios({
       method: "get",
@@ -223,6 +223,7 @@ const getWebAPI = (ip, url) => {
       httpsAgent: new https.Agent({
         rejectUnauthorized: false,
       }),
+      data: payload,
     })
       .then((res) => {
         logger.trace("GET " + url + " " + res.status);
@@ -346,11 +347,11 @@ const findMachineAndPost = (machineName, url, words, startIdx = 2) => {
   });
 };
 
-const findMachineAndGet = (machineName, url) => {
+const findMachineAndGet = (machineName, url, payload = null) => {
   return new Promise((resolve, reject) => {
     if (machineMap.has(machineName)) {
       const machine = machineMap.get(machineName);
-      getWebAPI(machine.ip, url)
+      getWebAPI(machine.ip, url, payload)
         .then((msg) => {
           return resolve(machine.name + ": " + msg);
         })
@@ -387,7 +388,7 @@ const getCmdHandler = (machineName, words, chatId) => {
     if (words.length == 3) {
       const arg1 = words[2];
       if (arg1 === "turnover") {
-        findMachineAndGet(machineName, "/turnover/today")
+        findMachineAndGet(machineName, "/turnover", "today")
           .then((msg) => {
             return resolve(msg);
           })
@@ -427,6 +428,45 @@ const getCmdHandler = (machineName, words, chatId) => {
           .catch((err) => {
             return reject(err);
           });
+      } else if (arg1 === "turnover") {
+        //get turnover today|ytd
+        findMachineAndGet(machineName, "/turnover", arg2)
+          .then((msg) => {
+            return resolve(msg);
+          })
+          .catch((err) => {
+            return reject(err);
+          });
+      } else {
+        resp = "sorry, I dont understand";
+        return reject(resp);
+      }
+    } else if (words.length == 5) {
+      //get sells detail today
+      const arg1 = words[2];
+      const arg2 = words[3];
+      const arg3 = words[4];
+      if (arg1 === "sells") {
+        if (arg2 === "vol") {
+          findMachineAndGet(machineName, "/sells/vol", arg3)
+            .then((msg) => {
+              return resolve(msg);
+            })
+            .catch((err) => {
+              return reject(err);
+            });
+        } else if (arg2 === "detail") {
+          findMachineAndGet(machineName, "/sells/detail", arg3)
+            .then((msg) => {
+              return resolve(msg);
+            })
+            .catch((err) => {
+              return reject(err);
+            });
+        } else {
+          resp = "sorry, I dont understand";
+          return reject(resp);
+        }
       } else {
         resp = "sorry, I dont understand";
         return reject(resp);
@@ -498,6 +538,17 @@ const setCmdHandler = (machineName, words) => {
   });
 };
 
+const showHelp = () => {
+  return "[help] [list] [clear] [soldout] [disable] [enable] [echo MSG] \n \
+          [bake CNT PRICE] \n \
+          [get db] \n \
+          [get recipe|turnover argu|today|ytd] \n \
+          [get sells vol|detail today|ytd] \n \
+          [set ip|recipe IP|NAME] \n \
+          [set recipe argu ARGU] \
+  ";
+};
+
 const cakeBotAction = (chatId, words) => {
   return new Promise((resolve, reject) => {
     let resp;
@@ -553,7 +604,7 @@ const cakeBotAction = (chatId, words) => {
             return reject(err);
           });
       } else if (cmd === "bake") {
-        if (words.length == 4) {
+        if (words.length === 4) {
           const payload = qs.stringify({
             cnt: words[2],
             price: words[3],
@@ -583,6 +634,8 @@ const cakeBotAction = (chatId, words) => {
         } else if (cmd === "clear") {
           machineMap.clear();
           return resolve("ok");
+        } else if (cmd === "help") {
+          return resolve(showHelp());
         }
       } else {
         resp = "missing arguments";

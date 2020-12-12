@@ -1,0 +1,9 @@
+[Unit]
+Description=create new turnover record of the cake vending machine at 00:00 daily
+
+[Timer]
+OnCalendar=*-*-* 00:00:01
+Unit=cakeDailyNewTurnover.service
+
+[Install]
+WantedBy=multi-user.target

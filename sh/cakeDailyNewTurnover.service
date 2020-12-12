@@ -1,0 +1,14 @@
+[Unit]
+Description=the daily cake vending machine create new turnover record service
+Requires=cakeBackend.service
+After=cakeBackend.service
+
+[Service]
+User=pi
+Environment=NODE_ENV=production
+ExecStart=/home/pi/.nvm/versions/node/v13.8.0/bin/node /home/pi/ui2/backend/dailyNewTurnover.js
+WorkingDirectory=/home/pi/ui2/backend
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.63";
+const version = "cakeVendingBackend v1.64";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -75,7 +75,11 @@ const batterPumpBackRoutineInterval =
 
 const dbPath = "mydatebase.db";
 const recipePath = "/home/pi/recipe";
+<<<<<<< HEAD
 //const recipePath = "C:\\codes\\cakeVending\\recipe";
+=======
+// const recipePath = "C:\\codes\\cakeVending\\recipe";
+>>>>>>> c9f509d... add create new turnover function, add to show sells detail function
 
 let bucketAliveMsg = "bucketAliveMsg";
 let lastBucketAliveMsg = "lastBucketAliveMsg";
@@ -114,7 +118,11 @@ let lastBatterVol = 0;
 let lastFridgeTemp = 0;
 
 let scriptFile = "dummy.py";
+<<<<<<< HEAD
 //let scriptFile = "test.py";
+=======
+// let scriptFile = "test.py";
+>>>>>>> c9f509d... add create new turnover function, add to show sells detail function
 
 const machineInfo = {
   name: process.env.LOCALNAME,
@@ -167,6 +175,22 @@ const postWebAPI = (url, payload) => {
 const postWebAPI2 = (url, payload) => {
   return postWebAPI(url, process.env.LOCALNAME + " " + payload);
 };
+
+const getYesterdayDate = () => {
+  const now = new Date();
+  now.setDate(now.getDate() - 1);
+  return (
+    "[" +
+    now.getFullYear() +
+    "-" +
+    (now.getMonth() + 1) +
+    "-" +
+    now.getDate() +
+    "]"
+  );
+};
+
+logger.info(getYesterdayDate());
 
 const getDate = () => {
   const now = new Date();
@@ -221,12 +245,20 @@ const getParFromDB = (table, name) => {
 };
 
 const createTableToDB = () => {
-  tableName = getDate();
-  const statement = util.format(
-    "CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, price INTEGER, firstTime TEXT, star INTEGER)",
-    tableName
-  );
-  db.run(statement);
+  return new Promise((resolve, reject) => {
+    tableName = getDate();
+    const statement = util.format(
+      "CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, price INTEGER, firstTime TEXT, star INTEGER)",
+      tableName
+    );
+    db.run(statement, (err) => {
+      if (err) {
+        return reject(err.message);
+      } else {
+        return resolve("OK");
+      }
+    });
+  });
 };
 
 const setToDB = (table, price) => {
@@ -261,6 +293,57 @@ const getTurnover = (table) => {
         return resolve(value[filed]);
       }
     });
+  });
+};
+
+const getSellsVol = (table) => {
+  return new Promise((resolve, reject) => {
+    const statement = util.format("SELECT COUNT(*) FROM %s", table);
+    db.get(statement, [], (err, value) => {
+      if (err) {
+        return reject(err.message);
+      } else {
+        return resolve(value["COUNT(*)"]);
+      }
+    });
+  });
+};
+
+const getFromDB = (template, table) => {
+  return new Promise((resolve, reject) => {
+    const statement = util.format(template, table);
+    db.all(statement, [], (err, value) => {
+      if (err) {
+        return reject(err.message);
+      } else {
+        return resolve(stringify(value));
+      }
+    });
+  });
+};
+
+const getSellsDetail = (table) => {
+  return new Promise((resolve, reject) => {
+    let finalResult;
+    getFromDB("SELECT price, COUNT(*) FROM %s GROUP BY price", table)
+      .then((result1) => {
+        finalResult = result1 + "\n";
+        return getFromDB(
+          "SELECT firstTime, COUNT(*) FROM %s GROUP BY firstTime",
+          table
+        );
+      })
+      .then((result2) => {
+        finalResult += result2 + "\n";
+        return getFromDB("SELECT star, COUNT(*) FROM %s GROUP BY star", table);
+      })
+      .then((result3) => {
+        finalResult += result3;
+        return resolve(finalResult);
+      })
+      .catch((err) => {
+        return reject(err);
+      });
   });
 };
 
@@ -417,8 +500,8 @@ app.post(
             setToDB(tableName, price);
             postWebAPI2("/machine/info", "bake start: " + cnt);
             let cmd = util.format(
-              // "sudo python %s/%s --cnt %d %s",
-              "python %s\\%s --cnt %d %s",
+              "sudo python %s/%s --cnt %d %s",
+              // "python %s\\%s --cnt %d %s",
               recipePath,
               scriptFile,
               cnt,
@@ -466,8 +549,8 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    // const root = "/home/pi/ui2/frontend/build/video";
-    const root = "../frontend/build/video";
+    const root = "/home/pi/ui2/frontend/build/video";
+    // const root = "../frontend/build/video";
     let ret = fs.readdirSync(root).map(function (file, index, array) {
       return ".\\video\\" + file;
     });
@@ -476,16 +559,70 @@ app.get(
 );
 
 app.get(
-  "/turnover/today",
+  "/turnover",
   jwt({
     subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
     name: process.env.CAKE_ACCESS_TOKEN_NAME,
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    getTurnover(tableName)
+    let table = tableName;
+    if (req.body === "today") {
+      table = tableName;
+    } else {
+      table = getYesterdayDate();
+    }
+    getTurnover(table)
       .then((msg) => {
-        res.status(200).send("NTD" + msg);
+        res.status(200).send("NTD " + msg);
+      })
+      .catch((err) => {
+        res.status(500).send(err);
+      });
+  }
+);
+
+app.get(
+  "/sells/vol",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    let table = tableName;
+    if (req.body === "today") {
+      table = tableName;
+    } else {
+      table = getYesterdayDate();
+    }
+    getSellsVol(table)
+      .then((msg) => {
+        res.status(200).send("PCS " + msg);
+      })
+      .catch((err) => {
+        res.status(500).send(err);
+      });
+  }
+);
+
+app.get(
+  "/sells/detail",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    let table = tableName;
+    if (req.body === "today") {
+      table = tableName;
+    } else {
+      table = getYesterdayDate();
+    }
+    getSellsDetail(table)
+      .then((msg) => {
+        res.status(200).send(msg);
       })
       .catch((err) => {
         res.status(500).send(err);
@@ -494,15 +631,24 @@ app.get(
 );
 
 app.post(
-  "/turnover/today",
+  "/turnover",
   jwt({
     subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
     name: process.env.CAKE_ACCESS_TOKEN_NAME,
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    createTableToDB();
-    res.sendStatus(200);
+    createTableToDB()
+      .then((msg) => {
+        logger.debug("create a new turnover: " + msg);
+        postWebAPI2("/machine/info", "create a new turnover: " + msg);
+        res.sendStatus(200);
+      })
+      .catch((err) => {
+        logger.error(err);
+        postWebAPI2("/machine/info", "create a new turnover: " + err);
+        res.sendStatus(500);
+      });
   }
 );
 
@@ -938,9 +1084,8 @@ mqttClient.on("connect", function () {
 if (machineInfo.isDevMode) {
   http.createServer(app).listen(process.env.MACHINE_BACKEND_PORT, () => {
     logger.info(
-      machineInfo.ver +
-        " listening on " +
-        ":" +
+      stringify(machineInfo) +
+        " listening on port " +
         process.env.MACHINE_BACKEND_PORT
     );
   });

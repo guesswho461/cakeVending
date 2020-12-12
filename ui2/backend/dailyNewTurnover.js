@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "dailyNewTurnoverRecord v1.00";
+const version = "dailyNewTurnover v1.00";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -20,7 +20,7 @@ log4js.configure({
     default: { appenders: ["file", "out"], level: "trace" },
   },
 });
-const logger = log4js.getLogger("dailyNewTurnoverRecord");
+const logger = log4js.getLogger("dailyNewTurnover");
 
 const axios = require("axios");
 
@@ -46,4 +46,4 @@ const postWebAPI = (ip, url, payload) => {
   });
 };
 
-postWebAPI("localhost", "/turnover/today", "true");
+postWebAPI("localhost", "/turnover", "true");
