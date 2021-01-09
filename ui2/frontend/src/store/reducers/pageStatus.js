@@ -42,7 +42,6 @@ const initState = {
   videoPlayList: [],
   video: { idx: 0, url: "" },
   checkoutDlgTitle: "plsInsertCoin",
-  showRecipeProgress: false,
   pressToBakeDlgOpen: false,
   isDevMode: false,
   maintainPageTitle: "maintainMsg",
@@ -157,6 +156,14 @@ export default function reducer(state = initState, action) {
         ...state,
         heatingUpWarningDlgOpen: false,
       };
+    case "frontend/baking":
+      return {
+        ...state,
+        checkoutDone: true,
+        adPageTitle: "makingText",
+        makingProgress: 0,
+        selectedPage: "ad",
+      };
     case "frontend/soldout":
       return {
         ...state,
@@ -189,7 +196,6 @@ export default function reducer(state = initState, action) {
           takeCakeWarningDlgOpen: true,
           makingProgress: 100,
           adPageTitle: "completeBake",
-          showRecipeProgress: false,
         };
       } else {
         return {
@@ -216,11 +222,6 @@ export default function reducer(state = initState, action) {
       return {
         ...state,
         checkoutDlgTitle: action.payload,
-      };
-    case SET_RECIPE_PROGRESS_VISABLE:
-      return {
-        ...state,
-        showRecipeProgress: true,
       };
     case GET_NEXT_VIDEO_URL:
       return {

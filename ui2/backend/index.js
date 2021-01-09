@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.64";
+const version = "cakeVendingBackend v1.65";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -75,11 +75,11 @@ const batterPumpBackRoutineInterval =
 
 const dbPath = "mydatebase.db";
 const recipePath = "/home/pi/recipe";
-<<<<<<< HEAD
-//const recipePath = "C:\\codes\\cakeVending\\recipe";
-=======
 // const recipePath = "C:\\codes\\cakeVending\\recipe";
->>>>>>> c9f509d... add create new turnover function, add to show sells detail function
+const videoPath = "/home/pi/ui2/frontend/build/video";
+// const videoPath = "../frontend/build/video";
+const recipeCmd = "sudo python %s/%s --cnt %d %s";
+// const recipeCmd = "python %s\\%s --cnt %d %s";
 
 let bucketAliveMsg = "bucketAliveMsg";
 let lastBucketAliveMsg = "lastBucketAliveMsg";
@@ -118,11 +118,7 @@ let lastBatterVol = 0;
 let lastFridgeTemp = 0;
 
 let scriptFile = "dummy.py";
-<<<<<<< HEAD
 //let scriptFile = "test.py";
-=======
-// let scriptFile = "test.py";
->>>>>>> c9f509d... add create new turnover function, add to show sells detail function
 
 const machineInfo = {
   name: process.env.LOCALNAME,
@@ -208,7 +204,11 @@ const getDate = () => {
 const getTime = () => {
   const now = new Date();
   return (
-    now.toLocaleDateString() +
+    now.getFullYear() +
+    "-" +
+    (now.getMonth() + 1) +
+    "-" +
+    now.getDate() +
     " " +
     now.getHours() +
     ":" +
@@ -497,11 +497,14 @@ app.post(
           cnt = parseInt(req.body.cnt);
           price = parseInt(req.body.price);
           getParFromDB("PAR", "scriptArgu").then((value) => {
-            setToDB(tableName, price);
+            if (price > 0) {
+              setToDB(tableName, price);
+            } else {
+              mqttClient.publish("frontend/baking", "true");
+            }
             postWebAPI2("/machine/info", "bake start: " + cnt);
             let cmd = util.format(
-              "sudo python %s/%s --cnt %d %s",
-              // "python %s\\%s --cnt %d %s",
+              recipeCmd,
               recipePath,
               scriptFile,
               cnt,
@@ -549,9 +552,7 @@ app.get(
     secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
   }),
   (req, res) => {
-    const root = "/home/pi/ui2/frontend/build/video";
-    // const root = "../frontend/build/video";
-    let ret = fs.readdirSync(root).map(function (file, index, array) {
+    let ret = fs.readdirSync(videoPath).map(function (file, index, array) {
       return ".\\video\\" + file;
     });
     res.send(ret);

@@ -81,9 +81,9 @@ class ADPage extends Component {
   }
 
   componentDidMount() {
-    if (this.props.pageStatus.checkoutDone) {
-      this.makingTimerID = setInterval(this.makingTimeTick, MAKING_TICK_TIME);
-    }
+    // if (this.props.pageStatus.checkoutDone) {
+    // this.makingTimerID = setInterval(this.makingTimeTick, MAKING_TICK_TIME);
+    // }
   }
 
   componentDidUpdate() {
@@ -111,17 +111,16 @@ class ADPage extends Component {
 
   toAppendTheTitle() {
     if (this.props.pageStatus.checkoutDone) {
-      if (this.props.pageStatus.makingProgress < 100) {
-        return (
-          <Box display="flex" justifyContent="center" alignItems="center">
-            <Translate value={"andAbout"} />
-            {this.getMakingCountDown()}
-            <Translate value={"toDone"} />
-          </Box>
-        );
-      } else {
-        return null;
+      if (this.props.pageStatus.makingProgress <= 0) {
+        this.makingTimerID = setInterval(this.makingTimeTick, MAKING_TICK_TIME);
       }
+      return (
+        <Box display="flex" justifyContent="center" alignItems="center">
+          <Translate value={"andAbout"} />
+          {this.getMakingCountDown()}
+          <Translate value={"toDone"} />
+        </Box>
+      );
     } else {
       if (this.props.pageStatus.takeCakeWarningDlgOpen === false) {
         return (
