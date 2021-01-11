@@ -81,14 +81,20 @@ class ADPage extends Component {
   }
 
   componentDidMount() {
-    // if (this.props.pageStatus.checkoutDone) {
-    // this.makingTimerID = setInterval(this.makingTimeTick, MAKING_TICK_TIME);
-    // }
+    if (this.props.pageStatus.checkoutDone) {
+      this.makingTimerID = setInterval(this.makingTimeTick, MAKING_TICK_TIME);
+    }
   }
 
   componentDidUpdate() {
     if (this.props.pageStatus.makingProgress >= MAX_MAKING_PROGRESS) {
       clearInterval(this.makingTimerID);
+      // }
+    } else if (
+      this.props.pageStatus.makingProgress <= 0 &&
+      this.props.pageStatus.checkoutDone
+    ) {
+      this.makingTimerID = setInterval(this.makingTimeTick, MAKING_TICK_TIME);
     }
   }
 
@@ -111,9 +117,6 @@ class ADPage extends Component {
 
   toAppendTheTitle() {
     if (this.props.pageStatus.checkoutDone) {
-      if (this.props.pageStatus.makingProgress <= 0) {
-        this.makingTimerID = setInterval(this.makingTimeTick, MAKING_TICK_TIME);
-      }
       return (
         <Box display="flex" justifyContent="center" alignItems="center">
           <Translate value={"andAbout"} />
