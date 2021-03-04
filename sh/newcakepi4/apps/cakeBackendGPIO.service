@@ -1,0 +1,14 @@
+[Unit]
+Description=cake vending backend gpio
+Requires=openvpn@client.service
+After=openvpn@client.service
+
+[Service]
+Environment=NODE_ENV=production
+ExecStart=/home/pi/.nvm/versions/node/v13.8.0/bin/node /home/pi/ui2/backendgpio/index.js
+WorkingDirectory=/home/pi/ui2/backendgpio
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+

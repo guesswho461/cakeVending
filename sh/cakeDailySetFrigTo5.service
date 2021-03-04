@@ -1,0 +1,14 @@
+[Unit]
+Description=set frig temp to 5 at 00:00 daily
+Requires=mosquitto.service
+After=mosquitto.service
+
+[Service]
+User=pi
+Environment=NODE_ENV=production
+ExecStart=/home/pi/.nvm/versions/node/v13.8.0/bin/node /home/pi/ui2/backend/setfrigtemp.js 5
+WorkingDirectory=/home/pi/ui2/backend
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
