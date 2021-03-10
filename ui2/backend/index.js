@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.66";
+const version = "cakeVendingBackend v1.67";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -60,7 +60,9 @@ const batterVolWarningLevel = process.env.BATTER_VOL_WARNING_LEVEL;
 const batterVolAlarmLevel = process.env.BATTER_ALARM_WARNING_LEVEL;
 
 //Celsius
-let maxFridgeTemp = parseFloat(process.env.MAX_FRIDGE_TEMP) + parseFloat(process.env.MAX_FRIDGE_TEMP_OFFSET);
+let maxFridgeTemp =
+  parseFloat(process.env.MAX_FRIDGE_TEMP) +
+  parseFloat(process.env.MAX_FRIDGE_TEMP_OFFSET);
 
 //min to ms
 const checkGateCmdDelay = process.env.CHECK_GATE_CMD_DELAY * 60 * 1000;
@@ -662,6 +664,23 @@ app.get(
   }),
   (req, res) => {
     res.download(dbPath);
+  }
+);
+
+app.get(
+  "/status",
+  jwt({
+    subject: process.env.CAKE_ACCESS_TOKEN_SUBJECT,
+    name: process.env.CAKE_ACCESS_TOKEN_NAME,
+    secret: process.env.CAKE_ACCESS_TOKEN_SECRET,
+  }),
+  (req, res) => {
+    const status = util.format(
+      "batter vol = %f, bowl cnt = %f",
+      lastBatterVol,
+      lastBowlCnt
+    );
+    res.send(status);
   }
 );
 
