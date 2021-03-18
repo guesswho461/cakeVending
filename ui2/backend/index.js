@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.67";
+const version = "cakeVendingBackend v1.68";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -118,6 +118,12 @@ let lastMacTemp = 0;
 let lastBowlCnt = 0;
 let lastBatterVol = 0;
 let lastFridgeTemp = 0;
+
+let isCheckBowlCnt = true;
+let isCheckBatterVol = true;
+//min to ms
+const checkBowlCntDelay = process.env.CHECK_BOWL_CNT_DELAY * 60 * 1000;
+const checkBatterVolDelay = process.env.CHECK_BATTER_VOL_DELAY * 60 * 1000;
 
 let scriptFile = "dummy.py";
 // let scriptFile = "test.py";
@@ -958,23 +964,38 @@ mqttClient.on("message", function (topic, message) {
     postAlarm(message.toString());
   } else if (topic === "latch/status/bowl/cnt") {
     const bowlCnt = parseInt(message.toString());
-    if (lastBowlCnt !== bowlCnt) {
+    if (lastBowlCnt !== bowlCnt && isCheckBowlCnt === true) {
       bowlCntStr = bowlCnt.toString();
       if (bowlCnt >= bowlCntAlarmLevel) {
         postAlarm("out of bowl (" + bowlCntStr + ")", true, true);
       } else if (bowlCnt >= bowlCntWarningLevel) {
         postWarning("bowl cnt too low (" + bowlCntStr + ")");
       }
+      if (bowlCnt >= bowlCntWarningLevel || bowlCnt >= bowlCntAlarmLevel) {
+        isCheckBowlCnt = false;
+        setTimeout(() => {
+          isCheckBowlCnt = true;
+        }, checkBowlCntDelay);
+      }
     }
     lastBowlCnt = bowlCnt;
   } else if (topic === "bucket/status/resiVol") {
     const batterVol = parseFloat(message.toString());
-    if (lastBatterVol !== batterVol) {
+    if (lastBatterVol !== batterVol && isCheckBatterVol === true) {
       batterVolStr = batterVol.toString();
       if (batterVol >= batterVolAlarmLevel) {
         postAlarm("out of batter (" + batterVolStr + ")", true, true);
       } else if (batterVol >= batterVolWarningLevel) {
         postWarning("batter vol too low (" + batterVolStr + ")");
+      }
+      if (
+        batterVol >= batterVolWarningLevel ||
+        batterVol >= batterVolAlarmLevel
+      ) {
+        isCheckBatterVol = false;
+        setTimeout(() => {
+          isCheckBatterVol = true;
+        }, checkBatterVolDelay);
       }
     }
     lastBatterVol = batterVol;

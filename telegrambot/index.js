@@ -1,4 +1,4 @@
-const version = "cakeVendingBot v1.33";
+const version = "cakeVendingBot v1.34";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -667,7 +667,7 @@ const cakeBotAction = (chatId, words) => {
             let machine = machines[i];
             getWebAPI(machine.ip, "/status")
               .then((msg) => {
-                resp += machine.name + ": " + msg;
+                resp += machine.name + ": " + msg + "\n";
                 completedRequests++;
                 if (completedRequests === machines.length) {
                   resp += "]";
@@ -675,7 +675,7 @@ const cakeBotAction = (chatId, words) => {
                 }
               })
               .catch((err) => {
-                resp += machine.name + ": " + err.message;
+                resp += machine.name + ": " + err.message + "\n";
                 completedRequests++;
                 if (completedRequests === machines.length) {
                   resp += "]";
