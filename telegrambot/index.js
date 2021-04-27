@@ -1,4 +1,4 @@
-const version = "cakeVendingBot v1.33";
+const version = "cakeVendingBot v1.32";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -412,14 +412,6 @@ const getCmdHandler = (machineName, words, chatId) => {
           .catch((err) => {
             return reject(err);
           });
-      } else if (arg1 === "status") {
-        findMachineAndGet(machineName, "/status", "today")
-          .then((msg) => {
-            return resolve(msg);
-          })
-          .catch((err) => {
-            return reject(err);
-          });
       } else {
         resp = "sorry, I dont understand";
         return reject(resp);
@@ -547,29 +539,14 @@ const setCmdHandler = (machineName, words) => {
 };
 
 const showHelp = () => {
-  return "[help] [list] [clear] [brief] [soldout] [disable] [enable] [echo MSG] \n \
+  return "[help] [list] [clear] [soldout] [disable] [enable] [echo MSG] \n \
           [bake CNT PRICE] \n \
-          [get db|status] \n \
+          [get db] \n \
           [get recipe|turnover argu|today|ytd] \n \
           [get sells vol|detail today|ytd] \n \
           [set ip|recipe IP|NAME] \n \
           [set recipe argu ARGU] \
   ";
-};
-
-const loop = (arr, fn, busy, err, i = 0) => {
-  const body = (ok, er) => {
-    try {
-      const r = fn(arr[i], i, arr);
-      r && r.then ? r.then(ok).catch(er) : ok(r);
-    } catch (e) {
-      er(e);
-    }
-  };
-  const next = (ok, er) => () => loop(arr, fn, ok, er, ++i);
-  const run = (ok, er) =>
-    i < arr.length ? new Promise(body).then(next(ok, er)).catch(er) : ok();
-  return busy ? run(busy, err) : new Promise(run);
 };
 
 const cakeBotAction = (chatId, words) => {
@@ -659,33 +636,6 @@ const cakeBotAction = (chatId, words) => {
           return resolve("ok");
         } else if (cmd === "help") {
           return resolve(showHelp());
-        } else if (cmd === "brief") {
-          resp = "machines status: [\n";
-          let machines = Array.from(machineMap.values());
-          let completedRequests = 0;
-          for (let i = 0; i < machines.length; i++) {
-            let machine = machines[i];
-            getWebAPI(machine.ip, "/status")
-              .then((msg) => {
-                resp += machine.name + ": " + msg;
-                completedRequests++;
-                if (completedRequests === machines.length) {
-                  resp += "]";
-                  return resolve(resp);
-                }
-              })
-              .catch((err) => {
-                resp += machine.name + ": " + err.message;
-                completedRequests++;
-                if (completedRequests === machines.length) {
-                  resp += "]";
-                  return resolve(resp);
-                }
-              });
-          }
-        } else {
-          resp = "sorry, I dont understand";
-          return reject(resp);
         }
       } else {
         resp = "missing arguments";
