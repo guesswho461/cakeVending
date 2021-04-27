@@ -89,12 +89,10 @@ class ADPage extends Component {
   componentDidUpdate() {
     if (this.props.pageStatus.makingProgress >= MAX_MAKING_PROGRESS) {
       clearInterval(this.makingTimerID);
-      this.makingTimerID = -1;
       // }
     } else if (
       this.props.pageStatus.makingProgress <= 0 &&
-      this.props.pageStatus.checkoutDone &&
-      this.makingTimerID <= 0
+      this.props.pageStatus.checkoutDone
     ) {
       this.makingTimerID = setInterval(this.makingTimeTick, MAKING_TICK_TIME);
     }
@@ -102,14 +100,10 @@ class ADPage extends Component {
 
   componentWillUnmount() {
     clearInterval(this.makingTimerID);
-    this.makingTimerID = -1;
   }
 
   secToMinAndSec(timeInSec) {
     let date = new Date(null);
-    if (timeInSec < 0) {
-      timeInSec = 0;
-    }
     date.setSeconds(timeInSec);
     return date.getUTCMinutes() + ":" + date.getUTCSeconds();
   }

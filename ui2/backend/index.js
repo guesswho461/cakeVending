@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../frontend/.env" });
 
-const version = "cakeVendingBackend v1.66";
+const version = "cakeVendingBackend v1.65";
 
 const log4js = require("log4js");
 log4js.configure({
@@ -60,7 +60,7 @@ const batterVolWarningLevel = process.env.BATTER_VOL_WARNING_LEVEL;
 const batterVolAlarmLevel = process.env.BATTER_ALARM_WARNING_LEVEL;
 
 //Celsius
-let maxFridgeTemp = parseFloat(process.env.MAX_FRIDGE_TEMP) + parseFloat(process.env.MAX_FRIDGE_TEMP_OFFSET);
+let maxFridgeTemp = process.env.MAX_FRIDGE_TEMP;
 
 //min to ms
 const checkGateCmdDelay = process.env.CHECK_GATE_CMD_DELAY * 60 * 1000;
@@ -118,7 +118,7 @@ let lastBatterVol = 0;
 let lastFridgeTemp = 0;
 
 let scriptFile = "dummy.py";
-// let scriptFile = "test.py";
+//let scriptFile = "test.py";
 
 const machineInfo = {
   name: process.env.LOCALNAME,
@@ -969,9 +969,7 @@ mqttClient.on("message", function (topic, message) {
     }
     lastFridgeTemp = fridgeTemp;
   } else if (topic === "bucket/cmd/refrigTemp") {
-    maxFridgeTemp =
-      parseFloat(message.toString()) +
-      parseFloat(process.env.MAX_FRIDGE_TEMP_OFFSET);
+    maxFridgeTemp = parseFloat(message.toString());
   } else if (topic === "gate/cmd/open") {
     let gateCmd = message.toString() === "true" ? true : false;
     if (gateCmd === true) {

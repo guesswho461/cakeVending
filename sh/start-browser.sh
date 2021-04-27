@@ -1,2 +1,0 @@
-#!/bin/sh
-DISPLAY=:0 chromium-browser --check-for-update-interval=31536000 --disable-features=TranslateUI --disable-pinch --test-type --no-sandbox --kiosk --disable-translate --noerrdialogs --autoplay-policy=no-user-gesture-required http://localhost

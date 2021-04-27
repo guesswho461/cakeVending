@@ -1,9 +1,0 @@
-[Unit]
-Description=set frig temp to 10 at 10:00 daily
-
-[Timer]
-OnCalendar=*-*-* 10:00:00
-Unit=cakeDailySetFrigTo10.service
-
-[Install]
-WantedBy=multi-user.target

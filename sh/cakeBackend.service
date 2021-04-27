@@ -1,7 +1,7 @@
 [Unit]
 Description=cake vending backend
-Requires=network-online.target
-After=network-online.target
+Requires=openvpn@client.service
+After=openvpn@client.service
 
 [Service]
 User=pi

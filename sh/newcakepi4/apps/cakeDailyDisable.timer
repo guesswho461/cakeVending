@@ -1,9 +1,0 @@
-[Unit]
-Description=disable the cake vending machine at 00:00 daily
-
-[Timer]
-OnCalendar=*-*-* 00:00:00
-Unit=cakeDailyDisable.service
-
-[Install]
-WantedBy=multi-user.target

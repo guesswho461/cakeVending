@@ -196,7 +196,6 @@ export default function reducer(state = initState, action) {
           takeCakeWarningDlgOpen: true,
           makingProgress: 100,
           adPageTitle: "completeBake",
-          checkoutDone: false,
         };
       } else {
         return {

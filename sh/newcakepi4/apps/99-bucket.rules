@@ -1,1 +1,0 @@
-KERNEL=="ttyUSB4", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", ENV{SYSTEMD_WANTS}+="cakeBucketSerial.service"
