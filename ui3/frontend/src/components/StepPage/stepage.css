@@ -1,0 +1,28 @@
+.abgne-img {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  z-index: 200;
+}
+
+.abgne-progress {
+  position: relative;
+  width: 390px;
+  height: 390px;
+  z-index: 0;
+}
+
+.buttonBase {
+  position: absolute;
+  width: 72px;
+  cursor: not-allowed;
+  pointer-events: none;
+  z-index: 200;
+}
+
+.pic {
+  display: block;
+}
+.hide {
+  display: none;
+}

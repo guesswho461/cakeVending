@@ -1,0 +1,10 @@
+.divcss5-right {
+  position: absolute;
+  right: 15px;
+  width: "150px";
+}
+
+.divcss5-left {
+  position: absolute;
+  left: 15px;
+}

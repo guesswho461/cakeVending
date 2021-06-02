@@ -1,0 +1,55 @@
+{
+  "name": "cake_vending_frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@material-ui/core": "^4.10.2",
+    "@material-ui/icons": "^4.2.1",
+    "animate.css": "^4.1.0",
+    "axios": "^0.19.0",
+    "classnames": "^2.2.6",
+    "dotenv": "^8.2.0",
+    "moment": "^2.26.0",
+    "mqtt": "^3.0.0",
+    "mqtt-react": "0.0.3",
+    "object.omit": "^3.0.0",
+    "react": "^16.9.0",
+    "react-animations": "^1.0.0",
+    "react-circular-progressbar": "^2.0.3",
+    "react-countdown": "^2.3.1",
+    "react-dom": "^16.9.0",
+    "react-idle-timer": "^4.2.12",
+    "react-player": "^2.3.1",
+    "react-redux": "^7.1.1",
+    "react-redux-i18n": "^1.9.3",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "3.1.1",
+    "react-window": "^1.8.5",
+    "redux": "^4.0.4",
+    "redux-logger": "^3.0.6",
+    "redux-thunk": "^2.3.0",
+    "styled-components": "^5.1.1",
+    "uifx": "^2.0.7"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

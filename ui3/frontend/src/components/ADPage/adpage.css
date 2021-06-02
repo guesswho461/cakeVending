@@ -1,0 +1,9 @@
+.player-wrapper {
+  width: 720px;
+  height: 450px;
+  background: black;
+}
+
+.react-player {
+  position: relative;
+}
