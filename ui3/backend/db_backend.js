@@ -60,13 +60,11 @@ const getYesterdayDate = () => {
 const getDate = () => {
   const now = new Date();
   return (
-    "[" +
     now.getFullYear() +
     "-" +
     Appendzero(now.getMonth() + 1) +
     "-" +
-    Appendzero(now.getDate()) +
-    "]"
+    Appendzero(now.getDate())
   );
 };
 
@@ -94,20 +92,27 @@ function Appendzero(obj) {
   else return obj;
 }
 
-let tableName = getDate();
+let tableName = "totalData";
 
 let db = new sqlite3.Database(dbPath, function (err) {
   if (err) throw err;
 });
 
-const setParToDB = (table, name, value) => {
-  const statement = util.format('UPDATE %s SET %s="%s"', table, name, value);
+const setParToDB = (name, value) => {
+  let _tableName = "PAR";
+  const statement = util.format(
+    'UPDATE %s SET %s="%s"',
+    _tableName,
+    name,
+    value
+  );
   db.run(statement);
 };
 
-const getParFromDB = (table, name) => {
+const getParFromDB = (name) => {
+  let _tableName = "PAR";
   return new Promise((resolve, reject) => {
-    const statement = util.format("SELECT %s FROM %s", name, table);
+    const statement = util.format("SELECT %s FROM %s", name, _tableName);
     db.get(statement, [], (err, value) => {
       if (err) {
         return reject(err.message);
@@ -118,9 +123,10 @@ const getParFromDB = (table, name) => {
   });
 };
 
-const chkParFromDB = (table, name) => {
+const chkParFromDB = (name) => {
+  let _tableName = "PAR";
   return new Promise((resolve, reject) => {
-    const statement = util.format("SELECT %s FROM %s", name, table);
+    const statement = util.format("SELECT %s FROM %s", name, _tableName);
     db.get(statement, [], (err, value) => {
       if (err) {
         return reject(err.message);
@@ -133,10 +139,8 @@ const chkParFromDB = (table, name) => {
 
 const createTableToDB = () => {
   return new Promise((resolve, reject) => {
-    tableName = getDate();
     const statement = util.format(
-      "CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY AUTOINCREMENT, time TEXT, price INTEGER, firstTime TEXT, star INTEGER)",
-      tableName
+      "CREATE TABLE IF NOT EXISTS totalData (time TEXT, price INTEGER, tenCnt INTEGER, fiveCnt INTEGER, firstTime TEXT, star INTEGER, batchNo TEXT, receiptNo TEXT, tradeNo TEXT, transAmount TEXT, transDate TEXT, transTime TEXT, info_1 TEXT, info_2 TEXT, payType TEXT, posID TEXT)"
     );
     db.run(statement, (err) => {
       if (err) {
@@ -149,8 +153,8 @@ const createTableToDB = () => {
 };
 
 const createTableToParDB = () => {
+  let _tableName = "PAR";
   return new Promise((resolve, reject) => {
-    let _tableName = "PAR";
     const statement = util.format(
       "CREATE TABLE IF NOT EXISTS %s (scriptArgu INTEGER)",
       _tableName
@@ -171,32 +175,64 @@ const insToParDB = () => {
   db.run(statement);
 };
 
-const setToDB = (table, price) => {
+const updateToLastRowOfDB = (columnName, data) => {
   const statement = util.format(
-    "INSERT INTO %s VALUES (NULL, '%s', %s, NULL, NULL)",
-    table,
-    getTime(),
-    price
-  );
-  db.run(statement);
-};
-
-const updateToLastRowOfDB = (table, columnName, data) => {
-  const statement = util.format(
-    "UPDATE %s set %s = '%s' WHERE _rowid_ = (SELECT MAX(_rowid_) FROM %s)",
-    table,
+    "UPDATE totalData set %s = '%s' WHERE _rowid_ = (SELECT MAX(_rowid_) FROM totalData)",
     columnName,
-    data,
-    table
+    data
   );
   db.run(statement);
 };
 
-const getTurnover = (table) => {
+const setToDB = (
+  price,
+  tenCnt,
+  fiveCnt,
+  batchNo,
+  receiptNo,
+  tradeNo,
+  transAmount,
+  transDate,
+  transTime,
+  info_1,
+  info_2,
+  payType,
+  posID
+) => {
+  const statement = util.format(
+    "INSERT INTO totalData VALUES ('%s', %s, %s, %s, NULL, NULL, %s, %s, %s, %s, %s, %s, %s, %s, '%s', %s)",
+    getTime(),
+    price,
+    tenCnt,
+    fiveCnt,
+    batchNo,
+    receiptNo,
+    tradeNo,
+    transAmount,
+    transDate,
+    transTime,
+    info_1,
+    info_2,
+    payType,
+    posID
+  );
+  db.run(statement);
+};
+
+const getTurnover = (date, mdt) => {
   return new Promise((resolve, reject) => {
     const filed = "SUM(price)";
-    const statement = util.format("SELECT %s FROM %s", filed, table);
-    db.get(statement, [], (err, value) => {
+    let dateFormat = "'%Y-%m-%d'";
+    if (mdt === "M") dateFormat = "'%Y-%m'";
+    const statement =
+      "SELECT " +
+      filed +
+      " FROM totalData t WHERE strftime(" +
+      dateFormat +
+      ",t.time) = strftime(" +
+      dateFormat +
+      ",?)";
+    db.get(statement, [date], (err, value) => {
       if (err) {
         return reject(err.message);
       } else {
@@ -206,10 +242,11 @@ const getTurnover = (table) => {
   });
 };
 
-const getSellsVol = (table) => {
+const getSellsVol = (date) => {
   return new Promise((resolve, reject) => {
-    const statement = util.format("SELECT COUNT(*) FROM %s", table);
-    db.get(statement, [], (err, value) => {
+    const statement =
+      "SELECT COUNT(*) FROM totalData t WHERE strftime('%Y-%m-%d',t.time) = strftime('%Y-%m-%d',?)";
+    db.get(statement, [date], (err, value) => {
       if (err) {
         return reject(err.message);
       } else {
@@ -219,10 +256,9 @@ const getSellsVol = (table) => {
   });
 };
 
-const getFromDB = (template, table) => {
+const getFromDB = (template, date) => {
   return new Promise((resolve, reject) => {
-    const statement = util.format(template, table);
-    db.all(statement, [], (err, value) => {
+    db.all(template, [date], (err, value) => {
       if (err) {
         return reject(err.message);
       } else {
@@ -232,23 +268,47 @@ const getFromDB = (template, table) => {
   });
 };
 
-const getSellsDetail = (table) => {
+const getSellsDetail = (date, mdt) => {
   return new Promise((resolve, reject) => {
     let finalResult;
-    getFromDB("SELECT price, COUNT(*) FROM %s GROUP BY price", table)
+    let dateFormat = "'%Y-%m-%d'";
+    if (mdt === "M") dateFormat = "'%Y-%m'";
+    getFromDB(
+      "SELECT price, COUNT(*) FROM totalData t WHERE strftime(" +
+        dateFormat +
+        ",t.time) = strftime(" +
+        dateFormat +
+        ",?) GROUP BY price",
+      date
+    )
       .then((result1) => {
         finalResult = result1 + "\n";
         return getFromDB(
-          "SELECT firstTime, COUNT(*) FROM %s GROUP BY firstTime",
-          table
+          "SELECT firstTime, COUNT(*) FROM totalData t WHERE strftime(" +
+            dateFormat +
+            ",t.time) = strftime(" +
+            dateFormat +
+            ",?) GROUP BY firstTime",
+          date
         );
       })
       .then((result2) => {
         finalResult += result2 + "\n";
-        return getFromDB("SELECT star, COUNT(*) FROM %s GROUP BY star", table);
+        return getFromDB(
+          "SELECT star, COUNT(*) FROM totalData t WHERE strftime(" +
+            dateFormat +
+            ",t.time) = strftime(" +
+            dateFormat +
+            ",?) GROUP BY star",
+          date
+        );
       })
       .then((result3) => {
-        finalResult += result3;
+        finalResult += result3 + "\n";
+        return getTurnover(date, mdt);
+      })
+      .then((result4) => {
+        finalResult += "NTD " + result4;
         return resolve(finalResult);
       })
       .catch((err) => {
@@ -261,7 +321,7 @@ db.serialize(function () {
   createTableToDB();
   createTableToParDB();
 
-  chkParFromDB("PAR", "scriptArgu").then((value) => {
+  chkParFromDB("scriptArgu").then((value) => {
     if (value == undefined) insToParDB();
   });
 });
@@ -270,35 +330,19 @@ app.get("/version", (req, res) => {
   res.send(VERSION);
 });
 
-app.post(
-  "/db/turnover",
-
-  (req, res) => {
-    createTableToDB()
-      .then((msg) => {
-        logger.debug("create a new turnover: " + msg);
-        res.sendStatus(200);
-      })
-      .catch((err) => {
-        logger.error(err);
-        res.sendStatus(500);
-      });
-  }
-);
-
 app.get(
-  "/db/turnover",
+  "/turnover",
 
   (req, res) => {
-    let table = tableName;
-    //isToday = "today";
+    let date = getDate();
     isToday = req.body;
+    //isToday = "today";
     if (isToday === "today") {
-      table = tableName;
+      date = getDate();
     } else {
-      table = getYesterdayDate();
+      date = getYesterdayDate();
     }
-    getTurnover(table)
+    getTurnover(date, "D")
       .then((msg) => {
         res.status(200).send("NTD " + msg);
       })
@@ -309,10 +353,10 @@ app.get(
 );
 
 app.get(
-  "/db/recipe/argu",
+  "/recipe/argu",
 
   (req, res) => {
-    getParFromDB("PAR", "scriptArgu")
+    getParFromDB("scriptArgu")
       .then((value) => {
         res.status(200).send("Argu " + value);
       })
@@ -323,25 +367,63 @@ app.get(
 );
 
 app.post(
-  "/db/recipe/argu",
+  "/recipe/argu",
 
   (req, res) => {
-    //vol = 28;
     vol = parseInt(req.body);
-    setParToDB("PAR", "scriptArgu", vol);
+    //vol = 28;
+    setParToDB("scriptArgu", vol);
     res.sendStatus(200);
   }
 );
 
 app.post(
-  "/db/sells",
+  "/sells",
 
   (req, res) => {
-    //cnt = 3;
-    cnt = parseInt(req.body.cnt);
-    //price = 30;
     price = parseInt(req.body.price);
-    setToDB(tableName, price);
+    tenCnt = parseInt(req.body.tenCnt);
+    fiveCnt = parseInt(req.body.fiveCnt);
+    batchNo = req.body.batchNo;
+    receiptNo = req.body.receiptNo;
+    tradeNo = req.body.tradeNo;
+    transAmount = req.body.transAmount;
+    transDate = req.body.transDate;
+    transTime = req.body.transTime;
+    info_1 = req.body.info1;
+    info_2 = req.body.info2;
+    payType = req.body.payType;
+    posID = req.body.posID;
+    /*
+    price = 30;
+    tenCnt = 2;
+    fiveCnt = 2;
+    batchNo = "000007";
+    receiptNo = "000007";
+    tradeNo = "21060906140362892";
+    transAmount = "100";
+    transDate = "210618";
+    transTime = "181403";
+    info_1 = "1585624672";
+    info_2 = "0";
+    payType = "VISA";
+    posID = "31001498";
+*/
+    setToDB(
+      price,
+      tenCnt,
+      fiveCnt,
+      batchNo,
+      receiptNo,
+      tradeNo,
+      transAmount,
+      transDate,
+      transTime,
+      info_1,
+      info_2,
+      payType,
+      posID
+    );
     res.sendStatus(200);
   }
 );
@@ -351,40 +433,40 @@ app.get("/db", (req, res) => {
 });
 
 app.post(
-  "/db/thisOrder/firstTimeBuy",
+  "/thisOrder/firstTimeBuy",
 
   (req, res) => {
-    //chk = "no";
     chk = req.body;
-    updateToLastRowOfDB(tableName, "firstTime", chk);
+    //chk = "no";
+    updateToLastRowOfDB("firstTime", chk);
     res.sendStatus(200);
   }
 );
 
 app.post(
-  "/db/thisOrder/star",
+  "/thisOrder/star",
 
   (req, res) => {
-    //rating = 4;
     rating = req.body;
-    updateToLastRowOfDB(tableName, "star", rating);
+    //rating = 4;
+    updateToLastRowOfDB("star", rating);
     res.sendStatus(200);
   }
 );
 
 app.get(
-  "/db/sells/vol",
+  "/sells/vol",
 
   (req, res) => {
-    let table = tableName;
-    //isToday = "today";
+    let date = getDate();
     isToday = req.body;
+    //isToday = "today";
     if (isToday === "today") {
-      table = tableName;
+      date = getDate();
     } else {
-      table = getYesterdayDate();
+      date = getYesterdayDate();
     }
-    getSellsVol(table)
+    getSellsVol(date)
       .then((msg) => {
         res.status(200).send("PCS " + msg);
       })
@@ -395,18 +477,50 @@ app.get(
 );
 
 app.get(
-  "/db/sells/detail",
+  "/sells/detail",
 
   (req, res) => {
-    let table = tableName;
-    //isToday = "today";
+    let date = getDate();
     isToday = req.body;
+    //isToday = "today";
     if (isToday === "today") {
-      table = tableName;
+      date = getDate();
     } else {
-      table = getYesterdayDate();
+      date = getYesterdayDate();
     }
-    getSellsDetail(table)
+    getSellsDetail(date, "D")
+      .then((msg) => {
+        res.status(200).send(msg);
+      })
+      .catch((err) => {
+        res.status(500).send(err);
+      });
+  }
+);
+
+app.get(
+  "/sells/detail/day",
+
+  (req, res) => {
+    let date = req.body;
+    //date = "2021-06-22";
+    getSellsDetail(date, "D")
+      .then((msg) => {
+        res.status(200).send(msg);
+      })
+      .catch((err) => {
+        res.status(500).send(err);
+      });
+  }
+);
+
+app.get(
+  "/sells/detail/month",
+
+  (req, res) => {
+    let date = req.body;
+    //date = getDate();
+    getSellsDetail(date, "M")
       .then((msg) => {
         res.status(200).send(msg);
       })
