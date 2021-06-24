@@ -140,7 +140,7 @@ const chkParFromDB = (name) => {
 const createTableToDB = () => {
   return new Promise((resolve, reject) => {
     const statement = util.format(
-      "CREATE TABLE IF NOT EXISTS totalData (time TEXT, price INTEGER, tenCnt INTEGER, fiveCnt INTEGER, firstTime TEXT, star INTEGER, batchNo TEXT, receiptNo TEXT, tradeNo TEXT, transAmount TEXT, transDate TEXT, transTime TEXT, info_1 TEXT, info_2 TEXT, payType TEXT, posID TEXT)"
+      "CREATE TABLE IF NOT EXISTS totalData (time TEXT, price INTEGER, discount INTEGER, tenCnt INTEGER, fiveCnt INTEGER, firstTime TEXT, star INTEGER, sex TEXT, age INTEGER, batchNo TEXT, receiptNo TEXT, tradeNo TEXT, transAmount TEXT, transDate TEXT, transTime TEXT, info_1 TEXT, info_2 TEXT, payType TEXT, other1 TEXT, other2 TEXT, other3 TEXT)"
     );
     db.run(statement, (err) => {
       if (err) {
@@ -184,8 +184,20 @@ const updateToLastRowOfDB = (columnName, data) => {
   db.run(statement);
 };
 
+const updateToLastRowOfDBs = (columnName1, data1, columnName2, data2) => {
+  const statement = util.format(
+    "UPDATE totalData set %s = '%s', %s = '%s' WHERE _rowid_ = (SELECT MAX(_rowid_) FROM totalData)",
+    columnName1,
+    data1,
+    columnName2,
+    data2
+  );
+  db.run(statement);
+};
+
 const setToDB = (
   price,
+  discount,
   tenCnt,
   fiveCnt,
   batchNo,
@@ -196,13 +208,13 @@ const setToDB = (
   transTime,
   info_1,
   info_2,
-  payType,
-  posID
+  payType
 ) => {
   const statement = util.format(
-    "INSERT INTO totalData VALUES ('%s', %s, %s, %s, NULL, NULL, %s, %s, %s, %s, %s, %s, %s, %s, '%s', %s)",
+    "INSERT INTO totalData VALUES ('%s', %s, %s, %s, %s, NULL, NULL, NULL, NULL, %s, %s, %s, %s, %s, %s, %s, %s, '%s', NULL, NULL, NULL)",
     getTime(),
     price,
+    discount,
     tenCnt,
     fiveCnt,
     batchNo,
@@ -213,8 +225,7 @@ const setToDB = (
     transTime,
     info_1,
     info_2,
-    payType,
-    posID
+    payType
   );
   db.run(statement);
 };
@@ -284,6 +295,17 @@ const getSellsDetail = (date, mdt) => {
       .then((result1) => {
         finalResult = result1 + "\n";
         return getFromDB(
+          "SELECT discount, COUNT(*) FROM totalData t WHERE strftime(" +
+            dateFormat +
+            ",t.time) = strftime(" +
+            dateFormat +
+            ",?) GROUP BY discount",
+          date
+        );
+      })
+      .then((result2) => {
+        finalResult += result2 + "\n";
+        return getFromDB(
           "SELECT firstTime, COUNT(*) FROM totalData t WHERE strftime(" +
             dateFormat +
             ",t.time) = strftime(" +
@@ -292,8 +314,8 @@ const getSellsDetail = (date, mdt) => {
           date
         );
       })
-      .then((result2) => {
-        finalResult += result2 + "\n";
+      .then((result3) => {
+        finalResult += result3 + "\n";
         return getFromDB(
           "SELECT star, COUNT(*) FROM totalData t WHERE strftime(" +
             dateFormat +
@@ -303,12 +325,34 @@ const getSellsDetail = (date, mdt) => {
           date
         );
       })
-      .then((result3) => {
-        finalResult += result3 + "\n";
+      .then((result4) => {
+        finalResult += result4 + "\n";
+        return getFromDB(
+          "SELECT sex, COUNT(*) FROM totalData t WHERE strftime(" +
+            dateFormat +
+            ",t.time) = strftime(" +
+            dateFormat +
+            ",?) GROUP BY sex",
+          date
+        );
+      })
+      .then((result5) => {
+        finalResult += result5 + "\n";
+        return getFromDB(
+          "SELECT payType, COUNT(*) FROM totalData t WHERE strftime(" +
+            dateFormat +
+            ",t.time) = strftime(" +
+            dateFormat +
+            ",?) GROUP BY payType",
+          date
+        );
+      })
+      .then((result6) => {
+        finalResult += result6 + "\n";
         return getTurnover(date, mdt);
       })
-      .then((result4) => {
-        finalResult += "NTD " + result4;
+      .then((result7) => {
+        finalResult += "NTD " + result7;
         return resolve(finalResult);
       })
       .catch((err) => {
@@ -382,6 +426,7 @@ app.post(
 
   (req, res) => {
     price = parseInt(req.body.price);
+    discount = parseInt(req.body.discount);
     tenCnt = parseInt(req.body.tenCnt);
     fiveCnt = parseInt(req.body.fiveCnt);
     batchNo = req.body.batchNo;
@@ -393,9 +438,9 @@ app.post(
     info_1 = req.body.info1;
     info_2 = req.body.info2;
     payType = req.body.payType;
-    posID = req.body.posID;
     /*
     price = 30;
+    discount = 10;
     tenCnt = 2;
     fiveCnt = 2;
     batchNo = "000007";
@@ -407,10 +452,10 @@ app.post(
     info_1 = "1585624672";
     info_2 = "0";
     payType = "VISA";
-    posID = "31001498";
 */
     setToDB(
       price,
+      discount,
       tenCnt,
       fiveCnt,
       batchNo,
@@ -421,8 +466,7 @@ app.post(
       transTime,
       info_1,
       info_2,
-      payType,
-      posID
+      payType
     );
     res.sendStatus(200);
   }
@@ -436,20 +480,24 @@ app.post(
   "/thisOrder/firstTimeBuy",
 
   (req, res) => {
-    chk = req.body;
+    chk = req.body.chk;
+    rating = req.body.star;
     //chk = "no";
-    updateToLastRowOfDB("firstTime", chk);
+    //rating = 4;
+    updateToLastRowOfDBs("firstTime", chk, "star", rating);
     res.sendStatus(200);
   }
 );
 
 app.post(
-  "/thisOrder/star",
+  "/thisOrder/age",
 
   (req, res) => {
-    rating = req.body;
-    //rating = 4;
-    updateToLastRowOfDB("star", rating);
+    sex = req.body.sex;
+    age = req.body.age;
+    //sex = "F";
+    //age = 26;
+    updateToLastRowOfDBs("sex", sex, "age", age);
     res.sendStatus(200);
   }
 );
