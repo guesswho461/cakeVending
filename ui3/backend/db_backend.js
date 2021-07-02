@@ -210,24 +210,33 @@ const setToDB = (
   info_2,
   payType
 ) => {
-  const statement = util.format(
-    "INSERT INTO totalData VALUES ('%s', %s, %s, %s, %s, NULL, NULL, NULL, NULL, %s, %s, %s, %s, %s, %s, %s, %s, '%s', NULL, NULL, NULL)",
-    getTime(),
-    price,
-    discount,
-    tenCnt,
-    fiveCnt,
-    batchNo,
-    receiptNo,
-    tradeNo,
-    transAmount,
-    transDate,
-    transTime,
-    info_1,
-    info_2,
-    payType
-  );
-  db.run(statement);
+  return new Promise((resolve, reject) => {
+    const statement = util.format(
+      "INSERT INTO totalData VALUES ('%s', %s, %s, %s, %s, NULL, NULL, NULL, NULL, %s, %s, %s, %s, %s, %s, %s, %s, '%s', NULL, NULL, NULL)",
+      getTime(),
+      price,
+      discount,
+      tenCnt,
+      fiveCnt,
+      batchNo,
+      receiptNo,
+      tradeNo,
+      transAmount,
+      transDate,
+      transTime,
+      info_1,
+      info_2,
+      payType
+    );
+
+    db.run(statement, [], (err, value) => {
+      if (err) {
+        return reject(err.message);
+      } else {
+        return resolve("OK");
+      }
+    });
+  });
 };
 
 const getTurnover = (date, mdt) => {
@@ -379,8 +388,7 @@ app.get(
 
   (req, res) => {
     let date = getDate();
-    isToday = req.body;
-    //isToday = "today";
+    isToday = req.body.isToday;
     if (isToday === "today") {
       date = getDate();
     } else {
@@ -414,8 +422,7 @@ app.post(
   "/recipe/argu",
 
   (req, res) => {
-    vol = parseInt(req.body);
-    //vol = 28;
+    vol = parseInt(req.body.vol);
     setParToDB("scriptArgu", vol);
     res.sendStatus(200);
   }
@@ -435,24 +442,12 @@ app.post(
     transAmount = req.body.transAmount;
     transDate = req.body.transDate;
     transTime = req.body.transTime;
-    info_1 = req.body.info1;
-    info_2 = req.body.info2;
+    info_1 = req.body.info_1;
+    info_2 = req.body.info_2;
     payType = req.body.payType;
-    /*
-    price = 30;
-    discount = 10;
-    tenCnt = 2;
-    fiveCnt = 2;
-    batchNo = "000007";
-    receiptNo = "000007";
-    tradeNo = "21060906140362892";
-    transAmount = "100";
-    transDate = "210618";
-    transTime = "181403";
-    info_1 = "1585624672";
-    info_2 = "0";
-    payType = "VISA";
-*/
+
+    console.log(req.body);
+
     setToDB(
       price,
       discount,
@@ -481,10 +476,8 @@ app.post(
 
   (req, res) => {
     chk = req.body.chk;
-    rating = req.body.star;
-    //chk = "no";
-    //rating = 4;
-    updateToLastRowOfDBs("firstTime", chk, "star", rating);
+    star = req.body.star;
+    updateToLastRowOfDBs("firstTime", chk, "star", star);
     res.sendStatus(200);
   }
 );
@@ -495,8 +488,6 @@ app.post(
   (req, res) => {
     sex = req.body.sex;
     age = req.body.age;
-    //sex = "F";
-    //age = 26;
     updateToLastRowOfDBs("sex", sex, "age", age);
     res.sendStatus(200);
   }
@@ -507,8 +498,7 @@ app.get(
 
   (req, res) => {
     let date = getDate();
-    isToday = req.body;
-    //isToday = "today";
+    isToday = req.body.isToday;
     if (isToday === "today") {
       date = getDate();
     } else {
@@ -529,46 +519,28 @@ app.get(
 
   (req, res) => {
     let date = getDate();
-    isToday = req.body;
-    //isToday = "today";
-    if (isToday === "today") {
+    let mdt = "D";
+
+    mode = req.body.mode;
+    if (mode === "today") {
+      mdt = "D";
       date = getDate();
-    } else {
+    } else if (mode === "ytd") {
+      mdt = "D";
       date = getYesterdayDate();
+    } else if (mode === "month") {
+      mdt = "M";
+      date = req.body.date;
+    } else if (mode === "select") {
+      mdt = "D";
+      date = req.body.date;
     }
-    getSellsDetail(date, "D")
-      .then((msg) => {
-        res.status(200).send(msg);
-      })
-      .catch((err) => {
-        res.status(500).send(err);
-      });
-  }
-);
 
-app.get(
-  "/sells/detail/day",
+    console.log(mode);
+    console.log(mdt);
+    console.log(date);
 
-  (req, res) => {
-    let date = req.body;
-    //date = "2021-06-22";
-    getSellsDetail(date, "D")
-      .then((msg) => {
-        res.status(200).send(msg);
-      })
-      .catch((err) => {
-        res.status(500).send(err);
-      });
-  }
-);
-
-app.get(
-  "/sells/detail/month",
-
-  (req, res) => {
-    let date = req.body;
-    //date = getDate();
-    getSellsDetail(date, "M")
+    getSellsDetail(date, mdt)
       .then((msg) => {
         res.status(200).send(msg);
       })
