@@ -12,7 +12,10 @@ import GridListTileBar from "@material-ui/core/GridListTileBar";
 import Box from "@material-ui/core/Box";
 
 import items from "../../items";
-import { setCheckoutDlgOpen } from "../../store/reducers/pageStatus";
+import {
+  setCheckoutDlgOpen,
+  openQRcodeScan,
+} from "../../store/reducers/pageStatus";
 import { FlashTouchAppIcon } from "../PageBase/PageBaseFunction";
 
 import UIfx from "uifx";
@@ -69,6 +72,7 @@ class ItemPage extends Component {
                   popSfx.play();
                   //this.props.setCheckoutDlgOpen(item);
                   this.setPayValue(item.price);
+                  this.props.openQRcodeScan();
                 }}
                 disableRipple={true}
                 disableTouchRipple={true}
@@ -146,6 +150,7 @@ const mapDispatchToProps = (dispatch) => {
   return bindActionCreators(
     {
       setCheckoutDlgOpen: (data) => setCheckoutDlgOpen(data),
+      openQRcodeScan: () => openQRcodeScan(),
     },
     dispatch
   );

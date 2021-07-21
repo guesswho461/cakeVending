@@ -24,6 +24,11 @@ import CodePay from "../../imgs/codePay.png";
 import UIfx from "uifx";
 import pop from "../../sounds/pop.flac";
 
+import {
+  setPayTypeToThisOrder,
+  closeQRcodeScan,
+} from "../../store/reducers/pageStatus";
+
 const popSfx = new UIfx(pop);
 
 const styles = (theme) => ({
@@ -128,6 +133,8 @@ class PayBox extends Component {
               onClick={() => {
                 popSfx.play();
                 this.setPayType(1);
+                this.props.setPayTypeToThisOrder(1);
+                this.props.closeQRcodeScan();
               }}
             >
               <Box height="350px">
@@ -184,6 +191,8 @@ class PayBox extends Component {
                 onClick={() => {
                   popSfx.play();
                   this.setPayType(2);
+                  this.props.setPayTypeToThisOrder(2);
+                  this.props.closeQRcodeScan();
                 }}
               >
                 <Box height="170px">
@@ -228,6 +237,8 @@ class PayBox extends Component {
                 onClick={() => {
                   popSfx.play();
                   this.setPayType(3);
+                  this.props.setPayTypeToThisOrder(3);
+                  this.props.closeQRcodeScan();
                 }}
               >
                 <Box height="170px">
@@ -272,6 +283,8 @@ class PayBox extends Component {
               onClick={() => {
                 popSfx.play();
                 this.setPayType(4);
+                this.props.setPayTypeToThisOrder(4);
+                this.props.closeQRcodeScan();
               }}
             >
               <Box height="350px">
@@ -326,6 +339,8 @@ class PayBox extends Component {
               onClick={() => {
                 popSfx.play();
                 this.setPayType(5);
+                this.props.setPayTypeToThisOrder(5);
+                this.props.closeQRcodeScan();
               }}
             >
               <Box>
@@ -379,7 +394,13 @@ const mapStateToProps = (state) => {
 };
 
 const mapDispatchToProps = (dispatch) => {
-  return bindActionCreators({}, dispatch);
+  return bindActionCreators(
+    {
+      setPayTypeToThisOrder: (data) => setPayTypeToThisOrder(data),
+      closeQRcodeScan: () => setPayTypeToThisOrder(),
+    },
+    dispatch
+  );
 };
 
 export default connect(

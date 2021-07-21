@@ -32,6 +32,8 @@ import {
   setMakingProgress,
   setPressToBakeDlgClose,
   setFirstTimeBuyDlgOpen,
+  openQRcodeScan,
+  closeQRcodeScan,
 } from "../../store/reducers/pageStatus";
 
 import logo from "../../imgs/logo.svg";
@@ -149,8 +151,10 @@ class StepPage extends Component {
         this.props.pageStatus.paidValue
     );
 
-    if (this.state.totalPay === 0 && this.props.pageStatus.actStep < 3)
+    if (this.state.totalPay === 0 && this.props.pageStatus.actStep < 3) {
       this.props.pageStatus.actStep = 3;
+      this.props.closeQRcodeScan();
+    }
   }
 
   componentDidMount() {
@@ -168,6 +172,7 @@ class StepPage extends Component {
   handleBack() {
     this.setActiveStep(this.state.actStep - 1);
     this.props.pageStatus.actStep--;
+    if (this.props.pageStatus.actStep == 0) this.props.closeQRcodeScan();
   }
 
   handleReset() {
@@ -300,7 +305,9 @@ class StepPage extends Component {
                           <Button
                             variant="contained"
                             style={{ width: "350px" }}
-                            onClick={this.addDiscount}
+                            onClick={() => {
+                              this.addDiscount();
+                            }}
                           >
                             <Typography variant="h4">
                               <Translate value={"plsScanDiscount"} />
@@ -537,6 +544,8 @@ const mapDispatchToProps = (dispatch) => {
       setMakingProgress: (data) => setMakingProgress(data),
       setPressToBakeDlgClose: () => setPressToBakeDlgClose(),
       setFirstTimeBuyDlgOpen: () => setFirstTimeBuyDlgOpen(),
+      openQRcodeScan: () => openQRcodeScan(),
+      closeQRcodeScan: () => closeQRcodeScan(),
     },
     dispatch
   );

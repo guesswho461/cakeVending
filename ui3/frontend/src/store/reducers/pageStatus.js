@@ -6,6 +6,9 @@ import items from "../../items";
 import UIfx from "uifx";
 // import coin from "../../sounds/coin.ogg";
 import coin from "../../sounds/beep2.wav";
+
+const URL = "http://localhost:8085";
+
 const coinSfx = new UIfx(coin);
 
 const SET_PAGE_SELECTED = "set/page/selected";
@@ -57,6 +60,31 @@ const initState = {
   actStep: 0,
 };
 
+export function setPayTypeToThisOrder(data) {
+  const payload = qs.stringify({
+    price: initState.payableValue,
+    payType: initState.payType,
+  });
+  post("/thisOrder/payType", payload);
+  return {
+    type: DUMMY,
+  };
+}
+
+export function openQRcodeScan() {
+  post("/gm65/code");
+  return {
+    type: DUMMY,
+  };
+}
+
+export function closeQRcodeScan() {
+  post("/gm65/close");
+  return {
+    type: DUMMY,
+  };
+}
+
 function decTheCoinValue(coinValue, data) {
   if (coinValue < data) {
     return 0;
@@ -81,10 +109,10 @@ function post(url, payload = null, type = "text/plain") {
     axios({
       method: "post",
       baseURL: backend + url,
-      headers: {
+      /*headers: {
         Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
         "content-type": type,
-      },
+      },*/
       data: payload,
     })
       .then((res) => {
@@ -103,10 +131,10 @@ function jump2MaintainPage(isDevMode, data, lastPage) {
     return lastPage;
   } else {
     if (data === "true") {
-      post("/kanban/disable");
+      post("/door/LED/close");
       return "maintain";
     } else {
-      post("/kanban/enable");
+      post("/door/LED/open");
       return "ad";
     }
   }
@@ -419,7 +447,7 @@ export function isAllOpModesAreCorrect() {
   return (dispatch) => {
     axios({
       method: "get",
-      baseURL: backend + "/opModesAreCorrect",
+      baseURL: backend + "/tp/mode",
       headers: {
         Authorization: "Bearer " + process.env.REACT_APP_CAKE_ACCESS_TOKEN,
       },
