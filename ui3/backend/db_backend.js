@@ -388,7 +388,7 @@ app.get(
 
   (req, res) => {
     let date = getDate();
-    isToday = req.body.isToday;
+    isToday = req.query.isToday;
     if (isToday === "today") {
       date = getDate();
     } else {
@@ -410,7 +410,7 @@ app.get(
   (req, res) => {
     getParFromDB("scriptArgu")
       .then((value) => {
-        res.status(200).send("Argu " + value);
+        res.status(200).send("--vol " + value);
       })
       .catch((err) => {
         res.status(500).send(err);
@@ -476,8 +476,17 @@ app.post(
 
   (req, res) => {
     chk = req.body.chk;
+    updateToLastRowOfDB("firstTime", chk);
+    res.sendStatus(200);
+  }
+);
+
+app.post(
+  "/thisOrder/star",
+
+  (req, res) => {
     star = req.body.star;
-    updateToLastRowOfDBs("firstTime", chk, "star", star);
+    updateToLastRowOfDB("star", star);
     res.sendStatus(200);
   }
 );
@@ -498,7 +507,7 @@ app.get(
 
   (req, res) => {
     let date = getDate();
-    isToday = req.body.isToday;
+    isToday = req.query.isToday;
     if (isToday === "today") {
       date = getDate();
     } else {
@@ -521,7 +530,8 @@ app.get(
     let date = getDate();
     let mdt = "D";
 
-    mode = req.body.mode;
+    mode = req.query.mode;
+
     if (mode === "today") {
       mdt = "D";
       date = getDate();
@@ -530,14 +540,13 @@ app.get(
       date = getYesterdayDate();
     } else if (mode === "month") {
       mdt = "M";
-      date = req.body.date;
+      date = req.query.date;
     } else if (mode === "select") {
       mdt = "D";
-      date = req.body.date;
+      date = req.query.date;
     }
 
     console.log(mode);
-    console.log(mdt);
     console.log(date);
 
     getSellsDetail(date, mdt)
