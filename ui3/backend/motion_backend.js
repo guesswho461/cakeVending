@@ -32,6 +32,8 @@ axis_client.connectRTUBuffered("COM9", {
   dataBits: 8,
 });
 
+const BEGIN_SET_HOME = false;
+
 let isHomeOvenFlip = false;
 let isHomeOvenOpen = false;
 let isOvenOpen = false;
@@ -93,6 +95,18 @@ const STEP_PER_MM_CV = 5;
 const STEP_PER_MM_DOOR = 25;
 const STEP_PER_MM_COLL = (pulMotor * RATIO_LATCH_COLL) / 360;
 const STEP_PER_MM_OVEN_OPEN = totalPul_OVEN_OPEN / 360;
+
+const MaxXVel = 8000;
+const MaxYVel = 8000;
+const MaxZVel = 8000;
+const MaxVolVel = 8000;
+
+const MaxArmVel = 8000;
+const MaxCvVel = 8000;
+const MaxCollVel = 8000;
+const MaxFlipVel = 8000;
+const MaxOvenOpenVel = 8000;
+const MaxDoorVel = 8000;
 
 //1~12
 const PAR_ADDR_SET_HOME = 0x0000;
@@ -159,7 +173,7 @@ log4js.configure({
 app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.text());
-app.use(log4js.connectLogger(logger, { level: "trace" }));
+app.use(log4js.connectLogger(logger, { level: "info" })); //trace
 
 http.createServer(app).listen(port, "localhost", () => {
   logger.info(VERSION + " listening on port " + port);
@@ -173,7 +187,6 @@ app.post(
   "/test",
 
   (req, res) => {
-    pos = 20000;
     absFastMove(AXIS_JOG_X, pos);
     res.sendStatus(200);
   }
@@ -185,7 +198,7 @@ app.get(
   (req, res) => {
     readAllStatus()
       .then((value) => {
-        res.status(200).send("status " + value);
+        res.status(200).send(value);
       })
       .catch((err) => {
         res.status(500).send(err);
@@ -212,7 +225,6 @@ app.post(
 
   (req, res) => {
     pos = req.body.pos;
-    pos = 200000;
     jog(AXIS_JOG_X, pos, STEP_PER_MM_XY);
     res.sendStatus(200);
   }
@@ -223,8 +235,10 @@ app.post(
 
   (req, res) => {
     dir = req.body.dir;
-    dir = true;
-    contDo(AXIS_JOG_X, dir);
+
+    if (dir == "true") contDo(AXIS_JOG_X, DIR_CW);
+    else contDo(AXIS_JOG_X, DIR_CCW);
+
     res.sendStatus(200);
   }
 );
@@ -233,14 +247,15 @@ app.post(
   "/jog/x/vel",
 
   (req, res) => {
-    slowVel = req.body.slowVel;
+    /*slowVel = req.body.slowVel;
     workingVel = req.body.workingVel;
     accelTime = req.body.accelTime;
+    setPar(AXIS_JOG_X, slowVel, workingVel, accelTime);*/
 
-    slowVel = 300;
-    workingVel = 4000;
-    accelTime = 10;
-    setPar(AXIS_JOG_X, slowVel, workingVel, accelTime);
+    workingVel = MaxXVel * req.body.percent;
+    //workingVel = 8000;
+    console.log(workingVel);
+    setWorkingVel(AXIS_JOG_X, workingVel);
     res.sendStatus(200);
   }
 );
@@ -269,7 +284,9 @@ app.post(
 
   (req, res) => {
     dir = req.body.dir;
-    contDo(AXIS_JOG_Y, dir);
+    if (dir == "true") contDo(AXIS_JOG_Y, DIR_CW);
+    else contDo(AXIS_JOG_Y, DIR_CCW);
+
     res.sendStatus(200);
   }
 );
@@ -278,10 +295,12 @@ app.post(
   "/jog/y/vel",
 
   (req, res) => {
-    slowVel = req.body.slowVel;
+    /*slowVel = req.body.slowVel;
     workingVel = req.body.workingVel;
     accelTime = req.body.accelTime;
-    setPar(AXIS_JOG_Y, slowVel, workingVel, accelTime);
+    setPar(AXIS_JOG_Y, slowVel, workingVel, accelTime);*/
+    workingVel = MaxYVel * req.body.percent;
+    setWorkingVel(AXIS_JOG_Y, workingVel);
     res.sendStatus(200);
   }
 );
@@ -310,7 +329,8 @@ app.post(
 
   (req, res) => {
     dir = req.body.dir;
-    contDo(AXIS_JOG_Z, dir);
+    if (dir == "true") contDo(AXIS_JOG_Z, DIR_CW);
+    else contDo(AXIS_JOG_Z, DIR_CCW);
     res.sendStatus(200);
   }
 );
@@ -319,11 +339,27 @@ app.post(
   "/jog/z/vel",
 
   (req, res) => {
-    slowVel = req.body.slowVel;
+    /*slowVel = req.body.slowVel;
     workingVel = req.body.workingVel;
     accelTime = req.body.accelTime;
-    setPar(AXIS_JOG_Z, slowVel, workingVel, accelTime);
+    setPar(AXIS_JOG_Z, slowVel, workingVel, accelTime);*/
+    workingVel = MaxZVel * req.body.percent;
+    setWorkingVel(AXIS_JOG_Z, workingVel);
     res.sendStatus(200);
+  }
+);
+
+app.get(
+  "/jog/z/isStop",
+
+  (req, res) => {
+    readStatus(AXIS_JOG_Z)
+      .then((value) => {
+        res.status(200).send(value);
+      })
+      .catch((err) => {
+        res.status(500).send(err);
+      });
   }
 );
 
@@ -332,6 +368,18 @@ app.post(
 
   (req, res) => {
     jog(AXIS_JOG_Z, 0, STEP_PER_MM_Z);
+    res.sendStatus(200);
+  }
+);
+
+app.post(
+  "/jog/xyz",
+
+  (req, res) => {
+    pos1 = req.body.pos1;
+    pos2 = req.body.pos2;
+    pos3 = req.body.pos3;
+    jogXYZ(pos1, pos2, pos3);
     res.sendStatus(200);
   }
 );
@@ -350,15 +398,12 @@ app.post(
   "/jog/arm/vel",
 
   (req, res) => {
-    slowVel = req.body.slowVel;
+    /*slowVel = req.body.slowVel;
     workingVel = req.body.workingVel;
     accelTime = req.body.accelTime;
-    /*
-    slowVel = 100;
-    workingVel = 4000;
-    accelTime = 10;
-    */
-    setPar(AXIS_LATCH_ARM, slowVel, workingVel, accelTime);
+    setPar(AXIS_LATCH_ARM, slowVel, workingVel, accelTime);*/
+    workingVel = MaxArmVel * req.body.percent;
+    setWorkingVel(AXIS_LATCH_ARM, workingVel);
     res.sendStatus(200);
   }
 );
@@ -391,7 +436,6 @@ app.post(
 
   (req, res) => {
     pos = req.body.pos;
-    //pos = 180;
     jog(AXIS_LATCH_CV, pos, STEP_PER_MM_CV);
     res.sendStatus(200);
   }
@@ -401,11 +445,13 @@ app.post(
   "/jog/cv/vel",
 
   (req, res) => {
-    slowVel = req.body.slowVel;
+    /*slowVel = req.body.slowVel;
     workingVel = req.body.workingVel;
     accelTime = req.body.accelTime;
 
-    setPar(AXIS_LATCH_CV, slowVel, workingVel, accelTime);
+    setPar(AXIS_LATCH_CV, slowVel, workingVel, accelTime);*/
+    workingVel = MaxCvVel * req.body.percent;
+    setWorkingVel(AXIS_LATCH_CV, workingVel);
     res.sendStatus(200);
   }
 );
@@ -438,7 +484,6 @@ app.post(
 
   (req, res) => {
     pos = req.body.pos;
-    //pos = 90;
     jog(AXIS_LATCH_COLL, pos, STEP_PER_MM_COLL);
     res.sendStatus(200);
   }
@@ -448,11 +493,13 @@ app.post(
   "/jog/coll/vel",
 
   (req, res) => {
-    slowVel = req.body.slowVel;
+    /*slowVel = req.body.slowVel;
     workingVel = req.body.workingVel;
     accelTime = req.body.accelTime;
 
-    setPar(AXIS_LATCH_COLL, slowVel, workingVel, accelTime);
+    setPar(AXIS_LATCH_COLL, slowVel, workingVel, accelTime);*/
+    workingVel = MaxCollVel * req.body.percent;
+    setWorkingVel(AXIS_LATCH_COLL, workingVel);
     res.sendStatus(200);
   }
 );
@@ -485,7 +532,6 @@ app.post(
 
   (req, res) => {
     pos = req.body;
-    //pos = 10;
     jog(AXIS_OVEN_OPEN, pos, STEP_PER_MM_OVEN_OPEN);
     res.sendStatus(200);
   }
@@ -513,11 +559,13 @@ app.post(
   "/oven/open/vel",
 
   (req, res) => {
-    slowVel = req.body.slowVel;
+    /*slowVel = req.body.slowVel;
     workingVel = req.body.workingVel;
     accelTime = req.body.accelTime;
 
-    setPar(AXIS_OVEN_OPEN, slowVel, workingVel, accelTime);
+    setPar(AXIS_OVEN_OPEN, slowVel, workingVel, accelTime);*/
+    workingVel = MaxOvenOpenVel * req.body.percent;
+    setWorkingVel(AXIS_OVEN_OPEN, workingVel);
     res.sendStatus(200);
   }
 );
@@ -584,11 +632,13 @@ app.post(
   "/oven/flip/vel",
 
   (req, res) => {
-    slowVel = req.body.slowVel;
+    /*slowVel = req.body.slowVel;
     workingVel = req.body.workingVel;
     accelTime = req.body.accelTime;
 
-    setPar(AXIS_OVEN_FLIP, slowVel, workingVel, accelTime);
+    setPar(AXIS_OVEN_FLIP, slowVel, workingVel, accelTime);*/
+    workingVel = MaxFlipVel * req.body.percent;
+    setWorkingVel(AXIS_OVEN_FLIP, workingVel);
     res.sendStatus(200);
   }
 );
@@ -614,6 +664,7 @@ app.get(
   "/oven/isStandBy",
 
   (req, res) => {
+    console.log(1010);
     res.status(200).send(isFlipStandBy);
   }
 );
@@ -654,6 +705,7 @@ app.get(
   "/oven/isFinish",
 
   (req, res) => {
+    console.log(isOvenFinish);
     res.status(200).send(isOvenFinish);
   }
 );
@@ -689,11 +741,13 @@ app.post(
   "/door/open/vel",
 
   (req, res) => {
-    slowVel = req.body.slowVel;
+    /*slowVel = req.body.slowVel;
     workingVel = req.body.workingVel;
     accelTime = req.body.accelTime;
 
-    setPar(AXIS_DOOR_OPEN, slowVel, workingVel, accelTime);
+    setPar(AXIS_DOOR_OPEN, slowVel, workingVel, accelTime);*/
+    workingVel = MaxDoorVel * req.body.percent;
+    setWorkingVel(AXIS_DOOR_OPEN, workingVel);
     res.sendStatus(200);
   }
 );
@@ -721,7 +775,7 @@ app.post(
     if (setVolObj) {
       clearInterval(setVolObj);
     }
-    setVolObj = setInterval(stpSetRelRevVol, 200, vol);
+    setVolObj = setInterval(stpSetRelRevVol, 150, vol);
     res.sendStatus(200);
   }
 );
@@ -750,11 +804,13 @@ app.post(
   "/jog/vol/vel",
 
   (req, res) => {
-    slowVel = req.body.slowVel;
+    /*slowVel = req.body.slowVel;
     workingVel = req.body.workingVel;
     accelTime = req.body.accelTime;
 
-    setPar(AXIS_BUCKET, slowVel, workingVel, accelTime);
+    setPar(AXIS_BUCKET, slowVel, workingVel, accelTime);*/
+    workingVel = MaxVolVel * req.body.percent;
+    setWorkingVel(AXIS_BUCKET, workingVel);
     res.sendStatus(200);
   }
 );
@@ -778,10 +834,7 @@ app.post(
   "/jog/home",
 
   (req, res) => {
-    axis = req.body;
-    axis = AXIS_JOG_X;
     setHomeObj = setInterval(jogHome, 100);
-
     res.sendStatus(200);
   }
 );
@@ -802,7 +855,7 @@ app.post(
   (req, res) => {
     axis = req.body.axis;
     pos = req.body.pos;
-    axis = 1;
+    axis = 4;
     pos = 21000;
     relMove(axis, pos, DIR_CW);
     res.sendStatus(200);
@@ -838,7 +891,8 @@ app.post(
 
   (req, res) => {
     axis = req.body.axis;
-    moveStop(axis);
+    //axis = 0;
+    moveStop(parseInt(axis));
     res.sendStatus(200);
   }
 );
@@ -1018,6 +1072,8 @@ const moveStop = (axis) => {
     address = PAR_ADDR_EXT_MOVE_STOP + axis;
   } else address = PAR_ADDR_MOVE_STOP + axis;
 
+  console.log(axis);
+  console.log(address);
   return new Promise((resolve, reject) => {
     axis_client
       .writeCoil(address, true)
@@ -1155,7 +1211,25 @@ function valueAtBit(num, bit) {
 
 const robotTargetReach = () => {
   return new Promise((resolve, reject) => {
-    readStatus(AXIS_JOG_X).then((status1) => {
+    readAllStatus().then((status) => {
+      if (
+        valueAtBit(status, 0) == 0 &&
+        valueAtBit(status, 1) == 0 &&
+        valueAtBit(status, 2) == 0
+      ) {
+        console.log("robot stop");
+        return resolve(true);
+      } else {
+        console.log("robot moving");
+        return resolve(false);
+      }
+    });
+  });
+};
+
+const robotTargetReach2 = () => {
+  return new Promise((resolve, reject) => {
+    readStatus(AXIS_JOG_X).then((status) => {
       if (status1 == true) {
         readStatus(AXIS_JOG_Y).then((status2) => {
           if (status2 == true) {
@@ -1183,10 +1257,16 @@ const latchTargetReach = () => {
   });
 };
 
+const absDoublePos = (axis1, AbsPos1, axis2, AbsPos2) => {
+  return absFastMove(axis1, AbsPos1).then(() => {
+    absFastMove(axis2, AbsPos2).then(() => {});
+  });
+};
+
 const absMultiPos = (axis1, AbsPos1, axis2, AbsPos2, axis3, AbsPos3) => {
-  absFastMove(axis1, AbsPos1).then(() => {
+  return absFastMove(axis1, AbsPos1).then(() => {
     absFastMove(axis2, AbsPos2).then(() => {
-      if (axis3 != 0 && axis3 != undefined) absFastMove(axis3, AbsPos3);
+      absFastMove(axis3, AbsPos3);
     });
   });
 };
@@ -1204,9 +1284,10 @@ const posToStep = (pos, stepPerMM) => {
 
 const oven_Open = () => {
   if (
-    isHome[AXIS_OVEN_FLIP] == true &&
+    //isHome[AXIS_OVEN_FLIP] == true &&
     isOvenFlip == false &&
     isOvenOpen == false
+    //&& isFlipStandBy == true
   )
     absFastMove(AXIS_OVEN_OPEN, openPul).then(() => {
       isOvenOpen = true;
@@ -1215,7 +1296,7 @@ const oven_Open = () => {
 
 const oven_Close = () => {
   if (
-    isHome[AXIS_OVEN_FLIP] == true &&
+    //isHome[AXIS_OVEN_FLIP] == true &&
     isOvenFlip == false &&
     isOvenOpen == true
   )
@@ -1226,7 +1307,7 @@ const oven_Close = () => {
 
 const oven_FlipTurn = () => {
   if (
-    isHome[AXIS_OVEN_OPEN] == true &&
+    //isHome[AXIS_OVEN_OPEN] == true &&
     isOvenFlip == false &&
     isOvenOpen == false
   )
@@ -1237,7 +1318,7 @@ const oven_FlipTurn = () => {
 
 const oven_FlipBack = () => {
   if (
-    isHome[AXIS_OVEN_OPEN] == true &&
+    //isHome[AXIS_OVEN_OPEN] == true &&
     isOvenFlip == true &&
     isOvenOpen == false
   )
@@ -1249,23 +1330,24 @@ const oven_FlipBack = () => {
 
 const oven_FlipStandBy = () => {
   if (
-    isHome[AXIS_OVEN_OPEN] == true &&
+    //isHome[AXIS_OVEN_OPEN] == true &&
     isFlipStandBy == false &&
     isOvenFlip == false &&
     isOvenOpen == false
   )
     absFastMove(AXIS_OVEN_FLIP, standByPul).then(() => {
-      isFlipStandBy == true;
+      isFlipStandBy = true;
     });
 };
 
 const oven_FinishTurn = () => {
   if (
-    isHome[AXIS_OVEN_OPEN] == true &&
-    isHome[AXIS_OVEN_FLIP] == true &&
-    isOvenFinish == false
+    //isHome[AXIS_OVEN_OPEN] == true &&
+    //isHome[AXIS_OVEN_FLIP] == true &&
+    isOvenFinish == false &&
+    isFlipStandBy == true
   )
-    absMultiPos(
+    absDoublePos(
       AXIS_OVEN_OPEN,
       openFinishPul,
       AXIS_OVEN_FLIP,
@@ -1277,17 +1359,28 @@ const oven_FinishTurn = () => {
 
 const oven_FinishBack = () => {
   if (
-    isHome[AXIS_OVEN_OPEN] == false &&
-    isHome[AXIS_OVEN_FLIP] == false &&
+    //isHome[AXIS_OVEN_OPEN] == false &&
+    //isHome[AXIS_OVEN_FLIP] == false &&
     isOvenFinish == true
   )
-    absMultiPos(AXIS_OVEN_OPEN, 0, AXIS_OVEN_FLIP, 0).then(() => {
+    absDoublePos(AXIS_OVEN_OPEN, 0, AXIS_OVEN_FLIP, 0).then(() => {
       isOvenFinish = false;
     });
 };
 
 const jog = (axis, cmdPos, stepPerMM) => {
   absFastMove(axis, posToStep(cmdPos, stepPerMM)).then(() => {});
+};
+
+const jogXYZ = (pos1, pos2, pos3) => {
+  absMultiPos(
+    AXIS_JOG_X,
+    posToStep(pos1, STEP_PER_MM_XY),
+    AXIS_JOG_Y,
+    posToStep(pos2, STEP_PER_MM_XY),
+    AXIS_JOG_Z,
+    posToStep(pos3, STEP_PER_MM_Z)
+  ).then(() => {});
 };
 
 let homeStep = 0;
@@ -1303,7 +1396,7 @@ const jogHome = () => {
         break;
 
       case 1:
-        jogHomeMulti(AXIS_JOG_X, AXIS_JOG_Y, AXIS_OVEN_OPEN);
+        jogHomeMulti(AXIS_JOG_Z, AXIS_OVEN_OPEN, AXIS_DOOR_OPEN);
 
         if (homeMultiStep == 4) {
           homeMultiStep = 0;
@@ -1315,7 +1408,7 @@ const jogHome = () => {
         break;
 
       case 2:
-        jogHomeMulti(AXIS_JOG_Y, AXIS_OVEN_OPEN, AXIS_OVEN_FLIP);
+        jogHomeMulti(AXIS_JOG_X, AXIS_OVEN_FLIP, AXIS_JOG_ARM);
 
         if (homeMultiStep == 4) {
           homeMultiStep = 0;
@@ -1327,7 +1420,7 @@ const jogHome = () => {
         break;
 
       case 3:
-        jogHomeMulti(AXIS_OVEN_OPEN, AXIS_OVEN_FLIP, AXIS_JOG_X);
+        jogHomeMulti(AXIS_JOG_Y, AXIS_DOOR_OPEN, AXIS_JOG_CV);
 
         if (homeMultiStep == 4) {
           homeMultiStep = 0;
@@ -1544,9 +1637,9 @@ const stpSetRelRevVol = (cmdVol) => {
     case TO_TOP:
       if (step == 0) {
         resetFlow1Cnt().then(() => {
-          curPos(AXIS_JOG_X).then((value) => {
+          curPos(AXIS_BUCKET).then((value) => {
             lastPos = value;
-            contDo(AXIS_JOG_X, DIR_CW).then(() => {
+            contDo(AXIS_BUCKET, DIR_CW).then(() => {
               step = 1;
             });
           });
@@ -1556,7 +1649,7 @@ const stpSetRelRevVol = (cmdVol) => {
           SensorPulCount = count;
           if (SensorPulCount > 0) step = 2;
           else {
-            curPos(AXIS_JOG_X).then((value) => {
+            curPos(AXIS_BUCKET).then((value) => {
               firstMotorStep = value - lastPos;
               if (firstMotorStep >= totalPul) {
                 stepErr = true;
@@ -1567,7 +1660,7 @@ const stpSetRelRevVol = (cmdVol) => {
         });
         console.log("1-1");
       } else if (step == 2) {
-        moveStop(AXIS_JOG_X).then(() => {
+        moveStop(AXIS_BUCKET).then(() => {
           if (stepErr) {
             if (cmdTop == true) flowSensorErr(99);
             else flowSensorErr(1); //如果for迴圈有跑完，代表flowSensor怪怪的
@@ -1576,9 +1669,9 @@ const stpSetRelRevVol = (cmdVol) => {
         });
         console.log("1-2");
       } else if (step == 3) {
-        readStatus(AXIS_JOG_X).then((status) => {
+        readStatus(AXIS_BUCKET).then((status) => {
           if (status == true) {
-            curPos(AXIS_JOG_X).then((value) => {
+            curPos(AXIS_BUCKET).then((value) => {
               firstMotorStep = value - lastPos;
               lastPos = value;
               firstReachCount = SensorPulCount;
@@ -1596,7 +1689,7 @@ const stpSetRelRevVol = (cmdVol) => {
       break;
     case TO_TARGETVOL:
       if (step == 0) {
-        contDo(AXIS_JOG_X, DIR_CW).then(() => {
+        contDo(AXIS_BUCKET, DIR_CW).then(() => {
           step = 1;
         });
         console.log(4);
@@ -1607,7 +1700,7 @@ const stpSetRelRevVol = (cmdVol) => {
           if (SensorPulCount >= targetSensorPulCount - 1) {
             step = 2;
           } else {
-            curPos(AXIS_JOG_X).then((value) => {
+            curPos(AXIS_BUCKET).then((value) => {
               scdMotorStep = value - lastPos;
               if (scdMotorStep >= totalPul) {
                 stepErr = true;
@@ -1618,7 +1711,7 @@ const stpSetRelRevVol = (cmdVol) => {
         });
         console.log("2-1");
       } else if (step == 2) {
-        moveStop(AXIS_JOG_X).then(() => {
+        moveStop(AXIS_BUCKET).then(() => {
           if (stepErr) {
             flowSensorErr(2); //如果for迴圈有跑完，代表flowSensor怪怪的
             volStep = TO_OK;
@@ -1626,9 +1719,9 @@ const stpSetRelRevVol = (cmdVol) => {
         });
         console.log("2-2");
       } else if (step == 3) {
-        readStatus(AXIS_JOG_X).then((status) => {
+        readStatus(AXIS_BUCKET).then((status) => {
           if (status == true) {
-            curPos(AXIS_JOG_X).then((value) => {
+            curPos(AXIS_BUCKET).then((value) => {
               scdMotorStep = value - lastPos;
 
               scdReachCount = SensorPulCount;
@@ -1656,7 +1749,7 @@ const stpSetRelRevVol = (cmdVol) => {
     case TO_REMAINDERVOL:
       if (step == 0) {
         if (remainderVol > 0) {
-          relFastMove(AXIS_JOG_X, totalPul3).then(() => {
+          relFastMove(AXIS_BUCKET, totalPul3).then(() => {
             step = 1;
           });
         } else {
@@ -1664,7 +1757,7 @@ const stpSetRelRevVol = (cmdVol) => {
         }
         console.log("3-1");
       } else if (step == 1) {
-        readStatus(AXIS_JOG_X).then((status) => {
+        readStatus(AXIS_BUCKET).then((status) => {
           if (status == true) {
             volStep = TO_OK;
             step = 0;
@@ -1675,12 +1768,12 @@ const stpSetRelRevVol = (cmdVol) => {
       break;
     case TO_BACKVOL:
       if (step == 0) {
-        relFastMove(AXIS_JOG_X, totalPul).then(() => {
+        relFastMove(AXIS_BUCKET, totalPul).then(() => {
           step = 1;
         });
         console.log("4-1");
       } else if (step == 1) {
-        readStatus(AXIS_JOG_X).then((status) => {
+        readStatus(AXIS_BUCKET).then((status) => {
           if (status == true) {
             volStep = TO_OK;
             step = 0;
@@ -1690,11 +1783,11 @@ const stpSetRelRevVol = (cmdVol) => {
       }
       break;
     case TO_OK:
-      resetFlow1Cnt().then(() => {
-        clearInterval(setVolObj);
-        stepErr = false;
-        volStep = 0;
-      });
+      //resetFlow1Cnt().then(() => {
+      clearInterval(setVolObj);
+      stepErr = false;
+      volStep = 0;
+      //  });
       console.log("9");
       break;
     default:
@@ -1746,7 +1839,7 @@ const getFlow1Cnt = () => {
 };
 
 const resetFlow1Cnt = () => {
-  return postWebAPI(process.env.MAIN_BACKEND_PORT, "/flow1/cnt/reset");
+  return postWebAPI(process.env.MAIN_BACKEND_PORT, "/flow1/reset");
   //flow1Cnt = 0;
   //return writeCnt(0);
 };
@@ -1784,3 +1877,10 @@ const writeCnt = (cnt) => {
       });
   });
 };
+
+function init() {
+  logger.info(VERSION + " connect to broker OK");
+  if (BEGIN_SET_HOME) setHomeObj = setInterval(jogHome, 100);
+}
+
+//init();

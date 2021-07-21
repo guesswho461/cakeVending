@@ -20,6 +20,9 @@ const axios = require("axios");
 const util = require("util");
 const { stringify } = require("comment-json");
 
+var io = require("socket.io-client")(http);
+var socket = io.connect("http://localhost:8085");
+
 log4js.configure({
   appenders: {
     file: {
@@ -47,6 +50,25 @@ const machineInfo = {
 
 let scriptFile = "dummy.py";
 
+//const recipePath = "/home/pi/recipe";
+const recipePath = "C:\\Users\\BNHuse\\Desktop\\3\\nano";
+//const recipeCmd = "sudo python %s/%s --cnt %d %s";
+const recipeCmd = "python %s/%s --cnt %d %s";
+
+let posMachineFile = "AS350.jar";
+//const posMachinePath = "/home/pi/ui3/AS350";
+const posMachinePath = "C:\\Users\\BNHuse\\Desktop\\3\\nano\\AS350";
+//const posMachineCmd = "sudo java -jar %s -com %s -id %d -pay %d -type %d";
+const posMachineCmd = "java -jar %s/%s -com %s -id %d -pay %d -type %d";
+
+let ovenIsReady = true;
+let isMakingACake = false;
+
+let isTpModeCorrect = true;
+//min to ms
+const batterPumpBackRoutineInterval =
+  process.env.BATTER_PUMP_BACK_ROUTINE_INTERVAL * 60 * 1000;
+
 app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.text());
@@ -68,6 +90,46 @@ app.get(
     res.send(machineInfo.ver);
   }
 );
+
+app.post("/machine/info", (req, res) => {
+  logger.debug("machine_info" + req.body);
+  res.sendStatus(200);
+});
+
+app.post("/machine/alarm", (req, res) => {
+  logger.debug("machine_alarm" + req.body);
+  res.sendStatus(200);
+});
+
+//gm65
+app.post("/gm65/code", (req, res) => {
+  getWebAPI(process.env.GM65_BACKEND_PORT, "/code")
+    .then((msg) => {
+      console.log(msg);
+      res.status(200).send(msg);
+    })
+    .catch((err) => {
+      res.status(500).send(err);
+    });
+});
+
+app.post("/gm65/open", (req, res) => {
+  getWebAPI(process.env.GM65_BACKEND_PORT, "/open")
+    .then((msg) => {
+      console.log(msg);
+      res.status(200).send(msg);
+    })
+    .catch((err) => {
+      res.status(500).send(err);
+    });
+});
+
+app.post("/gm65/close", (req, res) => {
+  postWebAPI(process.env.GM65_BACKEND_PORT, "/scanDisable").then(() => {
+    postWebAPI(process.env.GM65_BACKEND_PORT, "/close");
+  });
+  res.sendStatus(200);
+});
 
 /////DB
 app.post(
@@ -106,61 +168,87 @@ app.post(
   "/recipe/start/original",
 
   (req, res) => {
+    file = req.body;
+    cnt = req.body.cnt;
+    price = req.body.price;
+    file = scriptFile;
+    cnt = 3;
+    price = 30;
+
     if (isMakingACake === false) {
-      if (isAllOpModesAreCorrect() === true) {
+      if (isTpModeCorrect === true) {
         if (
-          Object.keys(req.body).length === 0 ||
-          Object.keys(req.body).includes("cnt") === false ||
-          Object.keys(req.body).includes("price") === false ||
-          isNaN(parseInt(req.body.cnt)) ||
-          parseInt(req.body.cnt) <= 0
+          //Object.keys(req.body).length === 0 ||
+          //Object.keys(req.body).includes("cnt") === false ||
+          //Object.keys(req.body).includes("price") === false ||
+          isNaN(parseInt(cnt)) ||
+          parseInt(cnt) <= 0
         ) {
           let resp = "illegal recipe cnt";
           logger.warn(resp);
           res.status(400).send(resp);
         } else {
           isMakingACake = true;
-          sellTime = getTime();
-          cnt = parseInt(req.body.cnt);
-          price = parseInt(req.body.price);
-          ("PAR", "scriptArgu").then((value) => {
-            if (price > 0) {
-              setToDB(tableName, price);
-            } else {
-              mqttClient.publish("frontend/baking", "true");
-            }
-            postWebAPI2("/machine/info", "bake start: " + cnt);
-            let cmd = util.format(
-              recipeCmd,
-              recipePath,
-              scriptFile,
-              cnt,
-              value.scriptArgu
-            );
-            exec(cmd, function (err, stdout, stderr) {
-              if (err !== null) {
-                res.status(500).send(stderr);
-                logger.error(stderr);
-                postWebAPI2("/machine/info", "bake NG: " + stderr)
-                  .then((msg) => {
-                    machineDisable();
-                  })
-                  .catch((err) => {
-                    machineDisable();
+          getWebAPI(process.env.DB_BACKEND_PORT, "/recipe/argu").then(
+            (value) => {
+              console.log(value);
+
+              if (price > 0) {
+                const payload = qs.stringify({
+                  price: price,
+                  discount: 10,
+                  tenCnt: 2,
+                  fiveCnt: 2,
+                  batchNo: "000007",
+                  receiptNo: "000007",
+                  tradeNo: "21060906140362892",
+                  transAmount: "100",
+                  transDate: "210618",
+                  transTime: "181403",
+                  info_1: "1585624672",
+                  info_2: "0",
+                  payType: "VISA",
+                });
+                postWebAPI(process.env.DB_BACKEND_PORT, "/sells", payload);
+              } /*else {
+                postWebAPI(
+                  process.env.FRONT_BACKEND_PORT,
+                  "frontend/baking",
+                  "true"
+                );
+              }*/
+              logger.debug("machine_info bake start: " + cnt);
+              let cmd = util.format(
+                recipeCmd,
+                recipePath,
+                scriptFile,
+                cnt,
+                value
+              );
+              exec(cmd, function (err, stdout, stderr) {
+                if (err !== null) {
+                  logger.error(stderr);
+                  res.status(500).send(stderr);
+                  postWebAPI(
+                    process.env.IO_BACKEND_PORT,
+                    "/machine/disable"
+                  ).then((msg) => {
+                    logger.debug("machine_info bake NG: " + stderr);
                   });
-              } else {
-                res.status(200).send(stderr);
-                logger.trace(stderr);
-                postWebAPI2("/machine/info", "bake OK: " + cnt);
-              }
-              isMakingACake = false;
-            });
-          });
+                } else {
+                  logger.trace(stderr);
+                  logger.debug("machine_info bake OK: " + cnt);
+                  res.status(200).send(stderr);
+                }
+                isMakingACake = false;
+              });
+            }
+          );
         }
       } else {
-        let resp = "cannot bake the cake, the modes of the modules are wrong";
+        let resp = "cannot bake the cake, the mode is wrong";
         logger.error(resp);
-        postWebAPI2("/machine/info", resp);
+        logger.debug("machine_info " + resp);
         res.status(403).send(resp);
       }
     } else {
@@ -168,6 +256,40 @@ app.post(
       logger.warn(resp);
       res.status(409).send(resp);
     }
+  }
+);
+
+app.post(
+  "/thisOrder/payType",
+
+  (req, res) => {
+    let com = "COM10";
+    let price = req.body.price;
+    let payType = req.body.payType;
+
+    let cmd = util.format(
+      posMachineCmd,
+      posMachinePath,
+      posMachineFile,
+      com,
+      1234567,
+      price,
+      payType
+    );
+    console.log(cmd);
+    exec(cmd, function (err, stdout, stderr) {
+      if (err !== null) {
+        logger.error(stderr);
+        logger.debug("POS Machine NG: " + stderr);
+        res.status(500).send(stderr);
+      } else {
+        logger.trace(stdout);
+        logger.debug("POS Machine OK: " + payType);
+
+        if (stdout._statusCode != 0) res.status(405).send(stdout);
+        else res.status(200).send(stdout);
+      }
+    });
   }
 );
 
@@ -199,9 +321,16 @@ app.post("/db/sells", (req, res) => {
 app.post("/db/thisOrder/firstTimeBuy", (req, res) => {
   const payload = qs.stringify({
     chk: "yes",
-    star: "1",
   });
   postWebAPI(process.env.DB_BACKEND_PORT, "/thisOrder/firstTimeBuy", payload);
+  res.sendStatus(200);
+});
+
+app.post("/db/thisOrder/star", (req, res) => {
+  const payload = qs.stringify({
+    star: "1",
+  });
+  postWebAPI(process.env.DB_BACKEND_PORT, "/thisOrder/star", payload);
   res.sendStatus(200);
 });
 
@@ -236,10 +365,10 @@ app.get(
   "/db/sells/detail",
 
   (req, res) => {
-    const payload = qs.stringify({
-      mode: "month",
-      date: "2021-06-24",
-    });
+    const payload = {
+      mode: "month", //select  month
+      date: "2021-06-28",
+    };
     getWebAPI(process.env.DB_BACKEND_PORT, "/sells/detail", payload)
       .then((msg) => {
         res.status(200).send(msg);
@@ -251,9 +380,9 @@ app.get(
 );
 
 app.get("/db/sells/turnover", (req, res) => {
-  const payload = qs.stringify({
+  const payload = {
     isToday: "today",
-  });
+  };
   getWebAPI(process.env.DB_BACKEND_PORT, "/turnover", payload)
     .then((msg) => {
       res.status(200).send(msg);
@@ -264,9 +393,9 @@ app.get("/db/sells/turnover", (req, res) => {
 });
 
 app.get("/db/sells/vol", (req, res) => {
-  const payload = qs.stringify({
+  const payload = {
     isToday: "today",
-  });
+  };
   getWebAPI(process.env.DB_BACKEND_PORT, "/sells/vol", payload)
     .then((msg) => {
       res.status(200).send(msg);
@@ -279,7 +408,7 @@ app.get("/db/sells/vol", (req, res) => {
 /////Motion
 app.post("/jog/x", (req, res) => {
   const payload = qs.stringify({
-    pos: 100,
+    pos: req.body.pos,
   });
   postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/x", payload);
   res.sendStatus(200);
@@ -287,7 +416,7 @@ app.post("/jog/x", (req, res) => {
 
 app.post("/jog/x/vel", (req, res) => {
   const payload = qs.stringify({
-    slowVel: 100,
+    slowVel: req.body.vel,
     workingVel: 4000,
     accelTime: 10,
   });
@@ -297,7 +426,7 @@ app.post("/jog/x/vel", (req, res) => {
 
 app.post("/jog/y", (req, res) => {
   const payload = qs.stringify({
-    pos: 100,
+    pos: req.body.pos,
   });
   postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/y", payload);
   res.sendStatus(200);
@@ -305,7 +434,7 @@ app.post("/jog/y", (req, res) => {
 
 app.post("/jog/y/vel", (req, res) => {
   const payload = qs.stringify({
-    slowVel: 100,
+    slowVel: req.body.vel,
     workingVel: 4000,
     accelTime: 10,
   });
@@ -313,25 +442,31 @@ app.post("/jog/y/vel", (req, res) => {
   res.sendStatus(200);
 });
 
-var jogZObj;
 app.post("/jog/z", (req, res) => {
   const payload = qs.stringify({
-    pos: 100,
+    pos: req.body.pos,
   });
-  if (jogZObj) {
-    clearInterval(jogZObj);
-  }
-  jogZObj = setInterval(jogZmove, 100, payload);
+  postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/z", payload);
   res.sendStatus(200);
 });
 
 app.post("/jog/z/vel", (req, res) => {
   const payload = qs.stringify({
-    slowVel: 100,
+    slowVel: req.body.vel,
     workingVel: 4000,
     accelTime: 10,
   });
   postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/z/vel", payload);
+  res.sendStatus(200);
+});
+
+app.post("/jog/xyz", (req, res) => {
+  const payload = qs.stringify({
+    pos1: req.body.pos1,
+    pos2: req.body.pos2,
+    pos3: req.body.pos3,
+  });
+  postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/xyz", payload);
   res.sendStatus(200);
 });
 
@@ -351,7 +486,7 @@ app.get(
 
 app.post("/jog/arm", (req, res) => {
   const payload = qs.stringify({
-    pos: 100,
+    pos: req.body.pos,
   });
   postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/arm", payload);
   res.sendStatus(200);
@@ -359,7 +494,7 @@ app.post("/jog/arm", (req, res) => {
 
 app.post("/jog/arm/vel", (req, res) => {
   const payload = qs.stringify({
-    slowVel: 100,
+    slowVel: req.body.vel,
     workingVel: 4000,
     accelTime: 10,
   });
@@ -383,7 +518,7 @@ app.get(
 
 app.post("/jog/cv", (req, res) => {
   const payload = qs.stringify({
-    pos: 100,
+    pos: req.body.pos,
   });
   postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/cv", payload);
   res.sendStatus(200);
@@ -391,7 +526,7 @@ app.post("/jog/cv", (req, res) => {
 
 app.post("/jog/cv/vel", (req, res) => {
   const payload = qs.stringify({
-    slowVel: 100,
+    slowVel: req.body.vel,
     workingVel: 4000,
     accelTime: 10,
   });
@@ -415,7 +550,7 @@ app.get(
 
 app.post("/jog/coll", (req, res) => {
   const payload = qs.stringify({
-    pos: 100,
+    pos: req.body.pos,
   });
   postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/coll", payload);
   res.sendStatus(200);
@@ -423,7 +558,7 @@ app.post("/jog/coll", (req, res) => {
 
 app.post("/jog/coll/vel", (req, res) => {
   const payload = qs.stringify({
-    slowVel: 100,
+    slowVel: req.body.vel,
     workingVel: 4000,
     accelTime: 10,
   });
@@ -447,15 +582,15 @@ app.get(
 
 app.post("/jog/vol", (req, res) => {
   const payload = qs.stringify({
-    pos: 30,
+    vol: req.body.vol,
   });
-  postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/voll", payload);
+  postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/vol", payload);
   res.sendStatus(200);
 });
 
 app.post("/jog/vol/vel", (req, res) => {
   const payload = qs.stringify({
-    slowVel: 100,
+    slowVel: req.body.vel,
     workingVel: 4000,
     accelTime: 10,
   });
@@ -478,18 +613,20 @@ app.get(
 );
 
 app.post("/door/open", (req, res) => {
-  postWebAPI(process.env.MOTION_BACKEND_PORT, "/door/open");
+  io.emit("msg", { status: "doorOpen" });
+  //postWebAPI(process.env.MOTION_BACKEND_PORT, "/door/open");
   res.sendStatus(200);
 });
 
 app.post("/door/close", (req, res) => {
-  postWebAPI(process.env.MOTION_BACKEND_PORT, "/door/close");
+  io.emit("msg", { status: "doorClose" });
+  //postWebAPI(process.env.MOTION_BACKEND_PORT, "/door/close");
   res.sendStatus(200);
 });
 
 app.post("/door/open/vel", (req, res) => {
   const payload = qs.stringify({
-    slowVel: 100,
+    slowVel: req.body.vel,
     workingVel: 4000,
     accelTime: 10,
   });
@@ -523,7 +660,7 @@ app.post("/oven/close", (req, res) => {
 
 app.post("/oven/open/vel", (req, res) => {
   const payload = qs.stringify({
-    slowVel: 100,
+    slowVel: req.body.vel,
     workingVel: 4000,
     accelTime: 10,
   });
@@ -560,9 +697,23 @@ app.post("/oven/flipStandBy", (req, res) => {
   res.sendStatus(200);
 });
 
+app.get(
+  "/oven/isStandBy",
+
+  (req, res) => {
+    getWebAPI(process.env.MOTION_BACKEND_PORT, "/oven/isStandBy")
+      .then((msg) => {
+        res.status(200).send(msg);
+      })
+      .catch((err) => {
+        res.status(500).send(err);
+      });
+  }
+);
+
 app.post("/oven/flip/vel", (req, res) => {
   const payload = qs.stringify({
-    slowVel: 100,
+    slowVel: req.body.vel,
     workingVel: 4000,
     accelTime: 10,
   });
@@ -593,6 +744,20 @@ app.post("/oven/finishBack", (req, res) => {
   postWebAPI(process.env.MOTION_BACKEND_PORT, "/oven/finishBack");
   res.sendStatus(200);
 });
+
+app.get(
+  "/oven/isFinish",
+
+  (req, res) => {
+    getWebAPI(process.env.MOTION_BACKEND_PORT, "/oven/isFinish")
+      .then((msg) => {
+        res.status(200).send(msg);
+      })
+      .catch((err) => {
+        res.status(500).send(err);
+      });
+  }
+);
 
 app.post("/jog/home", (req, res) => {
   postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/home");
@@ -679,6 +844,20 @@ app.post("/gate/close", (req, res) => {
   res.sendStatus(200);
 });
 
+app.get(
+  "/gate/isOpen",
+
+  (req, res) => {
+    getWebAPI(process.env.IO_BACKEND_PORT, "/gate/isOpen")
+      .then((msg) => {
+        res.status(200).send(msg);
+      })
+      .catch((err) => {
+        res.status(500).send(err);
+      });
+  }
+);
+
 app.post("/robot/brake/off", (req, res) => {
   postWebAPI(process.env.IO_BACKEND_PORT, "/robot/brake");
   res.sendStatus(200);
@@ -712,21 +891,25 @@ app.get(
   }
 );
 
-app.post("/coin10/enable", (req, res) => {
-  postWebAPI(process.env.IO_BACKEND_PORT, "/coin10/enable");
+app.post("/coin/enable", (req, res) => {
+  postWebAPI(process.env.IO_BACKEND_PORT, "/coin1/enable").then(() => {
+    postWebAPI(process.env.IO_BACKEND_PORT, "/coin2/enable");
+  });
   res.sendStatus(200);
 });
 
-app.post("/coin10/disable", (req, res) => {
-  postWebAPI(process.env.IO_BACKEND_PORT, "/coin10/disable");
+app.post("/coin/disable", (req, res) => {
+  postWebAPI(process.env.IO_BACKEND_PORT, "/coin1/disable").then(() => {
+    postWebAPI(process.env.IO_BACKEND_PORT, "/coin2/disable");
+  });
   res.sendStatus(200);
 });
 
 app.get(
-  "/coin10/cnt",
+  "/coin1/cnt",
 
   (req, res) => {
-    getWebAPI(process.env.IO_BACKEND_PORT, "/coin10/cnt")
+    getWebAPI(process.env.IO_BACKEND_PORT, "/coin1/cnt")
       .then((msg) => {
         res.status(200).send(msg);
       })
@@ -736,21 +919,11 @@ app.get(
   }
 );
 
-app.post("/coin5/enable", (req, res) => {
-  postWebAPI(process.env.IO_BACKEND_PORT, "/coin5/enable");
-  res.sendStatus(200);
-});
-
-app.post("/coin5/disable", (req, res) => {
-  postWebAPI(process.env.IO_BACKEND_PORT, "/coin5/disable");
-  res.sendStatus(200);
-});
-
 app.get(
-  "/coin5/cnt",
+  "/coin2/cnt",
 
   (req, res) => {
-    getWebAPI(process.env.IO_BACKEND_PORT, "/coin5/cnt")
+    getWebAPI(process.env.IO_BACKEND_PORT, "/coin2/cnt")
       .then((msg) => {
         res.status(200).send(msg);
       })
@@ -831,8 +1004,8 @@ app.get(
 
   (req, res) => {
     getWebAPI(process.env.IO_BACKEND_PORT, "/tp/mode")
-      .then((value) => {
-        res.status(200).send(value);
+      .then((msg) => {
+        res.status(200).send(msg);
       })
       .catch((err) => {
         res.status(500).send(err);
@@ -874,6 +1047,7 @@ app.get(
   (req, res) => {
     getWebAPI(process.env.IO_BACKEND_PORT, "/tp/jog/spd")
       .then((msg) => {
+        console.log(msg);
         res.status(200).send(msg);
       })
       .catch((err) => {
@@ -981,7 +1155,7 @@ const postWebAPI = (port, url, payload = "") => {
       })
         .then((res) => {
           let msg = "POST " + url + " " + payload + " " + res.status;
-          console.log(payload);
+          //console.log(payload);
           logger.debug(msg);
           return resolve(msg);
         })
@@ -1000,7 +1174,7 @@ const getWebAPI = (port, url, payload = "") => {
       axios({
         method: "get",
         baseURL: "http://localhost:" + port + url,
-        data: payload,
+        params: payload, //{ mode: "select", date: "2021-06-24" },
       })
         .then((res) => {
           console.log(payload);
@@ -1016,159 +1190,66 @@ const getWebAPI = (port, url, payload = "") => {
   });
 };
 
-let jogZstep = 0;
-const jogZmove = (payload) => {
-  switch (jogZstep) {
-    case 0:
-      postWebAPI(process.env.IO_BACKEND_PORT, "/robot/brake/off").then(() => {
-        jogZstep = 1;
-      });
-      break;
-    case 1:
-      postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/z", payload).then(
-        () => {
-          jogZstep = 2;
-        }
-      );
-      break;
-    case 2:
-      getWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/robot/isStop").then(
-        (status) => {
-          if (status == true) jogZstep = 3;
-        }
-      );
-      break;
-    case 3:
-      postWebAPI(process.env.IO_BACKEND_PORT, "/robot/brake/on").then(() => {
-        jogZstep = 4;
-      });
-      break;
-    case 4:
-      jogZstep = 0;
-      clearInterval(jogZObj);
-      break;
-  }
-};
-
 let lastMode = "";
 let lastDir = "";
 let lastTarget = "";
-
-let stopAllOK = false;
-let stopOK = false;
-
+let lastspd = "";
+let running = false;
+let manualStep = 0;
 const tpMode = () => {
-  const payload = qs.stringify({
-    axis: 0,
-    dir: false,
-    spd: 0,
-  });
   getWebAPI(process.env.IO_BACKEND_PORT, "/tp/mode").then((mode) => {
-    if (mode != lastMode) stopAllOK = false;
-    if (mode == "Manual" && stopAllOK == true) {
-      getWebAPI(process.env.IO_BACKEND_PORT, "/tp/jog/spd").then((spd) => {
-        if (spd != 0) {
-          getWebAPI(process.env.IO_BACKEND_PORT, "/tp/jog/dir").then((dir) => {
-            payload.dir = dir;
-            if (dir != lastDir && running == true) stopOK = false;
-            getWebAPI(process.env.IO_BACKEND_PORT, "/tp/jog/target").then(
-              (target) => {
-                if (target != lastTarget && running == true) stopOK = false;
-                if (target == "X") {
-                  getWebAPI(
-                    process.env.MOTION_BACKEND_PORT,
-                    "/jog/x/vel",
-                    payload
-                  ).then(() => {
-                    if (running == false) {
-                      postWebAPI(
-                        process.env.MOTION_BACKEND_PORT,
-                        "/cont/x",
-                        payload
-                      );
-                      running = true;
-                    }
-                  });
-                } else if (target == "Y") {
-                  getWebAPI(
-                    process.env.MOTION_BACKEND_PORT,
-                    "/jog/x/vel",
-                    payload
-                  ).then(() => {
-                    if (running == false) {
-                      postWebAPI(
-                        process.env.MOTION_BACKEND_PORT,
-                        "/cont/y",
-                        payload
-                      );
-                      running = true;
-                    }
-                  });
-                } else if (target == "Z") {
-                  getWebAPI(
-                    process.env.MOTION_BACKEND_PORT,
-                    "/jog/z/vel",
-                    payload
-                  ).then(() => {
-                    if (running == false) {
-                      postWebAPI(
-                        process.env.MOTION_BACKEND_PORT,
-                        "/cont/z",
-                        payload
-                      );
-                      running = true;
-                    }
-                  });
-                } else if (target == "B") {
-                  getWebAPI(
-                    process.env.MOTION_BACKEND_PORT,
-                    "/jog/vol/vel",
-                    payload
-                  ).then(() => {
-                    if (running == false) {
-                      postWebAPI(
-                        process.env.MOTION_BACKEND_PORT,
-                        "/cont/vol",
-                        payload
-                      );
-                      running = true;
-                    }
-                  });
-                }
+    switch (manualStep) {
+      case 0:
+        if (mode != lastMode) manualStep = 2;
+        else if (mode == "Manual") {
+          getWebAPI(process.env.IO_BACKEND_PORT, "/tp/jog/spd").then((spd) => {
+            console.log(spd);
+            if (spd == 0) manualStep = 1;
+            else {
+              getWebAPI(process.env.IO_BACKEND_PORT, "/tp/jog/dir").then(
+                (dir) => {
+                  getWebAPI(process.env.IO_BACKEND_PORT, "/tp/jog/target").then(
+                    (target) => {
+                      if (dir != lastDir && running == true) manualStep = 1;
+                      else if (target != lastTarget && running == true)
+                        manualStep = 1;
+                      else {
+                        console.log(dir);
+                        const payload = qs.stringify({
+                          dir: dir,
+                          percent: spd,
+                        });
 
-                if (stopOK == false) {
-                  if (lastTarget == "X") payload.axis = 0;
-                  else if (lastTarget == "Y") payload.axis = 1;
-                  else if (lastTarget == "Z") payload.axis = 2;
-                  else if (lastTarget == "B") payload.axis = 3;
-                  getWebAPI(
-                    process.env.MOTION_BACKEND_PORT,
-                    "/jog/stop",
-                    payload
+                        if (running == false) {
+                          postWebAPI(
+                            process.env.MOTION_BACKEND_PORT,
+                            "/cont/" + target,
+                            payload
+                          ).then(() => {
+                            running = true;
+                          });
+                        } else {
+                          if (spd != lastspd) {
+                            postWebAPI(
+                              process.env.MOTION_BACKEND_PORT,
+                              "/jog/" + target + "/vel",
+                              payload
+                            );
+                          }
+                          lastspd = spd;
+                        }
+                        lastTarget = target;
+                        lastDir = dir;
+                      }
+                    }
                   );
-                  running = false;
-                  stopOK = true;
                 }
-
-                lastTarget = target;
-              }
-            );
-            lastDir = dir;
+              );
+            }
           });
-        } else {
-          if (running == true) {
-            if (lastTarget == "X") payload.axis = 0;
-            else if (lastTarget == "Y") payload.axis = 1;
-            else if (lastTarget == "Z") payload.axis = 2;
-            else payload.axis = 3;
-            getWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/stop", payload);
-            running = false;
-            stopOK = true;
-          }
         }
-      });
 
-      getWebAPI(process.env.IO_BACKEND_PORT, "/tp/isClean1").then((value) => {
+        /*  getWebAPI(process.env.IO_BACKEND_PORT, "/tp/isClean1").then((value) => {
         if (value == true) {
           getWebAPI(process.env.MOTION_BACKEND_PORT, "/oven/isOpen").then(
             (isOpen) => {
@@ -1194,9 +1275,9 @@ const tpMode = () => {
             }
           );
         }
-      });
+      });*/
 
-      getWebAPI(process.env.IO_BACKEND_PORT, "/tp/isClean2").then((value) => {
+        /* getWebAPI(process.env.IO_BACKEND_PORT, "/tp/isClean2").then((value) => {
         if (value == true) {
           getWebAPI(process.env.MOTION_BACKEND_PORT, "/oven/isFlip").then(
             (isFlip) => {
@@ -1242,14 +1323,84 @@ const tpMode = () => {
             }
           );
         }
-      });
-    }
+      });*/
 
-    if (stopAllOK == false) {
-      getWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/stopAll");
-      stopAllOK = true;
-    }
+        break;
+      case 1:
+        axis = 0;
+        if (lastTarget == "x") axis = 0;
+        else if (lastTarget == "y") axis = 1;
+        else if (lastTarget == "z") axis = 2;
+        else axis = 3;
+        const payload = qs.stringify({
+          axis: axis,
+        });
+        postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/stop", payload).then(
+          () => {
+            manualStep = 11;
+          }
+        );
+        break;
+      case 11:
+        axis = 0;
+        if (lastTarget != "vol") {
+          getWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/robot/isStop").then(
+            (status) => {
+              if (status) {
+                manualStep = 0;
+                running = false;
+                lastspd = 0;
+              } else manualStep = 1;
+            }
+          );
+        } else {
+          getWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/vol/isStop").then(
+            (status) => {
+              if (status) {
+                manualStep = 0;
+                running = false;
+                lastspd = 0;
+              } else manualStep = 1;
+            }
+          );
+        }
 
+        break;
+      case 2:
+        postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/stopAll").then(() => {
+          manualStep = 21;
+        });
+        break;
+      case 21:
+        getWebAPI(process.env.MOTION_BACKEND_PORT, "/status").then((status) => {
+          if (status == 0) {
+            manualStep = 0;
+            running = false;
+            lastspd = 0;
+          } else manualStep = 2;
+        });
+        break;
+    }
     lastMode = mode;
   });
 };
+
+const batterPumpBackRoutine = () => {
+  const payload = qs.stringify({
+    vol: process.env.BATTER_PUMP_BACK_VOL,
+  });
+  if (isMakingACake === false) {
+    postWebAPI(process.env.MOTION_BACKEND_PORT, "/jog/vol", payload);
+    logger.info("batter pump back");
+  } else {
+    logger.info("cake is making, batter did not pump back");
+  }
+};
+
+function init() {
+  logger.info(machineInfo.ver + " connect to broker OK");
+  setInterval(batterPumpBackRoutine, batterPumpBackRoutineInterval);
+  setInterval(tpMode, 500);
+}
+
+init();

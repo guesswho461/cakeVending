@@ -24,7 +24,7 @@ client.setTimeout(500);
 client.setID(1);
 
 //argv.device;
-client.connectRTUBuffered("COM11", {
+client.connectRTUBuffered("COM2", {
   baudRate: 115200,
   parity: "none",
   stopBits: 1,
@@ -41,6 +41,7 @@ let alarmCnts = {
 };
 
 let gateCmd = false;
+let isGateOpen = false;
 
 const machineInfo = {
   name: process.env.NAME,
@@ -81,6 +82,12 @@ let maxFridgeTemp =
 let machineIsEnable = true;
 let checkGateCmdDelayObj;
 
+let vacuum_startTime = 0;
+let vacuum_endTime = 0;
+let coin1_startTime = 0;
+let coin1_endTime = 0;
+let coin2_startTime = 0;
+let coin2_endTime = 0;
 let clean1_startTime = 0;
 let clean1_endTime = 0;
 let clean2_startTime = 0;
@@ -90,7 +97,11 @@ let clean3_endTime = 0;
 let reset_startTime = 0;
 let reset_endTime = 0;
 
+let coin1EnableDelayOk = false;
+let coin2EnableDelayOk = false;
+
 let ovenIsReady = true;
+let tpMode = "Manual";
 
 let lastMacTemp = 0;
 let lastBowlCnt = 0;
@@ -119,7 +130,7 @@ const PAR_ADDR_SYS_ERROR_CODE = 0x0006;
 const PAR_ADDR_SYS_HEARTBEAT = 0x0007;
 
 //status
-const PAR_ADDR_CUP_CNT = 0x0010;
+const PAR_ADDR_BOWL_CNT = 0x0010;
 const PAR_ADDR_BATTER_CNT = 0x0011;
 const PAR_ADDR_OVEN_TEMP = 0x0012;
 const PAR_ADDR_FRIG_TEMP = 0x0013;
@@ -189,16 +200,17 @@ app.post(
   "/bowl/suck",
 
   (req, res) => {
-    vacuum_Ctrl(true);
+    vacuumOpen_Ctrl(true);
     res.sendStatus(200);
   }
 );
 
+let setVacuumObj;
 app.post(
   "/bowl/release",
 
   (req, res) => {
-    vacuum_Ctrl(false);
+    setVacuumObj = setInterval(vacuumClose_Ctrl, 50);
     res.sendStatus(200);
   }
 );
@@ -207,7 +219,6 @@ app.post(
   "/bowl/LED/open",
 
   (req, res) => {
-    //en = req.body;
     en = true;
     writeCmd(PAR_ADDR_LED_1_CMD, true);
     res.sendStatus(200);
@@ -227,7 +238,7 @@ app.post(
   "/gate/open",
 
   (req, res) => {
-    writeCmd(PAR_ADDR_GATE_CMD, true);
+    gate_Open();
     res.sendStatus(200);
   }
 );
@@ -236,8 +247,16 @@ app.post(
   "/gate/close",
 
   (req, res) => {
-    writeCmd(PAR_ADDR_GATE_CMD, false);
+    gate_Close();
     res.sendStatus(200);
+  }
+);
+
+app.get(
+  "/gate/isOpen",
+
+  (req, res) => {
+    res.status(200).send(isGateOpen);
   }
 );
 
@@ -277,10 +296,17 @@ app.get(
   }
 );
 
+var setCoin1Obj;
 app.post(
-  "/coin10/enable",
+  "/coin1/enable",
 
   (req, res) => {
+    if (setCoin1Obj) {
+      clearInterval(setCoin1Obj);
+    }
+    coin1_startTime = new Date();
+    setCoin1Obj = setInterval(coin1Trigger, 10);
+
     writeCmd(PAR_ADDR_COIN_1_CMD, true);
     setTimeout(() => {
       res.sendStatus(200);
@@ -289,26 +315,36 @@ app.post(
 );
 
 app.post(
-  "/coin10/disable",
+  "/coin1/disable",
 
   (req, res) => {
+    if (setCoin1Obj) {
+      clearInterval(setCoin1Obj);
+    }
+    coin1EnableDelayOk = false;
     writeCmd(PAR_ADDR_COIN_1_CMD, false);
     res.sendStatus(200);
   }
 );
 
 app.get(
-  "/coin10/cnt",
+  "/coin1/cnt",
 
   (req, res) => {
     res.status(200).send(coin1Count);
   }
 );
 
+var setCoin2Obj;
 app.post(
-  "/coin5/enable",
+  "/coin2/enable",
 
   (req, res) => {
+    if (setCoin2Obj) {
+      clearInterval(setCoin2Obj);
+    }
+    coin2_startTime = new Date();
+    setCoin2Obj = setInterval(coin2Trigger, 10);
     writeCmd(PAR_ADDR_COIN_2_CMD, true);
     setTimeout(() => {
       res.sendStatus(200);
@@ -317,16 +353,20 @@ app.post(
 );
 
 app.post(
-  "/coin5/disable",
+  "/coin2/disable",
 
   (req, res) => {
+    if (setCoin2Obj) {
+      clearInterval(setCoin2Obj);
+    }
+    coin2EnableDelayOk = false;
     writeCmd(PAR_ADDR_COIN_2_CMD, false);
     res.sendStatus(200);
   }
 );
 
 app.get(
-  "/coin5/cnt",
+  "/coin2/cnt",
 
   (req, res) => {
     res.status(200).send(coin2Count);
@@ -369,7 +409,7 @@ app.get(
   "/bowl/cnt",
 
   (req, res) => {
-    readData(PAR_ADDR_CUP_CNT)
+    readData(PAR_ADDR_BOWL_CNT)
       .then((value) => {
         res.status(200).send(value);
       })
@@ -439,13 +479,7 @@ app.get(
   "/tp/mode",
 
   (req, res) => {
-    getTpMode()
-      .then((value) => {
-        res.status(200).send(value);
-      })
-      .catch((err) => {
-        res.status(500).send(err);
-      });
+    res.status(200).send(tpMode);
   }
 );
 
@@ -504,7 +538,8 @@ app.post(
 
   (req, res) => {
     isClean1 = false;
-    res.status(200);
+    console.log("reset");
+    res.sendStatus(200);
   }
 );
 
@@ -521,7 +556,7 @@ app.post(
 
   (req, res) => {
     isClean2 = false;
-    res.status(200);
+    res.sendStatus(200);
   }
 );
 
@@ -538,7 +573,7 @@ app.post(
 
   (req, res) => {
     isClean3 = false;
-    res.status(200);
+    res.sendStatus(200);
   }
 );
 
@@ -547,7 +582,25 @@ app.post(
 
   (req, res) => {
     machineEnable();
-    res.status(200);
+    res.sendStatus(200);
+  }
+);
+
+app.post(
+  "/machine/enable",
+
+  (req, res) => {
+    machineEnable();
+    res.sendStatus(200);
+  }
+);
+
+app.post(
+  "/machine/disable",
+
+  (req, res) => {
+    machineDisable();
+    res.sendStatus(200);
   }
 );
 
@@ -564,14 +617,16 @@ app.post(
 
   (req, res) => {
     flow1Count = 0;
-    res.status(200);
+    res.sendStatus(200);
   }
 );
 
 const writeCmd = (address, en) => {
   return new Promise((resolve, reject) => {
+    if (en) value = 1;
+    else value = 0;
     client
-      .writeCoil(address, en)
+      .writeRegister(address, en)
       .then(function (d) {
         return resolve("OK");
       })
@@ -587,7 +642,7 @@ const readData = (address) => {
     client
       .readHoldingRegisters(address, 1)
       .then(function (d) {
-        console.log(d.data);
+        //console.log(d.data);
         return resolve(d.data);
       })
       .catch(function (err) {
@@ -598,139 +653,178 @@ const readData = (address) => {
 };
 
 const oven_Heatctrl = () => {
-  readData(PAR_ADDR_TP_MODE).then((mode) => {
-    if (mode === manual) address = PAR_ADDR_TP_OVEN_TEMP_CMD;
-    else address = PAR_ADDR_OVEN_TEMP_CMD;
+  return new Promise((resolve, reject) => {
+    readData(PAR_ADDR_TP_MODE).then((mode) => {
+      if (mode === manual) address = PAR_ADDR_TP_OVEN_TEMP_CMD;
+      else address = PAR_ADDR_OVEN_TEMP_CMD;
 
-    readData(address).then((cmdTemp) => {
-      readData(PAR_ADDR_OVEN_TEMP).then((curTemp) => {
-        if (cmdTemp < curTemp && machineInfo.isSoldout == false)
-          writeCmd(PAR_ADDR_OVEN_CMD, true);
-        else writeCmd(PAR_ADDR_OVEN_CMD, false);
+      readData(address).then((cmdTemp) => {
+        readData(PAR_ADDR_OVEN_TEMP).then((curTemp) => {
+          if (cmdTemp < curTemp && machineInfo.isSoldout == false)
+            writeCmd(PAR_ADDR_OVEN_CMD, true);
+          else writeCmd(PAR_ADDR_OVEN_CMD, false);
 
-        ovenIsReady = checkOvenIsReady(curTemp.toString());
+          ovenIsReady = checkOvenIsReady(curTemp.toString());
+        });
       });
     });
+    return resolve(true);
   });
 };
 
 const frig_Coldctrl = () => {
-  readData(PAR_ADDR_FRIG_TEMP).then((curTemp) => {
-    if (curTemp == 0 || curTemp == -127) {
-      //跳溫度異常error
-      writeCmd(PAR_ADDR_FRIG_CMD, true);
-    } else {
-      if (cmdFrigTemp < curTemp) writeCmd(PAR_ADDR_FRIG_CMD, true);
-      else writeCmd(PAR_ADDR_FRIG_CMD, false);
-    }
-
-    if (lastFridgeTemp !== curTemp) {
-      fridgeTempStr = curTemp.toString();
-      if (curTemp >= maxFridgeTemp) {
-        postWarning("fridge temperature to high (" + fridgeTempStr + ")");
+  return new Promise((resolve, reject) => {
+    readData(PAR_ADDR_FRIG_TEMP).then((curTemp) => {
+      if (curTemp == 0 || curTemp == -127) {
+        //跳溫度異常error
+        writeCmd(PAR_ADDR_FRIG_CMD, true).then(() => {});
+      } else {
+        if (cmdFrigTemp < curTemp)
+          writeCmd(PAR_ADDR_FRIG_CMD, true).then(() => {});
+        else writeCmd(PAR_ADDR_FRIG_CMD, false).then(() => {});
       }
-    }
-    lastFridgeTemp = curTemp;
+
+      if (lastFridgeTemp !== curTemp) {
+        fridgeTempStr = curTemp.toString();
+        if (curTemp >= maxFridgeTemp) {
+          postWarning("fridge temperature to high (" + fridgeTempStr + ")");
+        }
+      }
+      lastFridgeTemp = curTemp;
+    });
+    return resolve(true);
   });
 };
 
-const depressurelizeDelay = 200;
-const vacuum_Ctrl = (en) => {
-  if (en) writeCmd(PAR_ADDR_VACUUM_CMD, true);
-  else
-    writeCmd(PAR_ADDR_VACUUM_CMD, false).then(() => {
-      writeCmd(PAR_ADDR_DEPRESSURELIZE_CMD, true);
-      setTimeout(() => {
-        true;
-      }, depressurelizeDelay);
-      writeCmd(PAR_ADDR_DEPRESSURELIZE_CMD, false);
-    });
+const depressurelizeDelay = 1000;
+const vacuumOpen_Ctrl = () => {
+  writeCmd(PAR_ADDR_VACUUM_CMD, true);
+};
+
+let vacuumStep = 0;
+const vacuumClose_Ctrl = () => {
+  switch (vacuumStep) {
+    case 0:
+      writeCmd(PAR_ADDR_VACUUM_CMD, false).then(() => {
+        writeCmd(PAR_ADDR_DEPRESSURELIZE_CMD, true).then(() => {
+          vacuumStep = 1;
+          vacuum_startTime = new Date();
+        });
+      });
+      break;
+    case 1:
+      vacuum_endTime = new Date();
+      if (vacuum_endTime - vacuum_startTime >= depressurelizeDelay)
+        vacuumStep = 2;
+      break;
+    case 2:
+      writeCmd(PAR_ADDR_DEPRESSURELIZE_CMD, false).then(() => {
+        vacuumStep = 3;
+      });
+      break;
+    case 3:
+      clearInterval(setVacuumObj);
+      vacuumStep = 0;
+      break;
+  }
 };
 
 const chk_bowlCnt = () => {
-  readData(PAR_ADDR_CUP_CNT).then((bowlCnt) => {
-    if (lastBowlCnt !== bowlCnt && isCheckBowlCnt === true) {
-      bowlCntStr = bowlCnt.toString();
-      if (bowlCnt >= bowlCntAlarmLevel) {
-        alarmCnts.bowlCntAlarm = postAlarm(
-          "out of bowl (" + bowlCntStr + ")",
-          alarmCnts.bowlCntAlarm,
-          true,
-          true
-        );
-      } else if (bowlCnt >= bowlCntWarningLevel) {
-        postWarning("bowl cnt too low (" + bowlCntStr + ")");
+  return new Promise((resolve, reject) => {
+    readData(PAR_ADDR_BOWL_CNT).then((bowlCnt) => {
+      if (lastBowlCnt !== bowlCnt && isCheckBowlCnt === true) {
+        bowlCntStr = bowlCnt.toString();
+        if (bowlCnt >= bowlCntAlarmLevel) {
+          alarmCnts.bowlCntAlarm = postAlarm(
+            "out of bowl (" + bowlCntStr + ")",
+            alarmCnts.bowlCntAlarm,
+            true,
+            true
+          );
+        } else if (bowlCnt >= bowlCntWarningLevel) {
+          postWarning("bowl cnt too low (" + bowlCntStr + ")");
+        }
+        if (bowlCnt >= bowlCntWarningLevel || bowlCnt >= bowlCntAlarmLevel) {
+          isCheckBowlCnt = false;
+          setTimeout(() => {
+            isCheckBowlCnt = true;
+          }, checkBowlCntDelay);
+        }
       }
-      if (bowlCnt >= bowlCntWarningLevel || bowlCnt >= bowlCntAlarmLevel) {
-        isCheckBowlCnt = false;
-        setTimeout(() => {
-          isCheckBowlCnt = true;
-        }, checkBowlCntDelay);
-      }
-    }
-    lastBowlCnt = bowlCnt;
+      lastBowlCnt = bowlCnt;
+    });
+    return resolve(true);
   });
 };
 
 const chk_batterVol = () => {
-  readData(PAR_ADDR_BATTER_CNT).then((batterVol) => {
-    if (lastBatterVol !== batterVol && isCheckBatterVol === true) {
-      batterVolStr = batterVol.toString();
-      if (batterVol >= batterVolAlarmLevel) {
-        alarmCnts.batterVolAlarm = postAlarm(
-          "out of batter (" + batterVolStr + ")",
-          alarmCnts.batterVolAlarm,
-          true,
-          true
-        );
-      } else if (batterVol >= batterVolWarningLevel) {
-        postWarning("batter vol too low (" + batterVolStr + ")");
+  return new Promise((resolve, reject) => {
+    readData(PAR_ADDR_BATTER_CNT).then((batterVol) => {
+      if (lastBatterVol !== batterVol && isCheckBatterVol === true) {
+        batterVolStr = batterVol.toString();
+        if (batterVol >= batterVolAlarmLevel) {
+          alarmCnts.batterVolAlarm = postAlarm(
+            "out of batter (" + batterVolStr + ")",
+            alarmCnts.batterVolAlarm,
+            true,
+            true
+          );
+        } else if (batterVol >= batterVolWarningLevel) {
+          postWarning("batter vol too low (" + batterVolStr + ")");
+        }
+        if (
+          batterVol >= batterVolWarningLevel ||
+          batterVol >= batterVolAlarmLevel
+        ) {
+          isCheckBatterVol = false;
+          setTimeout(() => {
+            isCheckBatterVol = true;
+          }, checkBatterVolDelay);
+        }
       }
-      if (
-        batterVol >= batterVolWarningLevel ||
-        batterVol >= batterVolAlarmLevel
-      ) {
-        isCheckBatterVol = false;
-        setTimeout(() => {
-          isCheckBatterVol = true;
-        }, checkBatterVolDelay);
-      }
-    }
-    lastBatterVol = batterVol;
+      lastBatterVol = batterVol;
+    });
+    return resolve(true);
   });
 };
 
 const chk_macTemp = () => {
-  readData(PAR_ADDR_MACH_TEMP).then((macTemp) => {
-    if (lastMacTemp !== macTemp) {
-      macTempStr = macTemp.toString();
-      if (macTemp >= maxMachTemp) {
-        alarmCnts.macTempAlarm = postAlarm(
-          "machine temperature too high (" + macTempStr + ")",
-          alarmCnts.macTempAlarm
-        );
+  return new Promise((resolve, reject) => {
+    readData(PAR_ADDR_MACH_TEMP).then((macTemp) => {
+      if (lastMacTemp !== macTemp) {
+        macTempStr = macTemp.toString();
+        if (macTemp >= maxMachTemp) {
+          alarmCnts.macTempAlarm = postAlarm(
+            "machine temperature too high (" + macTempStr + ")",
+            alarmCnts.macTempAlarm
+          );
+        }
       }
-    }
-    lastMacTemp = macTemp;
+      lastMacTemp = macTemp;
+    });
+    return resolve(true);
   });
 };
 
 const chk_Gate = () => {
-  if (gateCmd === true) {
-    if (checkGateCmdDelayObj) {
+  return new Promise((resolve, reject) => {
+    if (gateCmd === true) {
+      if (checkGateCmdDelayObj) {
+        clearTimeout(checkGateCmdDelayObj);
+      }
+      checkGateCmdDelayObj = setTimeout(() => {
+        if (gateCmd === true) {
+          alarmCnts.gateOpenAlarm = postAlarm(
+            "gate open too long",
+            alarmCnts.gateOpenAlarm
+          );
+        }
+      }, checkGateCmdDelay);
+    } else {
       clearTimeout(checkGateCmdDelayObj);
     }
-    checkGateCmdDelayObj = setTimeout(() => {
-      if (gateCmd === true) {
-        alarmCnts.gateOpenAlarm = postAlarm(
-          "gate open too long",
-          alarmCnts.gateOpenAlarm
-        );
-      }
-    }, checkGateCmdDelay);
-  } else {
-    clearTimeout(checkGateCmdDelayObj);
-  }
+    return resolve(true);
+  });
 };
 
 const initAlarmCnts = () => {
@@ -826,127 +920,171 @@ const checkOvenIsReady = (tempature) => {
 };
 
 const coin1Trigger = () => {
-  if (coin1Enable == true) {
-    readData(PAR_ADDR_COIN_1_CNT).then((inc) => {
-      if (inc == 1 && ischeckCoin1Debounced === true) {
-        coin1Count++;
-
-        ischeckCoin1Debounced = false;
-        setTimeout(() => {
-          ischeckCoin1Debounced = true;
-        }, coin_debounceDelay);
+  return new Promise((resolve, reject) => {
+    if (coin1EnableDelayOk == false) {
+      coin1_endTime = new Date();
+      if (coin1_startTime - coin1_endTime >= coinEnableDelayToResponse) {
+        coin1EnableDelayOk = true;
       }
-    });
-  }
+    }
+    if (coin1EnableDelayOk == true) {
+      readData(PAR_ADDR_COIN_1_CNT).then((inc) => {
+        if (inc == 1 && ischeckCoin1Debounced === true) {
+          coin1Count++;
+
+          ischeckCoin1Debounced = false;
+          setTimeout(() => {
+            ischeckCoin1Debounced = true;
+          }, coin_debounceDelay);
+        }
+      });
+    }
+    return resolve(true);
+  });
 };
 
 const coin2Trigger = () => {
-  if (coin2Enable == true) {
-    readData(PAR_ADDR_COIN_2_CNT).then((inc) => {
-      if (inc == 1 && ischeckCoin2Debounced === true) {
-        coin2Count++;
-
-        ischeckCoin2Debounced = false;
-        setTimeout(() => {
-          ischeckCoin2Debounced = true;
-        }, coin_debounceDelay);
+  return new Promise((resolve, reject) => {
+    if (coin2EnableDelayOk == false) {
+      coin2_endTime = new Date();
+      if (coin2_startTime - coin2_endTime >= coinEnableDelayToResponse) {
+        coin2EnableDelayOk = true;
       }
-    });
-  }
+    }
+
+    if (coin2EnableDelayOk == true) {
+      readData(PAR_ADDR_COIN_2_CNT).then((inc) => {
+        if (inc == 1 && ischeckCoin2Debounced === true) {
+          coin2Count++;
+
+          ischeckCoin2Debounced = false;
+          setTimeout(() => {
+            ischeckCoin2Debounced = true;
+          }, coin_debounceDelay);
+        }
+      });
+    }
+    return resolve(true);
+  });
 };
 
 const flow1Trigger = () => {
-  readData(PAR_ADDR_FLOW_1_CNT).then((inc) => {
-    if (inc == 1 && ischeckFlow1Debounced === true) {
-      flow1Count++;
+  return new Promise((resolve, reject) => {
+    readData(PAR_ADDR_FLOW_1_CNT).then((inc) => {
+      if (inc == 1 && ischeckFlow1Debounced === true) {
+        flow1Count++;
 
-      ischeckFlow1Debounced = false;
-      setTimeout(() => {
-        ischeckFlow1Debounced = true;
-      }, flow_debounceDelay);
-    }
+        ischeckFlow1Debounced = false;
+        setTimeout(() => {
+          ischeckFlow1Debounced = true;
+        }, flow_debounceDelay);
+      }
+    });
+    return resolve(true);
   });
 };
 
 const flow2Trigger = () => {
-  readData(PAR_ADDR_FLOW_2_CNT).then((inc) => {
-    if (inc == 1 && ischeckFlow2Debounced === true) {
-      flow2Count++;
+  return new Promise((resolve, reject) => {
+    readData(PAR_ADDR_FLOW_2_CNT).then((inc) => {
+      if (inc == 1 && ischeckFlow2Debounced === true) {
+        flow2Count++;
 
-      ischeckFlow2Debounced = false;
-      setTimeout(() => {
-        ischeckFlow2Debounced = true;
-      }, flow_debounceDelay);
-    }
+        ischeckFlow2Debounced = false;
+        setTimeout(() => {
+          ischeckFlow2Debounced = true;
+        }, flow_debounceDelay);
+      }
+    });
+    return resolve(true);
   });
 };
 
-let lastClean1 = 0;
+let lastClean1 = 1;
 const clean1Trigger = () => {
-  readData(PAR_ADDR_CLEAN_1).then((value) => {
-    if (value == 1 && lastClean1 == 0) {
-      clean1_startTime = new Date();
-    } else if (value == 0 && lastClean1 == 1) {
-      clean1_endTime = new Date();
+  return new Promise((resolve, reject) => {
+    readData(PAR_ADDR_CLEAN_1).then((value) => {
+      if (isClean1 == false) {
+        if (value == 0 && lastClean1 == 1) {
+          clean1_startTime = new Date();
+        } else if (value == 1 && lastClean1 == 0) {
+          clean1_endTime = new Date();
 
-      if (parseInt(clean1_endTime - clean1_startTime) > tp_keythreshold)
-        isClean1 = true;
-      else isClean1 = false;
-    }
-    lastClean1 = value;
+          if (parseInt(clean1_endTime - clean1_startTime) > tp_keythreshold) {
+            isClean1 = true;
+            console.log("isClean True");
+          }
+        }
+        lastClean1 = value;
+      }
+    });
+    return resolve(true);
   });
 };
 
 let lastClean2 = 0;
 const clean2Trigger = () => {
-  readData(PAR_ADDR_CLEAN_2).then((value) => {
-    if (value == 1 && lastClean2 == 0) {
-      clean2_startTime = new Date();
-    } else if (value == 0 && lastClean2 == 1) {
-      clean2_endTime = new Date();
+  return new Promise((resolve, reject) => {
+    readData(PAR_ADDR_CLEAN_2).then((value) => {
+      if (value == 1 && lastClean2 == 0) {
+        clean2_startTime = new Date();
+      } else if (value == 0 && lastClean2 == 1) {
+        clean2_endTime = new Date();
 
-      if (parseInt(clean2_endTime - clean2_startTime) > tp_keythreshold)
-        isClean2 = true;
-      else isClean2 = false;
-    }
-    lastClean2 = value;
+        if (parseInt(clean2_endTime - clean2_startTime) > tp_keythreshold)
+          isClean2 = true;
+        else isClean2 = false;
+      }
+      lastClean2 = value;
+    });
+    return resolve(true);
   });
 };
 
 let lastClean3 = 0;
 const clean3Trigger = () => {
-  readData(PAR_ADDR_CLEAN_3).then((value) => {
-    if (value == 1 && lastClean3 == 0) {
-      clean3_startTime = new Date();
-    } else if (value == 0 && lastClean3 == 1) {
-      clean3_endTime = new Date();
+  return new Promise((resolve, reject) => {
+    readData(PAR_ADDR_CLEAN_3).then((value) => {
+      if (value == 1 && lastClean3 == 0) {
+        clean3_startTime = new Date();
+      } else if (value == 0 && lastClean3 == 1) {
+        clean3_endTime = new Date();
 
-      if (parseInt(clean3_endTime - clean3_startTime) > tp_keythreshold)
-        isClean3 = true;
-      else isClean3 = false;
-    }
-    lastClean3 = value;
+        if (parseInt(clean3_endTime - clean3_startTime) > tp_keythreshold)
+          isClean3 = true;
+        else isClean3 = false;
+      }
+      lastClean3 = value;
+    });
+    return resolve(true);
   });
 };
 
 const alarmResetTrigger = () => {
-  readData(PAR_ADDR_ALARM_RESET).then((value) => {
-    if (value == 1) {
-      reset_startTime = new Date();
-    } else {
-      reset_endTime = new Date();
+  return new Promise((resolve, reject) => {
+    readData(PAR_ADDR_ALARM_RESET).then((value) => {
+      if (value == 1) {
+        reset_startTime = new Date();
+      } else {
+        reset_endTime = new Date();
 
-      if (parseInt(reset_endTime - reset_startTime) > tp_keythreshold)
-        machineEnable();
-    }
+        if (parseInt(reset_endTime - reset_startTime) > tp_keythreshold)
+          machineEnable();
+      }
+    });
+    return resolve(true);
   });
 };
 
 const getTpMode = () => {
   return new Promise((resolve, reject) => {
     readData(PAR_ADDR_TP_MODE).then((value) => {
-      if (value == 0) return resolve("Auto");
-      else return resolve("Manual");
+      if (value == 0) {
+        tpMode = "Manual";
+      } else {
+        tpMode = "Auto";
+      }
+      return resolve(tpMode);
     });
   });
 };
@@ -954,10 +1092,10 @@ const getTpMode = () => {
 const getTpJogTarget = () => {
   return new Promise((resolve, reject) => {
     readData(PAR_ADDR_TP_JOG_TARGET).then((value) => {
-      if (value == 1) return resolve("X");
-      else if (value == 2) return resolve("Y");
-      else if (value == 3) return resolve("Z");
-      else if (value == 4) return resolve("B");
+      if (value == 1) return resolve("x");
+      else if (value == 3) return resolve("y");
+      else if (value == 2) return resolve("z");
+      else if (value == 4) return resolve("vol");
       else return resolve("");
     });
   });
@@ -966,8 +1104,8 @@ const getTpJogTarget = () => {
 const getTpJogDir = () => {
   return new Promise((resolve, reject) => {
     readData(PAR_ADDR_TP_JOG_DIR).then((value) => {
-      if (value == 0) return resolve(true);
-      else return resolve(false);
+      if (value == 0) return resolve(false);
+      else return resolve(true);
     });
   });
 };
@@ -975,9 +1113,64 @@ const getTpJogDir = () => {
 const getTpJogSpd = () => {
   return new Promise((resolve, reject) => {
     readData(PAR_ADDR_TP_JOG_SPD).then((value) => {
-      if (value <= 10) return resolve(0);
-      else if (value >= 100) return resolve(100);
-      else return resolve(value);
+      percent = (value / 4096).toFixed(2);
+      if (percent <= 0.1) return resolve("0");
+      else if (percent > 0.1 && percent <= 0.25) return resolve("0.25");
+      else if (percent > 0.25 && percent <= 0.5) return resolve("0.5");
+      else if (percent > 0.5 && percent <= 0.75) return resolve("0.75");
+      else if (percent > 0.75) return resolve("1");
+      else return resolve(percent.toString());
     });
   });
 };
+
+const gate_Open = () => {
+  if (isGateOpen == false)
+    writeCmd(PAR_ADDR_GATE_CMD, 90).then(() => {
+      isGateOpen = true;
+    });
+};
+
+const gate_Close = () => {
+  if (isGateOpen == true)
+    writeCmd(PAR_ADDR_GATE_CMD, 0).then(() => {
+      isGateOpen = false;
+    });
+};
+
+const tpTriggerData = () => {
+  getTpMode().then((mode) => {
+    if (mode == "Manual") {
+      //alarmResetTrigger().then(() => {
+      clean1Trigger().then(() => {
+        //    clean2Trigger().then(() => {
+        //    clean3Trigger().then(() => {});
+      });
+      //   });
+      // });
+    }
+    //  flow1Trigger().then(() => {});
+  });
+};
+
+const ctrlDataChk = () => {
+  frig_Coldctrl().then(() => {
+    oven_Heatctrl().then(() => {
+      chk_bowlCnt().then(() => {
+        chk_batterVol().then(() => {
+          chk_macTemp().then(() => {
+            chk_Gate().then(() => {});
+          });
+        });
+      });
+    });
+  });
+};
+
+function init() {
+  logger.info(VERSION + " connect to broker OK");
+  setInterval(tpTriggerData, 2000);
+  //setInterval(ctrlDataChk, 500);
+}
+
+init();
