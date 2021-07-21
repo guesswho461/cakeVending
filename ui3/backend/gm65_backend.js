@@ -2,7 +2,7 @@ require("dotenv").config({ path: "../frontend/.env" });
 
 const argv_opts = {
   string: ["device"],
-  default: { device: "/dev/ttyACM0" },
+  default: { device: "COM12" }, //"/dev/ttyACM0"
 };
 const argv = require("minimist")(process.argv.slice(2), argv_opts);
 
@@ -48,19 +48,48 @@ app.get("/version", (req, res) => {
   res.send(VERSION);
 });
 
+let reader;
+let timer;
+let setIntervalObj;
+let scaning = false;
+let scanOK = false;
 app.get("/code", (req, res) => {
-  const reader = require("./gm65.js")(argv.device, logger, {
+  reader = require("./gm65.js")(argv.device, logger, {
     onScan: (code) => {
       logger.info("code: ", code);
       res.send(code);
       reader.close();
-      clearTimeout(timer);
+      scanOK = true;
+      //clearTimeout(timer);
+      clearInterval(setIntervalObj);
     },
   });
+  scaning = true;
+  scanOK = false;
   reader.trigger();
-  const timer = setTimeout(() => {
+
+  /* timer = setTimeout(() => {
     reader.close();
     logger.error("time out, reader close");
     res.sendStatus(408);
-  }, timeout);
+  }, timeout);*/
+  setIntervalObj = setInterval(function () {
+    if (!scaning) {
+      clearInterval(setIntervalObj);
+      res.sendStatus(500);
+    }
+  }, 50);
+});
+
+app.post("/close", (req, res) => {
+  //if (timer) clearTimeout(timer);
+  if (!scanOK) reader.close();
+  scaning = false;
+  res.sendStatus(200);
+});
+
+app.post("/scanDisable", (req, res) => {
+  console.log("scan 1Sec");
+  if (!scanOK) reader.scanDisable();
+  res.sendStatus(200);
 });
