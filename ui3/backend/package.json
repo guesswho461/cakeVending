@@ -11,13 +11,17 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.21.1",
+    "body-parser": "^1.19.0",
     "comment-json": "^4.1.0",
     "cors": "^2.8.5",
     "dotenv": "^9.0.2",
     "express": "^4.17.1",
     "express-jwt": "^6.0.0",
     "log4js": "^6.3.0",
-    "sqlite3": "^5.0.2",
-    "serialport": "^8.0.7"
+    "modbus-serial": "^8.0.2",
+    "serialport": "^8.0.7",
+    "socket.io": "^4.1.2",
+    "socket.io-client": "^4.1.2",
+    "sqlite3": "^5.0.2"
   }
 }
